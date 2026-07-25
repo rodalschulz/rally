@@ -123,7 +123,7 @@ export default async function HomePage({
                       <input type="hidden" name="groupId" value={group.id} />
                       <PendingSubmitButton
                         pendingLabel="…"
-                        className="shrink-0 text-[0.85rem] font-medium text-ink"
+                        className="shrink-0 appearance-none bg-transparent p-0 text-[0.85rem] font-medium leading-normal text-ink"
                       >
                         Unirme
                       </PendingSubmitButton>

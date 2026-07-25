@@ -2,7 +2,6 @@ import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { BrandMark } from "./BrandMark";
 import { BottomNav } from "./BottomNav";
-import { LiveRefresh } from "./LiveRefresh";
 import { PendingSubmitButton } from "./PendingSubmitButton";
 import { ServiceWorkerRegister } from "./ServiceWorkerRegister";
 
@@ -25,7 +24,6 @@ export async function AppShell({
   return (
     <div className="app-shell">
       <ServiceWorkerRegister />
-      {inGroup ? <LiveRefresh /> : null}
       <header className="app-header sticky top-0 z-30 border-b border-ink/6 bg-mist/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-3">
           <BrandMark compact />
