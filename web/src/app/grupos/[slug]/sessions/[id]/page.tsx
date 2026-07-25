@@ -128,23 +128,6 @@ export default async function SessionDetailPage({
         allowedUserIds={session.allowedUserIds}
       />
 
-      <SessionChat
-        playSessionId={session.id}
-        initialMessages={chatMessages}
-        canPost={chatCanPost}
-        chatOpen={chatOpen}
-        meId={userId}
-        meDisplayName={
-          mePlayer?.displayName ??
-          authSession?.user?.displayName ??
-          "Jugador"
-        }
-        meShortName={
-          mePlayer?.shortName ?? authSession?.user?.shortName ?? "J"
-        }
-        meHue={mePlayer?.hue ?? authSession?.user?.hue ?? 160}
-      />
-
       <section className="animate-rise mt-8">
         <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
           Cancha
@@ -220,6 +203,23 @@ export default async function SessionDetailPage({
         labelPlayers={allPlayers}
         games={singlesGames}
         canManage={canManageGames}
+      />
+
+      <SessionChat
+        playSessionId={session.id}
+        initialMessages={chatMessages}
+        canPost={chatCanPost}
+        chatOpen={chatOpen}
+        meId={userId}
+        meDisplayName={
+          mePlayer?.displayName ??
+          authSession?.user?.displayName ??
+          "Jugador"
+        }
+        meShortName={
+          mePlayer?.shortName ?? authSession?.user?.shortName ?? "J"
+        }
+        meHue={mePlayer?.hue ?? authSession?.user?.hue ?? 160}
       />
 
       {canDeletePlaySession(
