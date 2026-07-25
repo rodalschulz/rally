@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { prisma } from "@/lib/db";
+import { getMembership } from "@/lib/groups";
 
 async function requireUserId() {
   const session = await auth();
@@ -13,11 +14,28 @@ async function requireUserId() {
   return session.user.id;
 }
 
+async function requireMemberOfGroup(groupId: string, userId: string) {
+  const m = await getMembership(groupId, userId);
+  if (!m) throw new Error("No eres miembro de este grupo");
+  return m;
+}
+
+async function groupPaths(groupId: string) {
+  const g = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!g) return { slug: "" };
+  return { slug: g.slug };
+}
+
 export async function setAttendanceAction(
   playSessionId: string,
   status: AttendanceStatus,
 ) {
   const userId = await requireUserId();
+  const session = await prisma.playSession.findUnique({
+    where: { id: playSessionId },
+  });
+  if (!session) throw new Error("Fecha no encontrada");
+  await requireMemberOfGroup(session.groupId, userId);
 
   await prisma.attendance.upsert({
     where: {
@@ -28,14 +46,13 @@ export async function setAttendanceAction(
   });
 
   await syncOpenDebtsForSession(playSessionId);
-  revalidatePath("/");
-  revalidatePath(`/sessions/${playSessionId}`);
-  revalidatePath("/deudas");
+  const { slug } = await groupPaths(session.groupId);
+  revalidatePath(`/grupos/${slug}`);
+  revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
+  revalidatePath(`/grupos/${slug}/deudas`);
 }
 
-export async function createPlaySessionAction(formData: FormData) {
-  const userId = await requireUserId();
-
+function parseSessionFields(formData: FormData) {
   const startsAtRaw = String(formData.get("startsAt") || "");
   const courtLabel = String(formData.get("courtLabel") || "").trim() || null;
   const costRaw = String(formData.get("costAmount") || "0");
@@ -51,12 +68,21 @@ export async function createPlaySessionAction(formData: FormData) {
     throw new Error("Fecha inválida");
   }
 
+  return { startsAt, courtLabel, costAmount, note };
+}
+
+export async function createPlaySessionAction(formData: FormData) {
+  const userId = await requireUserId();
+  const groupId = String(formData.get("groupId") || "");
+  if (!groupId) throw new Error("Grupo inválido");
+  await requireMemberOfGroup(groupId, userId);
+
+  const fields = parseSessionFields(formData);
+
   const created = await prisma.playSession.create({
     data: {
-      startsAt,
-      courtLabel,
-      costAmount,
-      note,
+      groupId,
+      ...fields,
       financierId: userId,
       createdById: userId,
       status: "scheduled",
@@ -70,21 +96,60 @@ export async function createPlaySessionAction(formData: FormData) {
   });
 
   await syncOpenDebtsForSession(created.id);
-  revalidatePath("/");
-  revalidatePath("/deudas");
-  redirect(`/sessions/${created.id}`);
+  const { slug } = await groupPaths(groupId);
+  revalidatePath(`/grupos/${slug}`);
+  revalidatePath(`/grupos/${slug}/deudas`);
+  redirect(`/grupos/${slug}/sessions/${created.id}`);
+}
+
+export async function updatePlaySessionAction(formData: FormData) {
+  const userId = await requireUserId();
+  const playSessionId = String(formData.get("playSessionId") || "");
+  if (!playSessionId) throw new Error("Fecha inválida");
+
+  const row = await prisma.playSession.findUnique({
+    where: { id: playSessionId },
+  });
+  if (!row) throw new Error("Fecha no encontrada");
+  await requireMemberOfGroup(row.groupId, userId);
+
+  if (row.createdById !== userId) {
+    throw new Error("Solo el creador puede editar esta fecha");
+  }
+
+  const fields = parseSessionFields(formData);
+
+  await prisma.playSession.update({
+    where: { id: playSessionId },
+    data: fields,
+  });
+
+  await syncOpenDebtsForSession(playSessionId);
+  const { slug } = await groupPaths(row.groupId);
+  revalidatePath(`/grupos/${slug}`);
+  revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
+  revalidatePath(`/grupos/${slug}/deudas`);
+  redirect(`/grupos/${slug}/sessions/${playSessionId}`);
 }
 
 export async function settleDebtAction(formData: FormData) {
-  await requireUserId();
+  const userId = await requireUserId();
   const debtId = String(formData.get("debtId") || "");
   if (!debtId) throw new Error("Deuda inválida");
-  const debt = await prisma.debt.update({
+  const debt = await prisma.debt.findUnique({
+    where: { id: debtId },
+    include: { playSession: true },
+  });
+  if (!debt) throw new Error("Deuda no encontrada");
+  await requireMemberOfGroup(debt.playSession.groupId, userId);
+
+  await prisma.debt.update({
     where: { id: debtId },
     data: { status: "settled", settledAt: new Date() },
   });
-  revalidatePath("/deudas");
-  revalidatePath(`/sessions/${debt.playSessionId}`);
+  const { slug } = await groupPaths(debt.playSession.groupId);
+  revalidatePath(`/grupos/${slug}/deudas`);
+  revalidatePath(`/grupos/${slug}/sessions/${debt.playSessionId}`);
 }
 
 export async function deletePlaySessionAction(formData: FormData) {
@@ -96,22 +161,23 @@ export async function deletePlaySessionAction(formData: FormData) {
     where: { id: playSessionId },
   });
   if (!row) throw new Error("Fecha no encontrada");
+  await requireMemberOfGroup(row.groupId, userId);
 
-  // Creator or financier can delete
   if (row.createdById !== userId && row.financierId !== userId) {
     throw new Error("No tienes permiso para borrar esta fecha");
   }
 
+  const { slug } = await groupPaths(row.groupId);
   await prisma.playSession.delete({ where: { id: playSessionId } });
-  revalidatePath("/");
-  revalidatePath("/deudas");
-  revalidatePath("/rankings/singles");
-  revalidatePath("/rankings/doubles");
-  redirect("/");
+  revalidatePath(`/grupos/${slug}`);
+  revalidatePath(`/grupos/${slug}/deudas`);
+  revalidatePath(`/grupos/${slug}/rankings/singles`);
+  revalidatePath(`/grupos/${slug}/rankings/doubles`);
+  redirect(`/grupos/${slug}`);
 }
 
 export async function addMatchAction(formData: FormData) {
-  await requireUserId();
+  const userId = await requireUserId();
   const playSessionId = String(formData.get("playSessionId") || "");
   const format = String(formData.get("format") || "singles") as
     | "singles"
@@ -131,6 +197,12 @@ export async function addMatchAction(formData: FormData) {
     throw new Error("Datos de match incompletos");
   }
 
+  const session = await prisma.playSession.findUnique({
+    where: { id: playSessionId },
+  });
+  if (!session) throw new Error("Fecha no encontrada");
+  await requireMemberOfGroup(session.groupId, userId);
+
   await prisma.match.create({
     data: {
       playSessionId,
@@ -142,7 +214,8 @@ export async function addMatchAction(formData: FormData) {
     },
   });
 
-  revalidatePath(`/sessions/${playSessionId}`);
-  revalidatePath("/rankings/singles");
-  revalidatePath("/rankings/doubles");
+  const { slug } = await groupPaths(session.groupId);
+  revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
+  revalidatePath(`/grupos/${slug}/rankings/singles`);
+  revalidatePath(`/grupos/${slug}/rankings/doubles`);
 }

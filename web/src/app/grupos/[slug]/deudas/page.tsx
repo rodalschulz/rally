@@ -1,19 +1,27 @@
 import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { listAllDebts, listPlayers } from "@/lib/data/queries";
+import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
 import { netBalances } from "@/lib/domain/split";
 import { formatSoles } from "@/lib/format";
 import { settleDebtAction } from "@/lib/actions/sessions";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Deudas" };
 
-export default async function DebtsPage() {
+export default async function DebtsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const group = await requireGroupMember(slug);
+
   const [debts, players, session] = await Promise.all([
-    listAllDebts(),
-    listPlayers(),
+    listAllDebts(group.id),
+    listGroupPlayers(group.id),
     auth(),
   ]);
   const me = session?.user?.id;
@@ -27,7 +35,12 @@ export default async function DebtsPage() {
   const playersById = new Map(players.map((p) => [p.id, p]));
 
   return (
-    <AppShell title="Plata" subtitle="Saldos">
+    <AppShell
+      groupSlug={slug}
+      groupName={group.name}
+      title="Plata"
+      subtitle="Saldos"
+    >
       <section className="animate-rise mb-6">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
           Deudas

@@ -1,10 +1,17 @@
 import Link from "next/link";
 
-export function RankingTabs({ active }: { active: "singles" | "doubles" }) {
+export function RankingTabs({
+  slug,
+  active,
+}: {
+  slug: string;
+  active: "singles" | "doubles";
+}) {
+  const base = `/grupos/${slug}/rankings`;
   return (
     <div className="mb-4 flex gap-1 rounded-xl bg-mist-2 p-1">
-      <Tab href="/rankings/singles" label="Singles" active={active === "singles"} />
-      <Tab href="/rankings/doubles" label="Dobles" active={active === "doubles"} />
+      <Tab href={`${base}/singles`} label="Singles" active={active === "singles"} />
+      <Tab href={`${base}/doubles`} label="Dobles" active={active === "doubles"} />
     </div>
   );
 }

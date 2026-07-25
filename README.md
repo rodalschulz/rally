@@ -2,12 +2,14 @@
 
 Monorepo para organizar partidos de tenis entre amigos (asistencias, quién paga la cancha, deudas, resultados y rankings) y, por separado, un bot que consulta horarios disponibles en la municipalidad de Miraflores.
 
+Marca de la app: **rally**.
+
 ## Estructura
 
 ```
 tenis/
 ├── bot/          # Script Selenium: disponibilidad de canchas Miraflores
-├── web/          # App Next.js (por crear): coordinación del grupo
+├── web/          # App Next.js (rally): coordinación del grupo
 ├── docs/         # Visión, dominio y arquitectura
 ├── AGENTS.md     # Contexto para agentes / colaboradores
 └── README.md
@@ -17,14 +19,23 @@ tenis/
 
 | Carpeta | Rol |
 |---------|-----|
-| `bot/` | Automatiza login + scrape/API de disponibilidad de canchas. |
-| `web/` | App social del grupo: sesiones, RSVP, financiador, saldos, matches, rankings. |
+| `bot/` | Automatiza login + scrape/API de disponibilidad de canchas. Puede sincronizar a rally (`POST /api/availability/sync`). |
+| `web/` | App social del grupo: sesiones, RSVP, financiador, saldos, matches, rankings, canchas libres. |
 | `docs/` | Fuente de verdad de producto y diseño técnico. |
 
 ## Empezar
 
+- **App (rally):** ver [`web/README.md`](web/README.md) y [`web/docs/SETUP.md`](web/docs/SETUP.md)
 - **Bot:** ver [`bot/README.md`](bot/README.md)
-- **App (rally):** `cd web && npm run dev` — ver [`web/README.md`](web/README.md)
+- **Sync PC → Neon:** ver [`bot/docs/PC_SYNC.md`](bot/docs/PC_SYNC.md)
+
+```bash
+cd web
+cp .env.example .env   # completar (Neon, Google, AUTH_SECRET, CRON_SECRET)
+npm install
+npx prisma migrate dev
+npm run dev
+```
 
 ## Deploy (Vercel)
 
@@ -32,7 +43,7 @@ Este repo es un **monorepo**. En Vercel:
 
 1. Importá `rodalschulz/rally`
 2. **Root Directory:** `web`
-3. Env vars: ver [`web/docs/SETUP.md`](web/docs/SETUP.md) + `CRON_SECRET`
+3. Env vars: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `CRON_SECRET` — detalle en [`web/docs/SETUP.md`](web/docs/SETUP.md)
 
 No subas solo `/web` al repo: conviene mantener `bot/` y `docs/` juntos.
 

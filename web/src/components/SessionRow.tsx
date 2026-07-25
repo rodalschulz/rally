@@ -13,11 +13,13 @@ export function SessionRow({
   goingPlayers,
   goingCount,
   index = 0,
+  hrefBase = "/sessions",
 }: {
   session: Session;
   goingPlayers: Player[];
   goingCount: number;
   index?: number;
+  hrefBase?: string;
 }) {
   const when = formatSessionWhen(session.startsAt);
   const rel = relativeDayLabel(session.startsAt);
@@ -25,7 +27,7 @@ export function SessionRow({
 
   return (
     <Link
-      href={`/sessions/${session.id}`}
+      href={`${hrefBase}/${session.id}`}
       className="animate-rise group flex items-center gap-3 border-b border-ink/6 px-4 py-3.5 last:border-b-0 active:bg-mist"
       style={{ animationDelay: `${index * 40}ms` }}
     >

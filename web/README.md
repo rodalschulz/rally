@@ -5,7 +5,7 @@ App Next.js (App Router) + TypeScript + Tailwind para coordinar tenis del grupo.
 ## Setup (Auth + Neon)
 
 Ver paso a paso: **[docs/SETUP.md](docs/SETUP.md)**  
-(Google OAuth + Neon `DATABASE_URL` / `DIRECT_URL` + `AUTH_SECRET`)
+(Google OAuth + Neon `DATABASE_URL` / `DIRECT_URL` + `AUTH_SECRET` + `CRON_SECRET` para el bot)
 
 ```bash
 cd web
@@ -27,6 +27,23 @@ Abre [http://localhost:3000](http://localhost:3000) → Continuar con Google.
 | `npm run db:studio` | Prisma Studio |
 | `node scripts/generate-icons.mjs` | Regenerar iconos PWA |
 
+## Rutas principales
+
+| Ruta | Uso |
+|------|-----|
+| `/login` | Google Auth |
+| `/` | Discovery: mis grupos + públicos + crear |
+| `/grupos/nuevo` | Crear grupo |
+| `/join/[code]` | Unirse por invite (+ password si privado) |
+| `/grupos/[slug]` | Hub Fechas + canchas libres (global) |
+| `/grupos/[slug]/sessions/*` | Crear / detalle, RSVP, matches |
+| `/grupos/[slug]/rankings/*` | Rankings singles / dobles |
+| `/grupos/[slug]/deudas` | Saldos del grupo |
+
 ## Diseño
 
 Marca **rally**: dark mode, UI minimal, acento lima, bottom nav, PWA.
+
+## Bot / disponibilidad
+
+Para publicar canchas libres desde la PC: [`../bot/docs/PC_SYNC.md`](../bot/docs/PC_SYNC.md).

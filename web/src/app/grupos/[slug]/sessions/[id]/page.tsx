@@ -6,7 +6,7 @@ import { AttendanceBadge, RsvpStrip } from "@/components/AttendanceUi";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
   getPlaySession,
-  listPlayers,
+  listGroupPlayers,
   toAttendance,
   toDebt,
   toMatch,
@@ -18,21 +18,24 @@ import { formatSessionWhen, formatSoles } from "@/lib/format";
 import { addMatchAction } from "@/lib/actions/sessions";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
 
 export default async function SessionDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { slug, id } = await params;
   if (id === "nueva") notFound();
 
+  const group = await requireGroupMember(slug);
+
   const [row, sessionAuth, allPlayers] = await Promise.all([
-    getPlaySession(id),
+    getPlaySession(id, group.id),
     auth(),
-    listPlayers(),
+    listGroupPlayers(group.id),
   ]);
   if (!row) notFound();
 
@@ -52,19 +55,33 @@ export default async function SessionDetailPage({
   const goingPlayers = allPlayers.filter((p) =>
     going.some((a) => a.playerId === p.id),
   );
-  // Prefer who marked "Voy"; fall back to everyone registered
   const matchPlayers =
     goingPlayers.length >= 2 ? goingPlayers : allPlayers;
   const canAddMatch = matchPlayers.length >= 2;
 
   return (
-    <AppShell title={when.weekday} subtitle={when.dayMonth}>
-      <Link
-        href="/"
-        className="mb-5 inline-flex text-[0.9rem] font-medium text-muted"
-      >
-        ← Fechas
-      </Link>
+    <AppShell
+      groupSlug={slug}
+      groupName={group.name}
+      title={when.weekday}
+      subtitle={when.dayMonth}
+    >
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <Link
+          href={`/grupos/${slug}`}
+          className="inline-flex text-[0.9rem] font-medium text-muted"
+        >
+          ← Fechas
+        </Link>
+        {sessionAuth?.user?.id === session.createdById ? (
+          <Link
+            href={`/grupos/${slug}/sessions/${session.id}/editar`}
+            className="text-[0.9rem] font-medium text-ink"
+          >
+            Editar
+          </Link>
+        ) : null}
+      </div>
 
       <section className="animate-rise">
         <p className="text-[0.8rem] font-medium text-muted">
@@ -91,7 +108,7 @@ export default async function SessionDetailPage({
       <section className="animate-rise mt-8">
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-            Grupo
+            Jugadores
           </h2>
           <p className="text-[0.8rem] text-muted">{going.length} confirmados</p>
         </div>
@@ -244,7 +261,7 @@ export default async function SessionDetailPage({
           >
             <p className="text-[0.9rem] font-medium text-ink">Agregar match</p>
             <p className="text-[0.8rem] text-muted">
-              Elegí formato, jugadores, score (ej. 6-4, 6-3) y quién ganó.
+              Elige formato, jugadores, score (ej. 6-4, 6-3) y quién ganó.
             </p>
             <input type="hidden" name="playSessionId" value={session.id} />
             <label className="block text-[0.8rem] text-muted">
@@ -316,8 +333,8 @@ export default async function SessionDetailPage({
         ) : (
           <p className="rounded-2xl bg-sand px-4 py-4 text-[0.9rem] text-muted">
             Para cargar un game hacen falta al menos{" "}
-            <strong className="font-medium text-ink">2 jugadores</strong> en
-            rally. Dile a un amigo que entre y marque “Voy”.
+            <strong className="font-medium text-ink">2 jugadores</strong> en el
+            grupo. Dile a un amigo que entre y marque “Voy”.
           </p>
         )}
       </section>

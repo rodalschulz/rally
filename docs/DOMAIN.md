@@ -2,18 +2,40 @@
 
 Lenguaje compartido para producto y código. Preferir estos nombres en UI, DB y PRs.
 
+## Contenedor: Group (grupo)
+
+Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo. Las canchas libres (Miraflores) son **globales** de la app, no por grupo.
+
+| Campo | Notas |
+|-------|--------|
+| `name` / `slug` | `slug` único en URL (`/grupos/[slug]`) |
+| `visibility` | `public` \| `private` |
+| `passwordHash` | bcrypt; obligatorio si `private` |
+| `inviteCode` | Token opaco único → `/join/[code]` |
+| `maxMembers` | Cupo; join falla si ya hay tantos miembros |
+| `createdById` | Creador |
+
+Owner edita nombre y `maxMembers` en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
+
+**Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
+
+**Membresía (`GroupMember`):** `role` = `owner` \| `member`. Owner = creador. Cualquier miembro puede coordinar fechas; solo owner borra/rota invite (MVP: create + copy invite).
+
+**Jugadores del grupo** = miembros (`GroupMember` → `User`), no todos los users globales.
+
 ## Entidades
 
 ### Player (jugador / miembro)
 
-Persona del grupo. Identidad mínima: nombre (o display name) + auth (definir en implementación: magic link, Google, o invite codes al inicio).
+Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google OAuth + `displayName` / `shortName` (derivados del perfil). Scoped al grupo vía `GroupMember`.
 
 ### Session (sesión / fecha de cancha)
 
-Una reserva concreta:
+En producto: **sesión** o **fecha**. En DB: **`PlaySession`** (evita choque con Auth.js `Session`).
 
 | Campo | Notas |
 |-------|--------|
+| `groupId` | Grupo dueño (requerido) |
 | `startsAt` | Fecha y hora |
 | `courtLabel` | Opcional (ej. cancha 30–41 según API Miraflores) |
 | `costAmount` | Costo total en soles (ej. 22.50) |
@@ -21,25 +43,26 @@ Una reserva concreta:
 | `financierId` | Quién pagó la cancha (**financiador**) |
 | `createdById` | Quién creó el registro |
 | `status` | `scheduled` \| `completed` \| `cancelled` |
+| `note` | Opcional |
 
-**Financiador:** término elegido para “quien adelantó el pago de la cancha”. En UI se puede mostrar como “Pagó la cancha” / “Financiador”.
+**Financiador:** “quien adelantó el pago de la cancha”. En UI: “Pagó la cancha” / “Financiador”.
 
 ### Attendance (asistencia / RSVP)
 
-Relación Player ↔ Session:
+Relación Player ↔ Session (`userId` + `playSessionId`):
 
 | Campo | Notas |
 |-------|--------|
 | `status` | `going` \| `not_going` \| `maybe` \| `pending` |
 | `updatedAt` | |
 
-Regla MVP: entran al **reparto de costo** solo los `going` (y típicamente el financiador si también asiste; si el financiador no juega pero pagó, definir si sigue en el split — default propuesto: el split es entre asistentes `going`; si el financiador no está en `going`, igual se le debe el total menos… ver reglas abajo).
+Regla MVP: entran al **reparto de costo** solo los `going`.
 
-**Default propuesto (simple):**
+**Default (simple):**
 
 - El costo se divide en partes iguales entre jugadores con `going`.
-- El financiador debe estar entre los `going` en el caso normal.
-- Si el financiador no asiste pero pagó, los `going` le deben `costo / N` cada uno (N = número de `going`); el financiador no “consume” una parte porque no juega — o sea recibe el 100% del costo repartido entre quienes sí van.  
+- El financiador suele estar entre los `going`.
+- Si el financiador no asiste pero pagó, los `going` le deben `costo / N` cada uno (N = número de `going`); el financiador no “consume” una parte porque no juega — recibe el 100% del costo repartido entre quienes sí van.  
   *(Confirmar con el grupo si preferís incluir siempre al financiador en N aunque no juegue.)*
 
 ### Debt (deuda)
@@ -48,12 +71,14 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 
 | Campo | Notas |
 |-------|--------|
-| `fromPlayerId` | Quien debe |
-| `toPlayerId` | Quien recibe (casi siempre el financiador) |
-| `sessionId` | Origen |
+| `fromUserId` | Quien debe |
+| `toUserId` | Quien recibe (casi siempre el financiador) |
+| `playSessionId` | Origen |
 | `amount` | |
 | `status` | `open` \| `settled` |
 | `settledAt` | Opcional |
+
+Scoped al grupo al filtrar deudas por `playSession.groupId`.
 
 Fórmula base (financiador asiste, N asistentes `going`):
 
@@ -65,26 +90,32 @@ para cada asistente ≠ financiador:
 
 El financiador ya cubrió `costAmount` al municipio; internamente “pagó” su `share` y adelantó el resto.
 
+Implementación: `web/src/lib/domain/split.ts` + sync en `web/src/lib/debts/sync.ts`.
+
 ### Match (partido)
 
-Resultado jugado en el contexto de una sesión (o suelto, si más adelante se permite):
+Resultado jugado en el contexto de una sesión:
 
 | Campo | Notas |
 |-------|--------|
-| `sessionId` | Preferible |
+| `playSessionId` | Obligatorio en MVP |
 | `format` | `singles` \| `doubles` |
-| `sideA` / `sideB` | 1 jugador (singles) o 2 (dobles) |
-| `score` | Estructura de sets/gameses (definir encoding en implementación) |
-| `winnerSide` | `A` \| `B` (derivable del score) |
+| `sideA` / `sideB` | Arrays de user ids (1 en singles, 2 en dobles) |
+| `score` | String (encoding simple en MVP) |
+| `winnerSide` | `A` \| `B` |
 
 ### Ranking
 
-Vista agregada, no necesariamente tabla persistida:
+Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 
 - **Singles ranking** — principal  
 - **Doubles ranking** — secundario  
 
-Algoritmo exacto (ELO, W-L, puntos por set, etc.) **aún no cerrado**. Documentar la decisión en `docs/` cuando se elija e implementar un módulo puro (`web/src/lib/ranking/…`) fácil de cambiar.
+**MVP cerrado:** 3 puntos por victoria, 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts`. ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
+
+### AvailabilitySnapshot (canchas libres)
+
+Snapshot JSON publicado por el bot (`POST /api/availability/sync`). **Global** (sin `groupId`); se muestra en el hub del grupo (Fechas), no en el directorio root.
 
 ## Casos ejemplo
 
@@ -105,9 +136,11 @@ Algoritmo exacto (ELO, W-L, puntos por set, etc.) **aún no cerrado**. Documenta
 
 | Término | Significado |
 |---------|-------------|
-| Sesión | Fecha/hora reservada de cancha |
+| Grupo | Contenedor de coordinación (`Group`) |
+| Sesión / fecha | Fecha/hora reservada de cancha (`PlaySession`) |
 | Financiador | Quien pagó la cancha al municipio |
 | Asistencia / RSVP | Confirmación de quién va |
-| Deuda | Cuánto debe A a B por una sesión (u otro concepto) |
+| Deuda | Cuánto debe A a B por una sesión |
 | Match | Partido con score |
-| Ranking singles/dobles | Ordenamiento por resultados |
+| Ranking singles/dobles | Ordenamiento por resultados (3 pts/win en MVP) |
+| Canchas libres | Snapshot Miraflores vía bot (global) |

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Group" ADD COLUMN     "maxMembers" INTEGER NOT NULL DEFAULT 20,
+ALTER COLUMN "updatedAt" DROP DEFAULT;

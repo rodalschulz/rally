@@ -4,13 +4,15 @@
 
 ```
 tenis/                          # monorepo
-├── bot/                        # Python + Selenium (tooling local)
+├── bot/                        # Python + Selenium (tooling local / Task Scheduler)
 │   ├── open_chrome.py
 │   ├── requirements.txt
-│   ├── .env                    # credenciales Miraflores (no commitear)
+│   ├── run_sync.bat
+│   ├── .env                    # credenciales Miraflores + RALLY_* (no commitear)
 │   └── output/                 # HTML generado
-├── web/                        # Next.js app (Vercel)
-│   └── (App Router + TS + Tailwind)
+├── web/                        # Next.js app (Vercel) — marca rally
+│   ├── prisma/                 # schema + migraciones
+│   └── src/                    # App Router + TS + Tailwind
 └── docs/                       # producto + arquitectura
 ```
 
@@ -18,35 +20,46 @@ Dos sistemas, un repo:
 
 | Sistema | Runtime | Deploy |
 |---------|---------|--------|
-| `bot/` | Python local (o cron futuro) | No en Vercel |
+| `bot/` | Python local (Task Scheduler en Windows) | No en Vercel |
 | `web/` | Node / Next.js | Vercel |
 
-Integración bot↔web (opción A): el bot corre en **PC**, hace `POST /api/availability/sync` con `CRON_SECRET`, y Fechas lee `AvailabilitySnapshot` en Neon. Ver `bot/docs/PC_SYNC.md`.
+Integración bot↔web: el bot corre en **PC**, hace `POST /api/availability/sync` con `CRON_SECRET`, y el hub del grupo lee `AvailabilitySnapshot` en Neon. Ver `bot/docs/PC_SYNC.md`.
 
 ## App web (`web/`)
 
-### Stack propuesto
+### Stack (actual)
 
 - **Next.js** (App Router) + **TypeScript** + **Tailwind**
-- **Auth:** por definir (Clerk / Auth.js / magic link). Grupo cerrado → invites o allowlist.
-- **DB:** empezar con algo serverless-friendly:
-  - **Opción A (recomendada MVP):** [Prisma](https://www.prisma.io/) + [Neon](https://neon.tech/) / Supabase Postgres / Turso  
-  - **Opción B:** Supabase (Auth + Postgres + RLS) si se quiere menos glue code  
-- **Mutaciones:** Server Actions o Route Handlers; sin API externa obligatoria al inicio.
-- **Hosting:** Vercel (frontend + server components + actions en la misma app).
+- **Auth:** Auth.js + Google OAuth (JWT session; adapter Prisma)
+- **DB:** Prisma 6 + Neon Postgres (`DATABASE_URL` pooler + `DIRECT_URL` para migrate)
+- **Mutaciones:** Server Actions + Route Handler de sync (`/api/availability/sync`)
+- **Hosting:** Vercel (Root Directory = `web`)
+- **PWA:** manifest + service worker básicos
+
+### Modelo multi-grupo
+
+```
+Login Google → / (discovery)
+  ├── grupos públicos + Unirme
+  ├── Mis grupos
+  ├── /grupos/nuevo
+  └── /join/[code] (+ password si private)
+       ↓
+/grupos/[slug]  (hub: Fechas + canchas libres globales)
+  ├── sessions/nueva | sessions/[id]
+  ├── rankings/singles | doubles
+  └── deudas
+```
+
+AuthZ: middleware exige login (salvo `/login`, assets, API auth/sync). Dentro del grupo: `requireGroupMember(slug)` + actions validan membresía y que `playSession.groupId` coincida.
 
 ### ¿Hace falta un backend aparte?
 
-**No para el MVP.** Next.js en Vercel cubre:
+**No para el MVP.** Next.js en Vercel cubre UI, auth, grupos, CRUD de sesiones / RSVP / deudas / matches y rankings.
 
-- UI
-- Auth callbacks
-- CRUD de sesiones / RSVP / deudas / matches
-- Cálculo de rankings en servidor
+Considerar un worker aparte solo si aparecen:
 
-Considerar un backend/worker aparte solo si aparecen:
-
-- Scraping programado del bot (mejor un cron + Python o un job queue)
+- Scraping sin depender de una PC encendida
 - Notificaciones WhatsApp/email a escala
 - Lógica que exceda timeouts de serverless
 
@@ -54,64 +67,80 @@ Considerar un backend/worker aparte solo si aparecen:
 
 ```
 src/
-  app/                 # rutas UI
-    sessions/          # listado + detalle + RSVP
-    rankings/
-      singles/
-      doubles/
-    debts/             # saldos / historial (opcional en MVP)
+  app/
+    page.tsx                 # Discovery (públicos + mis grupos)
+    login/
+    grupos/nuevo/
+    grupos/[slug]/           # Hub Fechas + canchas libres
+      sessions/nueva| [id]/
+      rankings/singles|doubles/
+      deudas/
+    join/[code]/
+    api/auth/[...nextauth]/
+    api/availability/sync/   # bot → Neon (Bearer CRON_SECRET)
   components/
   lib/
-    domain/            # tipos + reglas (split de costo, etc.)
-    ranking/           # algoritmos singles/dobles
-    db/                # cliente Prisma/Drizzle
-  actions/             # Server Actions
+    groups/                  # create, join, requireMember, crypto
+    domain/                  # tipos + split de costo
+    ranking/                 # 3 pts/win (simple.ts)
+    debts/                   # sync de deudas open
+    actions/                 # Server Actions (groups + sessions)
+    data/                    # queries scoped por groupId
+  auth.ts / auth.config.ts
 ```
 
-### Páginas mínimas (MVP UI)
+### Páginas (MVP UI)
 
-1. Lista de sesiones futuras (+ pasadas)
-2. Detalle de sesión: asistentes, financiador, costo, deudas de esa fecha, matches
-3. Ranking singles
-4. Ranking dobles
-5. (Nice) vista “quién me debe / a quién debo”
+1. Root discovery: marca, mis grupos, públicos, crear  
+2. Crear grupo / join por invite  
+3. Hub del grupo: sesiones + canchas libres  
+4. Detalle de sesión: RSVP, financiador, deudas, matches  
+5. Ranking singles / dobles (por grupo)  
+6. Deudas del grupo  
+7. Login Google  
 
 ### Datos y consistencia
 
-- Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas de la sesión; no tocar `settled` sin regla explícita).
-- Rankings: recalcular on-read o materializar en tabla `RankingSnapshot` si el cómputo se vuelve pesado.
+- Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
+- Rankings: on-read vía `buildRanking` filtrando matches del grupo.
+- Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad
 
-- Todo dato del grupo detrás de auth.
+- Rutas de producto detrás de auth (middleware Auth.js).
+- Membresía de grupo en server components / actions.
 - Nunca exponer `bot/.env` ni credenciales Miraflores al cliente web.
-- Validar en servidor que solo miembros del grupo mutan sesiones.
+- Sync de disponibilidad solo con `Authorization: Bearer <CRON_SECRET>`.
+- No commitear `.env`; usar `.env.example`.
 
 ## Bot (`bot/`)
 
-- Selenium headless → login SSO Miraflores → captura respuesta de disponibilidad.
+- Selenium → login SSO Miraflores → captura respuesta de disponibilidad.
 - Filtra canchas relevantes (IDs 30–41 en el código actual).
 - Salida: consola + `bot/output/tenis_availability.html`.
+- Opcional: POST a rally con `RALLY_API_URL` + `RALLY_CRON_SECRET`.
 
-Futuro posible: job que escribe slots libres a DB o notifica Discord/WhatsApp. Tratarlo como **adaptador**, no como núcleo de la app social.
+Tratarlo como **adaptador**, no como núcleo de la app social.
 
-## Decisiones abiertas (registrar aquí cuando se cierren)
+## Decisiones
 
 | Tema | Estado |
 |------|--------|
-| Proveedor de auth | **Auth.js + Google** (registro abierto con el link) |
-| Proveedor de DB | **Neon Postgres** + Prisma 6 (`DATABASE_URL` + `DIRECT_URL`) |
-| Algoritmo de ranking | MVP: 3 pts/win (`web/src/lib/ranking/simple.ts`); ELO abierto |
+| Proveedor de auth | **Auth.js + Google** |
+| Proveedor de DB | **Neon Postgres** + Prisma 6 |
+| Multi-grupo | Root = discovery; coordinación bajo `/grupos/[slug]` |
+| Grupos privados | Invite + contraseña; no listados en root |
+| Canchas libres | Globales (sin groupId) |
+| Algoritmo de ranking | MVP: 3 pts/win; ELO abierto |
 | Nombre de marca UI | **rally** |
 | Setup local | `web/docs/SETUP.md` |
+| Puente bot ↔ web | PC + `CRON_SECRET` (`bot/docs/PC_SYNC.md`) |
 | ¿Financiador cuenta en el split si no asiste? | Propuesta en DOMAIN.md; confirmar con el grupo |
-| Monorepo tool (pnpm workspaces / Turborepo) | No necesario hasta que `web/` exista |
+| Monorepo tool (pnpm / Turborepo) | No necesario por ahora |
+| Roles granulares / kick / billing | Fuera de alcance MVP multi-grupo |
 
-## Orden de implementación sugerido
+## Orden de implementación (histórico / pendientes)
 
-1. Scaffold `web/` (Next + TS + Tailwind)  
-2. Modelo DB + auth mínima  
-3. CRUD sesiones + RSVP + financiador + split de deudas  
-4. Carga de matches  
-5. Rankings singles → luego dobles  
-6. (Opcional) puente con `bot/`  
+Hecho: scaffold web, DB + auth, sesiones + RSVP + financiador + deudas, matches, rankings, puente bot, **multi-grupo** (discovery + hub).
+
+Pendiente / nice-to-have: rotar invite/password UI completa, ELO, bot sin PC, notificaciones.

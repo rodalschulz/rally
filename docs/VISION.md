@@ -4,20 +4,21 @@
 
 El repo empezó como un **bot** que revisa horarios disponibles de canchas de tenis en la app de la municipalidad de Miraflores (distrito donde vive el grupo).
 
-Eso se mantiene en `bot/`, como herramienta auxiliar.
+Eso se mantiene en `bot/`, como herramienta auxiliar (y puede publicar “canchas libres” a la app).
 
 ## Destino
 
-Convertir el proyecto en una **app de coordinación** para un grupo de amigos que juegan tenis con regularidad: saber quién va, quién pagó la cancha, quién le debe a quién, qué partidos se jugaron y cómo van los rankings.
+Una **app de coordinación** (**rally**) para un grupo de amigos que juegan tenis con regularidad: saber quién va, quién pagó la cancha, quién le debe a quién, qué partidos se jugaron y cómo van los rankings.
 
-Stack previsto de la app: **Next.js + TypeScript + Tailwind**, desplegable en **Vercel**. El backend puede vivir en el mismo Next.js (Route Handlers / Server Actions) al menos en el MVP; un servicio aparte solo si aparece una necesidad clara (jobs, notificaciones push, etc.).
+Stack actual: **Next.js + TypeScript + Tailwind** en **Vercel**, con **Auth.js (Google)** y **Neon/Prisma**. El backend vive en el mismo Next.js (Server Actions / Route Handlers). Un servicio aparte solo si aparece una necesidad clara (jobs a escala, notificaciones push, etc.).
 
 ## Problemas que resuelve
 
 1. **Coordinación de asistencia** — Alguien reserva una fecha/hora; el resto marca si asiste. Todos ven la lista.
-2. **Dinero de la cancha** — Quien paga al municipio aparece como **financiador** (u “host de pago”). El costo se reparte entre asistentes; el resto queda en deuda con el financiador hasta saldar.
+2. **Dinero de la cancha** — Quien paga al municipio aparece como **financiador**. El costo se reparte entre asistentes; el resto queda en deuda con el financiador hasta saldar.
 3. **Resultados** — Registrar puntajes de los matches de esa sesión.
 4. **Rankings** — Dos tablas: **singles** (prioridad) y **dobles**, derivadas de esos resultados.
+5. **Canchas libres (opcional)** — El bot de Miraflores alimenta un snapshot en Neon para ver horarios disponibles en Fechas.
 
 ## Flujos principales (MVP)
 
@@ -49,7 +50,7 @@ Tras (o durante) la sesión se cargan resultados (singles y/o dobles). Los ranki
 
 - Reservar la cancha automáticamente en Miraflores (el bot solo consulta disponibilidad).
 - Pagos online reales (Yape/Plin/Stripe): el MVP lleva **registro de deudas**, no cobro automático.
-- Ligas abiertas al público: es una app **de grupo cerrado** (amigos).
+- Ligas abiertas al público: es una app **de grupo cerrado** (amigos). Allowlist / invites más estrictos pueden llegar después; hoy el login es Google con el link.
 
 ## Principios de producto
 

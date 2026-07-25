@@ -24,7 +24,7 @@
 cd web
 cp .env.example .env
 # edit .env with the values above
-# generate secret:
+# generate AUTH_SECRET (and optionally CRON_SECRET for the Miraflores bot):
 openssl rand -base64 32
 ```
 
@@ -47,7 +47,14 @@ Open [http://localhost:3000](http://localhost:3000) → login with Google → cr
 
 ## Vercel
 
-Add the same env vars in the Vercel project settings (`DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`).  
+Add these env vars in the Vercel project settings:
+
+- `DATABASE_URL`, `DIRECT_URL`
+- `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`
+- `CRON_SECRET` — same value as `bot` `RALLY_CRON_SECRET` (availability sync)
+
 `AUTH_URL` is usually inferred; if login redirects break, set it to your production URL.
 
 Build command should run `prisma generate` (or `prisma migrate deploy` on release). Scripts in `package.json` include `postinstall`: `prisma generate`.
+
+Bot sync from your PC: see [`../../bot/docs/PC_SYNC.md`](../../bot/docs/PC_SYNC.md).

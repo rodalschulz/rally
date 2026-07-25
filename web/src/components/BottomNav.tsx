@@ -4,14 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/", label: "Fechas", icon: CalendarIcon },
-  { href: "/rankings/singles", label: "Singles", icon: RankIcon },
-  { href: "/rankings/doubles", label: "Dobles", icon: PairIcon },
-  { href: "/deudas", label: "Deudas", icon: WalletIcon },
+  { segment: "", label: "Fechas", icon: CalendarIcon },
+  { segment: "/rankings/singles", label: "Singles", icon: RankIcon },
+  { segment: "/rankings/doubles", label: "Dobles", icon: PairIcon },
+  { segment: "/deudas", label: "Deudas", icon: WalletIcon },
 ] as const;
 
-export function BottomNav() {
+export function BottomNav({ slug }: { slug: string }) {
   const pathname = usePathname();
+  const base = `/grupos/${slug}`;
 
   return (
     <nav
@@ -23,10 +24,11 @@ export function BottomNav() {
         className="mx-auto grid max-w-lg grid-cols-4 px-1"
         style={{ height: "var(--nav-h)" }}
       >
-        {items.map(({ href, label, icon: Icon }) => {
+        {items.map(({ segment, label, icon: Icon }) => {
+          const href = `${base}${segment}`;
           const active =
-            href === "/"
-              ? pathname === "/" || pathname.startsWith("/sessions")
+            segment === ""
+              ? pathname === base || pathname.startsWith(`${base}/sessions`)
               : pathname === href || pathname.startsWith(href);
           return (
             <li key={href}>

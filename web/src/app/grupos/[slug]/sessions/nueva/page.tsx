@@ -2,15 +2,26 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { createPlaySessionAction } from "@/lib/actions/sessions";
+import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
 
-export default function NewSessionPage() {
-  // default datetime-local: tomorrow 15:00 local-ish via empty; browser fills
+export default async function NewSessionPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const group = await requireGroupMember(slug);
+
   return (
-    <AppShell title="Nueva fecha">
+    <AppShell
+      groupSlug={slug}
+      groupName={group.name}
+      title="Nueva fecha"
+    >
       <Link
-        href="/"
+        href={`/grupos/${slug}`}
         className="mb-5 inline-flex text-[0.9rem] font-medium text-muted"
       >
         ← Fechas
@@ -26,6 +37,7 @@ export default function NewSessionPage() {
       </section>
 
       <form action={createPlaySessionAction} className="animate-rise space-y-4">
+        <input type="hidden" name="groupId" value={group.id} />
         <label className="block text-[0.8rem] text-muted">
           Fecha y hora
           <input
