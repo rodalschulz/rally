@@ -15,6 +15,7 @@ import {
 } from "@/lib/data/queries";
 import { roundMoney } from "@/lib/domain/split";
 import { formatSessionWhen, formatSoles } from "@/lib/format";
+import { canDeletePlaySession } from "@/lib/actions/sessions";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -180,9 +181,16 @@ export default async function SessionDetailPage({
         canManage={canManageGames}
       />
 
-      {(userId === session.createdById || userId === session.financierId) && (
+      {canDeletePlaySession(
+        {
+          createdById: session.createdById,
+          financierId: session.financierId,
+          startsAt: new Date(session.startsAt),
+        },
+        userId,
+      ) ? (
         <DeleteSessionButton playSessionId={session.id} />
-      )}
+      ) : null}
     </>
   );
 }

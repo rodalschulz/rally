@@ -17,6 +17,8 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 
 Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
 
+**Borrar fecha:** si `startsAt` ya pasó, solo el `createdById`. Si aún es futura, creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos games dejan de contar en el ranking.
+
 **Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
 
 **Membresía (`GroupMember`):** `role` = `owner` \| `member`. Owner = creador. Cualquier miembro puede coordinar fechas; solo owner edita ajustes / invite (MVP: create + copy invite).

@@ -242,6 +242,18 @@ export async function settleDebtAction(formData: FormData) {
   revalidatePath(`/grupos/${slug}/sessions/${debt.playSessionId}`);
 }
 
+/** Past fechas: only creator. Upcoming: creator or financier. Matches cascade on delete. */
+export function canDeletePlaySession(
+  row: { createdById: string; financierId: string; startsAt: Date },
+  userId: string,
+  now = new Date(),
+): boolean {
+  if (row.createdById === userId) return true;
+  const isPast = row.startsAt.getTime() < now.getTime();
+  if (isPast) return false;
+  return row.financierId === userId;
+}
+
 export async function deletePlaySessionAction(formData: FormData) {
   const userId = await requireUserId();
   const playSessionId = String(formData.get("playSessionId") || "");
@@ -253,11 +265,16 @@ export async function deletePlaySessionAction(formData: FormData) {
   if (!row) throw new Error("Fecha no encontrada");
   await requireMemberOfGroup(row.groupId, userId);
 
-  if (row.createdById !== userId && row.financierId !== userId) {
-    throw new Error("No tienes permiso para borrar esta fecha");
+  if (!canDeletePlaySession(row, userId)) {
+    throw new Error(
+      row.startsAt.getTime() < Date.now()
+        ? "Solo el creador puede borrar una fecha pasada"
+        : "No tienes permiso para borrar esta fecha",
+    );
   }
 
   const { slug } = await groupPaths(row.groupId);
+  // Cascades attendances, debts, and matches → ranking no longer counts them.
   await prisma.playSession.delete({ where: { id: playSessionId } });
   revalidatePath(`/grupos/${slug}`);
   revalidatePath(`/grupos/${slug}/deudas`);
