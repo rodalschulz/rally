@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+:root {
+  /* Dark by default — quiet Apple-like + tennis accent */
+  --court-ink: #f5f5f7;
+  --court-ink-soft: #d1d1d6;
+  --ball: #c6e84a;
+  --ball-deep: #a8d12e;
+  --mist: #000000;
+  --mist-2: #2c2c2e;
+  --sand: #1c1c1e;
+  --line: rgba(255, 255, 255, 0.08);
+  --muted: #98989d;
+  --danger: #ff453a;
+  --ok: #30d158;
+  --on-ball: #0a0a0a;
+  --surface: #1c1c1e;
+
+  --background: var(--mist);
+  --foreground: var(--court-ink);
+
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-h: 4rem;
+
+  --font-ui:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--court-ink);
+  --color-ink-soft: var(--court-ink-soft);
+  --color-ball: var(--ball);
+  --color-ball-deep: var(--ball-deep);
+  --color-mist: var(--mist);
+  --color-mist-2: var(--mist-2);
+  --color-sand: var(--sand);
+  --color-muted: var(--muted);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --color-on-ball: var(--on-ball);
+  --font-sans: var(--font-ui);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.01em;
+  background: var(--mist);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+.animate-row {
+  animation: row-in 0.35s ease both;
+}
+
+.animate-ball,
+.animate-underline {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-row {
+    animation: none;
+  }
+}
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 0.5rem);
+}
+
+.app-main {
+  width: min(100%, 40rem);
+  margin-inline: auto;
+  padding: 1.25rem 1.25rem 2rem;
+  flex: 1;
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    width: min(100%, 44rem);
+    padding-top: 1.75rem;
+  }
+}

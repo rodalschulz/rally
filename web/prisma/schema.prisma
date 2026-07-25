@@ -1,0 +1,170 @@
+// Domain + Auth.js models. Tennis "Session" → PlaySession (avoids Auth Session clash).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum PlaySessionStatus {
+  scheduled
+  completed
+  cancelled
+}
+
+enum AttendanceStatus {
+  going
+  not_going
+  maybe
+  pending
+}
+
+enum DebtStatus {
+  open
+  settled
+}
+
+enum MatchFormat {
+  singles
+  doubles
+}
+
+enum WinnerSide {
+  A
+  B
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  displayName   String?
+  shortName     String?
+  hue           Int       @default(160)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  createdPlaySessions  PlaySession[] @relation("CreatedBy")
+  financedPlaySessions PlaySession[] @relation("Financier")
+  attendances          Attendance[]
+  debtsFrom            Debt[]        @relation("DebtFrom")
+  debtsTo              Debt[]        @relation("DebtTo")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PlaySession {
+  id          String            @id @default(cuid())
+  startsAt    DateTime
+  courtLabel  String?
+  costAmount  Decimal           @db.Decimal(10, 2)
+  currency    String            @default("PEN")
+  status      PlaySessionStatus @default(scheduled)
+  note        String?
+  financierId String
+  createdById String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  financier   User         @relation("Financier", fields: [financierId], references: [id])
+  createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
+  attendances Attendance[]
+  debts       Debt[]
+  matches     Match[]
+}
+
+model Attendance {
+  id            String           @id @default(cuid())
+  playSessionId String
+  userId        String
+  status        AttendanceStatus @default(pending)
+  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime         @default(now())
+
+  playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([playSessionId, userId])
+}
+
+model Debt {
+  id            String     @id @default(cuid())
+  playSessionId String
+  fromUserId    String
+  toUserId      String
+  amount        Decimal    @db.Decimal(10, 2)
+  status        DebtStatus @default(open)
+  settledAt     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+  fromUser    User        @relation("DebtFrom", fields: [fromUserId], references: [id])
+  toUser      User        @relation("DebtTo", fields: [toUserId], references: [id])
+
+  @@index([playSessionId, status])
+}
+
+model Match {
+  id            String      @id @default(cuid())
+  playSessionId String
+  format        MatchFormat
+  sideA         String[]
+  sideB         String[]
+  score         String
+  winnerSide    WinnerSide
+  createdAt     DateTime    @default(now())
+
+  playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+}
+
+/** Latest Miraflores court availability pushed by the PC bot */
+model AvailabilitySnapshot {
+  id        String   @id @default("latest")
+  /** { "YYYY-MM-DD": { "HH:MM:SS": ["30","32"], ... } } */
+  slots     Json
+  fetchedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
