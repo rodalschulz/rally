@@ -1,11 +1,21 @@
-/* PWA service worker — production assets only. HTML is never cached. */
-const CACHE = "rally-v2";
+/**
+ * PWA service worker — static assets only.
+ * Never cache HTML, RSC/Flight, or API: that caused stale Games/attendance on Safari.
+ */
+const CACHE = "rally-v3";
 const PRECACHE = ["/manifest.webmanifest", "/icons/icon-192.png"];
 
-// Safety: never stay active on local Next.js (HMR + cached "/" = refresh loop)
 const isLocal =
   self.location.hostname === "localhost" ||
   self.location.hostname === "127.0.0.1";
+
+function isCacheableAsset(url) {
+  if (url.pathname === "/manifest.webmanifest") return true;
+  if (url.pathname.startsWith("/icons/")) return true;
+  // Fingerprinted Next build assets only (not /_next/data or RSC)
+  if (url.pathname.startsWith("/_next/static/")) return true;
+  return false;
+}
 
 self.addEventListener("install", (event) => {
   if (isLocal) {
@@ -13,7 +23,10 @@ self.addEventListener("install", (event) => {
     return;
   }
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -40,12 +53,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Never cache navigations / HTML
-  const accept = request.headers.get("accept") || "";
-  if (request.mode === "navigate" || accept.includes("text/html")) {
-    event.respondWith(fetch(request));
-    return;
-  }
+  // Navigations, RSC, server components, pages → always network (default).
+  if (!isCacheableAsset(url)) return;
 
   event.respondWith(
     caches.match(request).then((cached) => {
@@ -53,7 +62,7 @@ self.addEventListener("fetch", (event) => {
       return fetch(request).then((response) => {
         if (response.ok) {
           const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
+          void caches.open(CACHE).then((cache) => cache.put(request, copy));
         }
         return response;
       });

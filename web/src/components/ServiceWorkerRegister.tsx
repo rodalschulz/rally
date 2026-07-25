@@ -16,9 +16,15 @@ export function ServiceWorkerRegister() {
       return;
     }
 
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      /* ignore — e.g. unsupported private mode */
-    });
+    void navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => {
+        // Pick up rally-v3 (no RSC cache) ASAP on returning visitors.
+        void reg.update();
+      })
+      .catch(() => {
+        /* ignore — e.g. unsupported private mode */
+      });
   }, []);
 
   return null;

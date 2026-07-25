@@ -52,10 +52,15 @@ export function SinglesGamesPanel({
   canManage: boolean;
 }) {
   const router = useRouter();
+  const [localGames, setLocalGames] = useState(games);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(players));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setLocalGames(games);
+  }, [games]);
 
   useEffect(() => {
     if (!editingId) {
@@ -102,6 +107,23 @@ export function SinglesGamesPanel({
         setError(result.error);
         return;
       }
+      if (editingId) {
+        setLocalGames((prev) =>
+          prev.map((m) =>
+            m.id === editingId
+              ? {
+                  ...m,
+                  sideA: [draft.player1Id],
+                  sideB: [draft.player2Id],
+                  score: `${draft.games1}-${draft.games2}`,
+                  winnerSide:
+                    Number(draft.games1) > Number(draft.games2) ? "A" : "B",
+                }
+              : m,
+          ),
+        );
+      }
+      // New games get a server id — refresh to append accurately.
       cancelEdit();
       router.refresh();
     });
@@ -110,15 +132,18 @@ export function SinglesGamesPanel({
   const remove = (matchId: string) => {
     if (!window.confirm("¿Borrar este game?")) return;
     setError(null);
+    const previous = localGames;
+    setLocalGames((prev) => prev.filter((m) => m.id !== matchId));
+    if (editingId === matchId) cancelEdit();
     const fd = new FormData();
     fd.set("matchId", matchId);
     startTransition(async () => {
       const result = await deleteSinglesGameAction(fd);
       if (!result.ok) {
+        setLocalGames(previous);
         setError(result.error);
         return;
       }
-      if (editingId === matchId) cancelEdit();
       router.refresh();
     });
   };
@@ -129,11 +154,11 @@ export function SinglesGamesPanel({
         Games (singles)
       </h2>
 
-      {games.length === 0 ? (
+      {localGames.length === 0 ? (
         <p className="mb-4 text-[0.9rem] text-muted">Sin games todavía.</p>
       ) : (
         <ul className="mb-4 overflow-hidden rounded-2xl bg-sand">
-          {games.map((m, i) => {
+          {localGames.map((m, i) => {
             const a =
               labelPlayers.find((p) => p.id === m.sideA[0])?.displayName ??
               "?";
