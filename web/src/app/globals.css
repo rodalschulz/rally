@@ -77,6 +77,15 @@ button {
   font: inherit;
 }
 
+/* Native datetime-local often has a huge intrinsic min-width on mobile. */
+input[type="datetime-local"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 @keyframes rise-in {
   from {
     opacity: 0;
@@ -134,6 +143,7 @@ button {
   margin-inline: auto;
   padding: 1.25rem 1.25rem 2rem;
   flex: 1;
+  min-width: 0;
 }
 
 /* Block landscape on phones / narrow viewports (PWA + Safari). */

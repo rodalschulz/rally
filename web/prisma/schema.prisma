@@ -149,6 +149,8 @@ model PlaySession {
   courtLabel  String?
   costAmount  Decimal           @db.Decimal(10, 2)
   currency    String            @default("PEN")
+  /** When true, financier gifts the court — no debts for going players. */
+  financierCoversAll Boolean    @default(false)
   status      PlaySessionStatus @default(scheduled)
   note        String?
   /** null = sin cupo; solo cuenta status going */

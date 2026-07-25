@@ -49,6 +49,7 @@ En producto: **sesión** o **fecha**. En DB: **`PlaySession`** (evita choque con
 | `courtLabel` | Opcional (ej. cancha 30–41 según API Miraflores) |
 | `costAmount` | Costo total en soles (ej. 22.50) |
 | `currency` | Default `PEN` |
+| `financierCoversAll` | Si true, el financiador regala la cancha → no se generan deudas |
 | `financierId` | Quién pagó la cancha (**financiador**) |
 | `createdById` | Quién creó el registro |
 | `status` | `scheduled` \| `completed` \| `cancelled` |

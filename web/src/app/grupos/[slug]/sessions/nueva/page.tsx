@@ -1,3 +1,4 @@
+import { FinancierCoversField } from "@/components/FinancierCoversField";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { createPlaySessionAction } from "@/lib/actions/sessions";
@@ -27,9 +28,12 @@ export default async function NewSessionPage({
         </p>
       </section>
 
-      <form action={createPlaySessionAction} className="animate-rise space-y-4">
+      <form
+        action={createPlaySessionAction}
+        className="animate-rise min-w-0 space-y-4"
+      >
         <input type="hidden" name="groupId" value={group.id} />
-        <label className="block text-[0.8rem] text-muted">
+        <label className="block min-w-0 text-[0.8rem] text-muted">
           Fecha y hora
           <input
             type="datetime-local"
@@ -37,7 +41,7 @@ export default async function NewSessionPage({
             required
             step={3600}
             defaultValue={defaultSessionDatetimeLocal()}
-            className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"
+            className="mt-1 w-full min-w-0 max-w-full rounded-xl bg-sand px-3 py-3 text-ink"
           />
         </label>
         <label className="block text-[0.8rem] text-muted">
@@ -60,6 +64,9 @@ export default async function NewSessionPage({
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"
           />
         </label>
+
+        <FinancierCoversField />
+
         <label className="block text-[0.8rem] text-muted">
           Nota (opcional)
           <input

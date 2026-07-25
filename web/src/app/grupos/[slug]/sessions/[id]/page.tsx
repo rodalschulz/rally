@@ -158,18 +158,29 @@ export default async function SessionDetailPage({
           </div>
           <div className="mt-3 flex items-center justify-between gap-3 border-t border-ink/6 pt-3">
             <span className="text-[0.9rem] text-muted">
-              Por persona ({going.length})
+              {session.financierCoversAll
+                ? "Por persona"
+                : `Por persona (${going.length})`}
             </span>
             <span className="text-[1.05rem] font-medium tabular-nums">
-              {going.length ? formatSoles(share) : "—"}
+              {session.financierCoversAll
+                ? formatSoles(0)
+                : going.length
+                  ? formatSoles(share)
+                  : "—"}
             </span>
           </div>
           <p className="mt-3 text-[0.85rem] text-muted">
             Pagó {financier.displayName}
+            {session.financierCoversAll ? " · cancha regalada" : ""}
           </p>
         </div>
 
-        {sessionDebts.length > 0 ? (
+        {session.financierCoversAll ? (
+          <p className="mt-3 text-[0.9rem] text-muted">
+            Cancha regalada — no hay deudas en esta fecha.
+          </p>
+        ) : sessionDebts.length > 0 ? (
           <ul className="mt-2 overflow-hidden rounded-2xl bg-sand">
             {sessionDebts.map((d) => {
               const from = allPlayers.find((p) => p.id === d.fromPlayerId);

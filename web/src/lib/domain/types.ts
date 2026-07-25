@@ -21,6 +21,8 @@ export type Session = {
   currency: "PEN";
   financierId: PlayerId;
   createdById: PlayerId;
+  /** Financiador regala la cancha — no se generan deudas. */
+  financierCoversAll: boolean;
   status: SessionStatus;
   note?: string;
   /** null / undefined = sin cupo */

@@ -33,6 +33,7 @@ export function toSession(row: PlaySession): DomainSession {
     currency: "PEN",
     financierId: row.financierId,
     createdById: row.createdById,
+    financierCoversAll: row.financierCoversAll,
     status: row.status,
     note: row.note ?? undefined,
     maxAttendees: row.maxAttendees,

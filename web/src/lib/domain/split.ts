@@ -9,6 +9,8 @@ export function computeSessionDebts(
   session: Session,
   attendances: Attendance[],
 ): Omit<Debt, "id" | "status">[] {
+  if (session.financierCoversAll) return [];
+
   const going = attendances.filter(
     (a) => a.sessionId === session.id && a.status === "going",
   );

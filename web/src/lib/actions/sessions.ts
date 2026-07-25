@@ -149,6 +149,10 @@ function parseSessionFields(formData: FormData, creatorId: string) {
     );
   }
 
+  const financierCoversAll =
+    formData.get("financierCoversAll") === "on" ||
+    formData.get("financierCoversAll") === "true";
+
   return {
     startsAt,
     courtLabel,
@@ -156,6 +160,7 @@ function parseSessionFields(formData: FormData, creatorId: string) {
     note,
     maxAttendees,
     allowedUserIds,
+    financierCoversAll,
   };
 }
 
