@@ -44,17 +44,9 @@ export function AvailabilityPanel({
 
       <div className="overflow-hidden rounded-2xl bg-sand">
         {!hasData ? (
-          <div className="px-4 py-5 text-[0.9rem] text-muted">
-            <p>Todavía no hay datos de Miraflores.</p>
-            <p className="mt-2 text-[0.8rem] leading-relaxed">
-              En tu PC:{" "}
-              <code className="text-ink">cd bot && python open_chrome.py</code>
-              {" "}(con{" "}
-              <code className="text-ink">RALLY_API_URL</code> y{" "}
-              <code className="text-ink">RALLY_CRON_SECRET</code> en{" "}
-              <code className="text-ink">bot/.env</code>).
-            </p>
-          </div>
+          <p className="px-4 py-5 text-[0.9rem] text-muted">
+            Todavía no hay horarios disponibles.
+          </p>
         ) : (
           <ul className="divide-y divide-ink/6">
             {dates.map((fecha) => {
