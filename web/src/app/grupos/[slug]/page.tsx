@@ -51,6 +51,11 @@ export default async function GroupHubPage({
             <InviteLinkCard inviteCode={group.inviteCode} isOwner />
           ) : null}
         </div>
+        {group.description ? (
+          <p className="mt-2 max-w-[40ch] text-[0.95rem] leading-relaxed text-muted">
+            {group.description}
+          </p>
+        ) : null}
       </section>
 
       <section aria-labelledby="upcoming-heading">

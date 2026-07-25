@@ -1,10 +1,12 @@
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { updateGroupAction } from "@/lib/actions/groups";
+import { GROUP_DESCRIPTION_MAX } from "@/lib/groups/description";
 
 export function EditGroupForm({
   groupId,
   slug,
   name,
+  description,
   maxMembers,
   memberCount,
   isPrivate,
@@ -12,6 +14,7 @@ export function EditGroupForm({
   groupId: string;
   slug: string;
   name: string;
+  description: string | null;
   maxMembers: number;
   memberCount: number;
   isPrivate: boolean;
@@ -28,6 +31,20 @@ export function EditGroupForm({
           defaultValue={name}
           className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"
         />
+      </label>
+      <label className="block text-[0.8rem] text-muted">
+        Descripción
+        <textarea
+          name="description"
+          maxLength={GROUP_DESCRIPTION_MAX}
+          rows={3}
+          defaultValue={description ?? ""}
+          placeholder="Breve texto del grupo"
+          className="mt-1 w-full resize-none rounded-xl bg-sand px-3 py-3 text-ink placeholder:text-muted"
+        />
+        <span className="mt-1 block text-[0.75rem] text-muted">
+          Máx. {GROUP_DESCRIPTION_MAX} caracteres. Se muestra bajo el nombre.
+        </span>
       </label>
       <label className="block text-[0.8rem] text-muted">
         Máximo de miembros

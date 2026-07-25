@@ -40,6 +40,7 @@ export async function updateGroupAction(formData: FormData) {
   const slug = String(formData.get("slug") || "");
   const name = String(formData.get("name") || "");
   const maxMembers = Number(formData.get("maxMembers") || "0");
+  const description = String(formData.get("description") || "");
   const password = String(formData.get("password") || "");
 
   await updateGroupSettings({
@@ -47,6 +48,7 @@ export async function updateGroupAction(formData: FormData) {
     userId,
     name,
     maxMembers,
+    description,
     password: password || undefined,
   });
 

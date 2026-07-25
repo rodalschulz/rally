@@ -68,6 +68,7 @@ model User {
   attendances          Attendance[]
   debtsFrom            Debt[]        @relation("DebtFrom")
   debtsTo              Debt[]        @relation("DebtTo")
+  sessionChatMessages  SessionChatMessage[]
 
   createdGroups Group[]       @relation("GroupCreator")
   memberships   GroupMember[]
@@ -165,6 +166,7 @@ model PlaySession {
   attendances Attendance[]
   debts       Debt[]
   matches     Match[]
+  chatMessages SessionChatMessage[]
 
   @@index([groupId, startsAt])
 }
@@ -212,6 +214,20 @@ model Match {
   createdAt     DateTime    @default(now())
 
   playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+}
+
+/** Chat for a fecha: Voy/Quizás can post until startsAt is past. */
+model SessionChatMessage {
+  id            String   @id @default(cuid())
+  playSessionId String
+  userId        String
+  body          String
+  createdAt     DateTime @default(now())
+
+  playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([playSessionId, createdAt])
 }
 
 /** Latest Miraflores court availability pushed by the PC bot */

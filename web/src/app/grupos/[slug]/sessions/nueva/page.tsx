@@ -2,6 +2,7 @@ import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { createPlaySessionAction } from "@/lib/actions/sessions";
 import { listGroupPlayers } from "@/lib/data/queries";
+import { defaultSessionDatetimeLocal } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,8 @@ export default async function NewSessionPage({
             type="datetime-local"
             name="startsAt"
             required
+            step={3600}
+            defaultValue={defaultSessionDatetimeLocal()}
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"
           />
         </label>

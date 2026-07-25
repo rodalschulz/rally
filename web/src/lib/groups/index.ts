@@ -6,6 +6,7 @@ import {
   newInviteCode,
   verifyGroupPassword,
 } from "@/lib/groups/crypto";
+import { normalizeGroupDescription } from "@/lib/groups/description";
 import type { Group, GroupMember, GroupVisibility } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -139,7 +140,7 @@ export async function createGroup(input: {
     data: {
       name,
       slug,
-      description: input.description?.trim() || null,
+      description: normalizeGroupDescription(input.description),
       visibility: input.visibility,
       passwordHash,
       inviteCode,
@@ -160,6 +161,7 @@ export async function updateGroupSettings(input: {
   userId: string;
   name: string;
   maxMembers: number;
+  description?: string;
   /** If set (private groups), replaces join password. Empty = keep current. */
   password?: string;
 }) {
@@ -174,6 +176,7 @@ export async function updateGroupSettings(input: {
   const name = input.name.trim();
   if (!name) throw new Error("Nombre requerido");
   const maxMembers = parseMaxMembers(input.maxMembers);
+  const description = normalizeGroupDescription(input.description);
 
   const memberCount = await prisma.groupMember.count({
     where: { groupId: input.groupId },
@@ -184,9 +187,15 @@ export async function updateGroupSettings(input: {
     );
   }
 
-  const data: { name: string; maxMembers: number; passwordHash?: string } = {
+  const data: {
+    name: string;
+    maxMembers: number;
+    description: string | null;
+    passwordHash?: string;
+  } = {
     name,
     maxMembers,
+    description,
   };
 
   const password = input.password?.trim() ?? "";

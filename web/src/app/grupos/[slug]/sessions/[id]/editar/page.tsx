@@ -46,6 +46,7 @@ export default async function EditSessionPage({
             type="datetime-local"
             name="startsAt"
             required
+            step={3600}
             defaultValue={toDatetimeLocalValue(session.startsAt)}
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"
           />

@@ -9,6 +9,7 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 | Campo | Notas |
 |-------|--------|
 | `name` / `slug` | `slug` único en URL (`/grupos/[slug]`) |
+| `description` | Opcional; máx. 250 chars; dueño edita en ajustes; se muestra bajo el nombre en el hub |
 | `visibility` | `public` \| `private` |
 | `passwordHash` | bcrypt; obligatorio si `private` |
 | `inviteCode` | Token opaco único → `/join/[code]` |
@@ -126,6 +127,8 @@ Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (fechas futuras no sum
 **MVP cerrado:** 3 puntos por victoria, 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts`. ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
 
 **Games en una fecha:** cualquier asistente `going` puede agregar, editar o borrar singles. Hacen falta dos jugadores distintos al confirmar.
+
+**Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` mientras `startsAt` no haya pasado; después queda solo como registro. Cascade al borrar la fecha.
 
 ### AvailabilitySnapshot (canchas libres)
 

@@ -6,6 +6,7 @@ import {
   toPlayer,
   toSession,
 } from "@/lib/mappers";
+import type { ChatMessageDTO } from "@/lib/sessions/chat";
 
 export async function listGroupPlayers(groupId: string) {
   const members = await listGroupMembers(groupId);
@@ -79,6 +80,27 @@ export async function listRankingMatches(groupId: string) {
     },
   });
   return rows.map(toMatch);
+}
+
+export async function listSessionChatMessages(
+  playSessionId: string,
+): Promise<ChatMessageDTO[]> {
+  const rows = await prisma.sessionChatMessage.findMany({
+    where: { playSessionId },
+    orderBy: { createdAt: "asc" },
+    include: { user: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    body: r.body,
+    createdAt: r.createdAt.toISOString(),
+    userId: r.userId,
+    displayName: r.user.displayName || r.user.name || "Jugador",
+    shortName:
+      r.user.shortName ||
+      (r.user.displayName || r.user.name || "J").slice(0, 2).toUpperCase(),
+    hue: r.user.hue,
+  }));
 }
 
 export { toAttendance, toDebt, toMatch, toPlayer, toSession };

@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { FreshOnMount } from "@/components/FreshOnMount";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
+import { SessionChat } from "@/components/SessionChat";
 import { SinglesGamesPanel } from "@/components/SinglesGamesPanel";
+import { getSession } from "@/lib/auth-session";
 import {
   getPlaySession,
   listGroupPlayers,
+  listSessionChatMessages,
   toAttendance,
   toDebt,
   toMatch,
@@ -16,6 +19,10 @@ import {
 import { roundMoney } from "@/lib/domain/split";
 import { formatSessionWhen, formatSoles } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
+import {
+  canPostSessionChat,
+  isSessionChatOpen,
+} from "@/lib/sessions/chat";
 import { canDeletePlaySession } from "@/lib/sessions/permissions";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +37,12 @@ export default async function SessionDetailPage({
 
   const group = await requireGroupMember(slug);
   const userId = group.membership.userId;
+  const authSession = await getSession();
 
-  const [row, allPlayers] = await Promise.all([
+  const [row, allPlayers, chatMessages] = await Promise.all([
     getPlaySession(id, group.id),
     listGroupPlayers(group.id),
+    listSessionChatMessages(id),
   ]);
   if (!row) redirect("/");
 
@@ -58,6 +67,10 @@ export default async function SessionDetailPage({
     .sort()
     .join("|");
   const canManageGames = going.some((a) => a.playerId === userId);
+  const myAtt = sessionAtt.find((a) => a.playerId === userId)?.status;
+  const chatOpen = isSessionChatOpen(new Date(session.startsAt));
+  const chatCanPost = chatOpen && canPostSessionChat(myAtt);
+  const mePlayer = allPlayers.find((p) => p.id === userId);
 
   return (
     <>
@@ -113,6 +126,23 @@ export default async function SessionDetailPage({
         syncKey={attendanceSyncKey}
         maxAttendees={session.maxAttendees}
         allowedUserIds={session.allowedUserIds}
+      />
+
+      <SessionChat
+        playSessionId={session.id}
+        initialMessages={chatMessages}
+        canPost={chatCanPost}
+        chatOpen={chatOpen}
+        meId={userId}
+        meDisplayName={
+          mePlayer?.displayName ??
+          authSession?.user?.displayName ??
+          "Jugador"
+        }
+        meShortName={
+          mePlayer?.shortName ?? authSession?.user?.shortName ?? "J"
+        }
+        meHue={mePlayer?.hue ?? authSession?.user?.hue ?? 160}
       />
 
       <section className="animate-rise mt-8">

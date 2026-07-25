@@ -9,7 +9,11 @@ import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { prisma } from "@/lib/db";
 import { getMembership } from "@/lib/groups";
 import { canDeletePlaySession } from "@/lib/sessions/permissions";
-import { parseAppDatetimeLocal } from "@/lib/timezone";
+import {
+  appZonedParts,
+  fromAppZonedDateTime,
+  parseAppDatetimeLocal,
+} from "@/lib/timezone";
 
 async function requireUserId() {
   const session = await auth();
@@ -107,6 +111,11 @@ function parseSessionFields(formData: FormData, creatorId: string) {
   }
   if (Number.isNaN(startsAt.getTime())) {
     throw new Error("Fecha inválida");
+  }
+  // Fechas always start on the hour (ignore picker minutes).
+  {
+    const p = appZonedParts(startsAt);
+    startsAt = fromAppZonedDateTime(p.year, p.month, p.day, p.hour, 0, 0);
   }
 
   const maxRaw = String(formData.get("maxAttendees") || "").trim();

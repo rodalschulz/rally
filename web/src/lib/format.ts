@@ -2,6 +2,7 @@ import {
   APP_TIMEZONE,
   appCalendarDayKey,
   appZonedParts,
+  fromAppZonedDateTime,
 } from "@/lib/timezone";
 
 const soles = new Intl.NumberFormat("es-PE", {
@@ -28,6 +29,13 @@ const dayMonth = new Intl.DateTimeFormat("es-PE", {
 });
 /** Hora militar (24h), siempre en America/Lima. */
 const timeFmt = new Intl.DateTimeFormat("es-PE", {
+  ...dateOpts,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+const chatTimeFmt = new Intl.DateTimeFormat("es-PE", {
   ...dateOpts,
   hour: "2-digit",
   minute: "2-digit",
@@ -72,6 +80,19 @@ export function toDatetimeLocalValue(iso: string | Date): string {
   return `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}`;
 }
 
+/**
+ * Default for nueva fecha: next full hour in America/Lima (`:00`).
+ * Fechas always start on the hour.
+ */
+export function defaultSessionDatetimeLocal(now = new Date()): string {
+  const p = appZonedParts(now);
+  const floorHour = fromAppZonedDateTime(p.year, p.month, p.day, p.hour, 0, 0);
+  const nextHour = new Date(floorHour.getTime() + 60 * 60 * 1000);
+  const q = appZonedParts(nextHour);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${q.year}-${pad(q.month)}-${pad(q.day)}T${pad(q.hour)}:00`;
+}
+
 export function relativeDayLabel(iso: string): string | null {
   const thatKey = appCalendarDayKey(iso);
   const todayKey = appCalendarDayKey(new Date());
@@ -87,4 +108,8 @@ export function relativeDayLabel(iso: string): string | null {
 /** Day-of-month in America/Lima (for session list chips). */
 export function sessionDayOfMonth(iso: string): number {
   return appZonedParts(iso).day;
+}
+
+export function formatChatTime(iso: string): string {
+  return chatTimeFmt.format(new Date(iso));
 }

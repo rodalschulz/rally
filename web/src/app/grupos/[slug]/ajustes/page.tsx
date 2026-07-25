@@ -34,7 +34,7 @@ export default async function GroupSettingsPage({
         </div>
         <p className="mt-1 text-[0.95rem] text-muted">
           {isOwner
-            ? "Nombre, cupo, contraseña e invitación del grupo."
+            ? "Nombre, descripción, cupo, contraseña e invitación."
             : "Información del grupo."}
         </p>
       </section>
@@ -44,6 +44,7 @@ export default async function GroupSettingsPage({
           groupId={group.id}
           slug={slug}
           name={group.name}
+          description={group.description}
           maxMembers={group.maxMembers}
           memberCount={memberCount}
           isPrivate={group.visibility === "private"}
@@ -52,6 +53,11 @@ export default async function GroupSettingsPage({
         <div className="animate-rise rounded-2xl bg-sand px-4 py-4">
           <p className="text-[0.8rem] text-muted">Grupo</p>
           <p className="mt-1 text-[1.05rem] font-medium text-ink">{group.name}</p>
+          {group.description ? (
+            <p className="mt-2 text-[0.9rem] leading-relaxed text-ink-soft">
+              {group.description}
+            </p>
+          ) : null}
           <p className="mt-2 text-[0.85rem] text-muted">
             {memberCount}/{group.maxMembers} miembros
             {group.visibility === "private" ? " · privado" : " · público"}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { createGroupAction } from "@/lib/actions/groups";
+import { GROUP_DESCRIPTION_MAX } from "@/lib/groups/description";
 
 export function CreateGroupForm() {
   const [visibility, setVisibility] = useState<"public" | "private">("private");
@@ -20,11 +21,16 @@ export function CreateGroupForm() {
       </label>
       <label className="block text-[0.8rem] text-muted">
         Descripción (opcional)
-        <input
+        <textarea
           name="description"
+          maxLength={GROUP_DESCRIPTION_MAX}
+          rows={3}
           placeholder="Los jueves a la tarde"
-          className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink placeholder:text-muted"
+          className="mt-1 w-full resize-none rounded-xl bg-sand px-3 py-3 text-ink placeholder:text-muted"
         />
+        <span className="mt-1 block text-[0.75rem] text-muted">
+          Máx. {GROUP_DESCRIPTION_MAX} caracteres.
+        </span>
       </label>
 
       <fieldset className="space-y-2">
