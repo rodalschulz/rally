@@ -1,3 +1,9 @@
+import {
+  APP_TIMEZONE,
+  appCalendarDayKey,
+  appZonedParts,
+} from "@/lib/timezone";
+
 const soles = new Intl.NumberFormat("es-PE", {
   style: "currency",
   currency: "PEN",
@@ -5,16 +11,27 @@ const soles = new Intl.NumberFormat("es-PE", {
   maximumFractionDigits: 2,
 });
 
-const weekdayLong = new Intl.DateTimeFormat("es-PE", { weekday: "long" });
-const weekdayShort = new Intl.DateTimeFormat("es-PE", { weekday: "short" });
+const dateOpts = { timeZone: APP_TIMEZONE } as const;
+
+const weekdayLong = new Intl.DateTimeFormat("es-PE", {
+  ...dateOpts,
+  weekday: "long",
+});
+const weekdayShort = new Intl.DateTimeFormat("es-PE", {
+  ...dateOpts,
+  weekday: "short",
+});
 const dayMonth = new Intl.DateTimeFormat("es-PE", {
+  ...dateOpts,
   day: "numeric",
   month: "short",
 });
+/** Hora militar (24h), siempre en America/Lima. */
 const timeFmt = new Intl.DateTimeFormat("es-PE", {
-  hour: "numeric",
+  ...dateOpts,
+  hour: "2-digit",
   minute: "2-digit",
-  hour12: true,
+  hourCycle: "h23",
 });
 
 export function formatSoles(amount: number): string {
@@ -48,23 +65,26 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Value for `<input type="datetime-local">` in the browser local zone. */
+/** Value for `<input type="datetime-local">` as America/Lima wall clock. */
 export function toDatetimeLocalValue(iso: string | Date): string {
-  const d = typeof iso === "string" ? new Date(iso) : iso;
+  const p = appZonedParts(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}`;
 }
 
 export function relativeDayLabel(iso: string): string | null {
-  const d = new Date(iso);
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diff = Math.round(
-    (startThat.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24),
-  );
+  const thatKey = appCalendarDayKey(iso);
+  const todayKey = appCalendarDayKey(new Date());
+  const that = Date.parse(`${thatKey}T12:00:00Z`);
+  const today = Date.parse(`${todayKey}T12:00:00Z`);
+  const diff = Math.round((that - today) / (1000 * 60 * 60 * 24));
   if (diff === 0) return "Hoy";
   if (diff === 1) return "Mañana";
   if (diff === -1) return "Ayer";
   return null;
+}
+
+/** Day-of-month in America/Lima (for session list chips). */
+export function sessionDayOfMonth(iso: string): number {
+  return appZonedParts(iso).day;
 }

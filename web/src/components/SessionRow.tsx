@@ -5,6 +5,7 @@ import {
   formatSoles,
   formatSessionWhen,
   relativeDayLabel,
+  sessionDayOfMonth,
 } from "@/lib/format";
 import { PlayerAvatar } from "./PlayerAvatar";
 
@@ -33,7 +34,7 @@ export function SessionRow({
     >
       <div className="w-11 shrink-0 text-center">
         <p className="text-[1.35rem] font-semibold leading-none tracking-[-0.03em] text-ink">
-          {new Date(session.startsAt).getDate()}
+          {sessionDayOfMonth(session.startsAt)}
         </p>
         <p className="mt-1 text-[0.7rem] font-medium capitalize text-muted">
           {formatSessionChip(session.startsAt).split(" ").slice(1).join(" ")}

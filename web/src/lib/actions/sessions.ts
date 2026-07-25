@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { prisma } from "@/lib/db";
 import { getMembership } from "@/lib/groups";
+import { parseAppDatetimeLocal } from "@/lib/timezone";
 
 async function requireUserId() {
   const session = await auth();
@@ -96,7 +97,12 @@ function parseSessionFields(formData: FormData, creatorId: string) {
     throw new Error("Datos inválidos");
   }
 
-  const startsAt = new Date(startsAtRaw);
+  let startsAt: Date;
+  try {
+    startsAt = parseAppDatetimeLocal(startsAtRaw);
+  } catch {
+    throw new Error("Fecha inválida");
+  }
   if (Number.isNaN(startsAt.getTime())) {
     throw new Error("Fecha inválida");
   }

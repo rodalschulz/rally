@@ -36,7 +36,7 @@ En producto: **sesión** o **fecha**. En DB: **`PlaySession`** (evita choque con
 | Campo | Notas |
 |-------|--------|
 | `groupId` | Grupo dueño (requerido) |
-| `startsAt` | Fecha y hora |
+| `startsAt` | Instant UTC; en UI siempre como hora de pared en `America/Lima` (24h) |
 | `courtLabel` | Opcional (ej. cancha 30–41 según API Miraflores) |
 | `costAmount` | Costo total en soles (ej. 22.50) |
 | `currency` | Default `PEN` |

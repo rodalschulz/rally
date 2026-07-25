@@ -5,8 +5,10 @@ import { useState } from "react";
 
 function formatFetchedAt(iso: string): string {
   return new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
     dateStyle: "medium",
     timeStyle: "short",
+    hourCycle: "h23",
   }).format(new Date(iso));
 }
 
