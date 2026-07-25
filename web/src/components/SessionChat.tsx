@@ -213,31 +213,28 @@ export function SessionChat({
                 send();
               }}
             >
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                maxLength={CHAT_BODY_MAX}
-                rows={2}
-                placeholder="Escribe un mensaje…"
-                className="w-full resize-none rounded-xl bg-mist-2 px-3 py-2.5 text-[0.95rem] text-ink placeholder:text-muted"
-              />
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  maxLength={CHAT_BODY_MAX}
+                  rows={2}
+                  placeholder="Escribe un mensaje…"
+                  className="min-w-0 flex-1 resize-none rounded-xl bg-mist-2 px-3 py-2.5 text-[0.95rem] text-ink placeholder:text-muted"
+                />
+                <button
+                  type="submit"
+                  disabled={pending || !body.trim()}
+                  aria-label="Enviar"
+                  title="Enviar"
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-ball text-on-ball disabled:opacity-60"
+                >
+                  {pending ? <Spinner /> : <SendIcon />}
+                </button>
+              </div>
               {error ? (
                 <p className="text-[0.85rem] text-danger">{error}</p>
               ) : null}
-              <button
-                type="submit"
-                disabled={pending || !body.trim()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ball py-2.5 text-[0.9rem] font-semibold text-on-ball disabled:opacity-60"
-              >
-                {pending ? (
-                  <>
-                    <Spinner />
-                    Enviando…
-                  </>
-                ) : (
-                  "Enviar"
-                )}
-              </button>
             </form>
           ) : (
             <p className="text-[0.85rem] text-muted">
@@ -249,5 +246,16 @@ export function SessionChat({
         </div>
       </div>
     </section>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M3.4 20.4 21 12 3.4 3.6 3 10l11 2-11 2 .4 6.4Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
