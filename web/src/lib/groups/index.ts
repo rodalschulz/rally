@@ -7,7 +7,7 @@ import {
   verifyGroupPassword,
 } from "@/lib/groups/crypto";
 import type { Group, GroupMember, GroupVisibility } from "@prisma/client";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 
 export type GroupWithRole = Group & { membership: GroupMember };
@@ -61,7 +61,7 @@ export const requireGroupMember = cache(
       requireUserId(),
       getGroupBySlug(slug),
     ]);
-    if (!group) notFound();
+    if (!group) redirect("/");
 
     const membership = await getMembership(group.id, userId);
     if (!membership) {

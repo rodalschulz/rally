@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { updatePlaySessionAction } from "@/lib/actions/sessions";
@@ -19,7 +19,7 @@ export default async function EditSessionPage({
     getPlaySession(id, group.id),
     listGroupPlayers(group.id),
   ]);
-  if (!row) notFound();
+  if (!row) redirect("/");
 
   if (group.membership.userId !== row.createdById) {
     redirect(`/grupos/${slug}/sessions/${id}`);

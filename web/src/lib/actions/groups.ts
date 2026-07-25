@@ -1,5 +1,6 @@
 "use server";
 
+import { rethrowNextControlFlow } from "@/lib/action-errors";
 import {
   createGroup,
   joinPublicGroup,
@@ -63,6 +64,7 @@ export async function joinPublicGroupAction(formData: FormData) {
     revalidatePath("/");
     redirect(`/grupos/${group.slug}`);
   } catch (e) {
+    rethrowNextControlFlow(e);
     const msg = e instanceof Error ? e.message : "No se pudo unir";
     redirect(`/?error=${encodeURIComponent(msg)}`);
   }
@@ -82,6 +84,7 @@ export async function joinViaInviteAction(formData: FormData) {
     revalidatePath("/");
     redirect(`/grupos/${group.slug}`);
   } catch (e) {
+    rethrowNextControlFlow(e);
     const msg = e instanceof Error ? e.message : "No se pudo unir";
     redirect(`/join/${inviteCode}?error=${encodeURIComponent(msg)}`);
   }

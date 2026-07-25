@@ -119,7 +119,11 @@ Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 - **Singles ranking** — principal  
 - **Doubles ranking** — secundario  
 
+Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (fechas futuras no suman).
+
 **MVP cerrado:** 3 puntos por victoria, 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts`. ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
+
+**Games en una fecha:** cualquier asistente `going` puede agregar, editar o borrar singles. Hacen falta dos jugadores distintos al confirmar.
 
 ### AvailabilitySnapshot (canchas libres)
 

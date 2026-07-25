@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { redirect } from "next/navigation";
+import { FreshOnMount } from "@/components/FreshOnMount";
+import { DeleteSessionButton } from "@/components/DeleteSessionButton";
+import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
+import { SinglesGamesPanel } from "@/components/SinglesGamesPanel";
 import {
   getPlaySession,
   listGroupPlayers,
@@ -12,9 +15,6 @@ import {
 } from "@/lib/data/queries";
 import { roundMoney } from "@/lib/domain/split";
 import { formatSessionWhen, formatSoles } from "@/lib/format";
-import { DeleteSessionButton } from "@/components/DeleteSessionButton";
-import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
-import { SinglesGamesForm } from "@/components/SinglesGamesForm";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function SessionDetailPage({
   params: Promise<{ slug: string; id: string }>;
 }) {
   const { slug, id } = await params;
-  if (id === "nueva") notFound();
+  if (id === "nueva") redirect(`/grupos/${slug}/sessions/nueva`);
 
   const group = await requireGroupMember(slug);
   const userId = group.membership.userId;
@@ -34,7 +34,7 @@ export default async function SessionDetailPage({
     getPlaySession(id, group.id),
     listGroupPlayers(group.id),
   ]);
-  if (!row) notFound();
+  if (!row) redirect("/");
 
   const session = toSession(row);
   const when = formatSessionWhen(session.startsAt);
@@ -56,9 +56,11 @@ export default async function SessionDetailPage({
     .map((a) => `${a.playerId}:${a.status}`)
     .sort()
     .join("|");
+  const canManageGames = going.some((a) => a.playerId === userId);
 
   return (
     <>
+      <FreshOnMount />
       {userId === session.createdById ? (
         <div className="mb-5 flex justify-end">
           <Link
@@ -170,64 +172,13 @@ export default async function SessionDetailPage({
         )}
       </section>
 
-      <section className="animate-rise mt-8">
-        <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Games (singles)
-        </h2>
-        {singlesGames.length === 0 ? (
-          <p className="mb-4 text-[0.9rem] text-muted">Sin games todavía.</p>
-        ) : (
-          <ul className="mb-4 overflow-hidden rounded-2xl bg-sand">
-            {singlesGames.map((m, i) => {
-              const a =
-                allPlayers.find((p) => p.id === m.sideA[0])?.displayName ?? "?";
-              const b =
-                allPlayers.find((p) => p.id === m.sideB[0])?.displayName ?? "?";
-              return (
-                <li
-                  key={m.id}
-                  className="flex items-center justify-between gap-3 border-b border-ink/6 px-4 py-3 last:border-b-0"
-                >
-                  <div className="min-w-0">
-                    <p className="text-[0.75rem] font-medium text-muted">
-                      Game {i + 1}
-                    </p>
-                    <p className="mt-0.5 text-[0.95rem]">
-                      <span
-                        className={
-                          m.winnerSide === "A"
-                            ? "font-medium text-ink"
-                            : "text-muted"
-                        }
-                      >
-                        {a}
-                      </span>
-                      <span className="mx-1.5 text-muted">vs</span>
-                      <span
-                        className={
-                          m.winnerSide === "B"
-                            ? "font-medium text-ink"
-                            : "text-muted"
-                        }
-                      >
-                        {b}
-                      </span>
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-[1.15rem] font-semibold tabular-nums tracking-tight text-ink">
-                    {m.score}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        <SinglesGamesForm
-          playSessionId={session.id}
-          players={goingPlayers}
-        />
-      </section>
+      <SinglesGamesPanel
+        playSessionId={session.id}
+        players={goingPlayers}
+        labelPlayers={allPlayers}
+        games={singlesGames}
+        canManage={canManageGames}
+      />
 
       {(userId === session.createdById || userId === session.financierId) && (
         <DeleteSessionButton playSessionId={session.id} />

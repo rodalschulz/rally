@@ -136,6 +136,29 @@ button {
   flex: 1;
 }
 
+/* Block landscape on phones / narrow viewports (PWA + Safari). */
+.portrait-lock-overlay {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .portrait-lock-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: var(--mist);
+  }
+
+  .app-shell {
+    visibility: hidden;
+  }
+}
+
 @media (min-width: 768px) {
   .app-main {
     width: min(100%, 44rem);

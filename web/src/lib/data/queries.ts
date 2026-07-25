@@ -68,4 +68,17 @@ export async function listMatches(groupId: string) {
   return rows.map(toMatch);
 }
 
+/** Matches that count for ranking: only fechas already in the past. */
+export async function listRankingMatches(groupId: string) {
+  const rows = await prisma.match.findMany({
+    where: {
+      playSession: {
+        groupId,
+        startsAt: { lt: new Date() },
+      },
+    },
+  });
+  return rows.map(toMatch);
+}
+
 export { toAttendance, toDebt, toMatch, toPlayer, toSession };

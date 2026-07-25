@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { PortraitLock } from "@/components/PortraitLock";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,7 +44,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es-PE" className="h-full">
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        <PortraitLock />
+        {children}
+      </body>
     </html>
   );
 }
