@@ -127,9 +127,9 @@ Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (fechas futuras no sum
 
 **MVP cerrado:** 3 puntos por victoria, 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts`. ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
 
-**Games en una fecha:** cualquier asistente `going` puede agregar, editar o borrar singles. Hacen falta dos jugadores distintos al confirmar.
+**Games en una fecha:** cualquier asistente `going` puede agregar, editar o borrar singles. Hacen falta dos jugadores distintos al confirmar. Plazo: hasta 60 min después del final del evento (duración asumida 1 h desde `startsAt` → cierre en `startsAt + 2 h`).
 
-**Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` mientras `startsAt` no haya pasado; después queda solo como registro. Cascade al borrar la fecha.
+**Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` hasta `startsAt + 30 min`; después queda solo como registro. Cascade al borrar la fecha.
 
 ### AvailabilitySnapshot (canchas libres)
 

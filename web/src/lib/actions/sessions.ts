@@ -9,6 +9,7 @@ import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { prisma } from "@/lib/db";
 import { getMembership } from "@/lib/groups";
 import { canDeletePlaySession } from "@/lib/sessions/permissions";
+import { isSessionGamesOpen } from "@/lib/sessions/windows";
 import {
   appZonedParts,
   fromAppZonedDateTime,
@@ -367,6 +368,12 @@ async function assertGoingCanManageGames(
     return {
       ok: false as const,
       error: "Solo quien marcó Voy puede gestionar games",
+    };
+  }
+  if (!isSessionGamesOpen(session.startsAt)) {
+    return {
+      ok: false as const,
+      error: "Ya cerró el plazo para agregar o editar games",
     };
   }
   return { ok: true as const, session, goingIds };

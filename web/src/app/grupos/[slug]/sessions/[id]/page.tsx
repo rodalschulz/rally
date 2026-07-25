@@ -24,6 +24,7 @@ import {
   isSessionChatOpen,
 } from "@/lib/sessions/chat";
 import { canDeletePlaySession } from "@/lib/sessions/permissions";
+import { isSessionGamesOpen } from "@/lib/sessions/windows";
 
 export const dynamic = "force-dynamic";
 
@@ -66,9 +67,12 @@ export default async function SessionDetailPage({
     .map((a) => `${a.playerId}:${a.status}`)
     .sort()
     .join("|");
-  const canManageGames = going.some((a) => a.playerId === userId);
+  const startsAtDate = new Date(session.startsAt);
+  const gamesOpen = isSessionGamesOpen(startsAtDate);
+  const canManageGames =
+    gamesOpen && going.some((a) => a.playerId === userId);
   const myAtt = sessionAtt.find((a) => a.playerId === userId)?.status;
-  const chatOpen = isSessionChatOpen(new Date(session.startsAt));
+  const chatOpen = isSessionChatOpen(startsAtDate);
   const chatCanPost = chatOpen && canPostSessionChat(myAtt);
   const mePlayer = allPlayers.find((p) => p.id === userId);
 
@@ -203,6 +207,7 @@ export default async function SessionDetailPage({
         labelPlayers={allPlayers}
         games={singlesGames}
         canManage={canManageGames}
+        gamesOpen={gamesOpen}
       />
 
       <SessionChat

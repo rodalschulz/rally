@@ -1,3 +1,5 @@
+export { isSessionChatOpen } from "@/lib/sessions/windows";
+
 export const CHAT_BODY_MAX = 500;
 
 export type ChatMessageDTO = {
@@ -9,10 +11,6 @@ export type ChatMessageDTO = {
   shortName: string;
   hue: number;
 };
-
-export function isSessionChatOpen(startsAt: Date, now = new Date()): boolean {
-  return startsAt.getTime() >= now.getTime();
-}
 
 export function canPostSessionChat(status: string | undefined | null): boolean {
   return status === "going" || status === "maybe";

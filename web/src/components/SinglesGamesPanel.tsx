@@ -42,6 +42,7 @@ export function SinglesGamesPanel({
   labelPlayers,
   games,
   canManage,
+  gamesOpen,
 }: {
   playSessionId: string;
   /** Asistentes Voy — opciones del form */
@@ -50,6 +51,7 @@ export function SinglesGamesPanel({
   labelPlayers: Player[];
   games: Match[];
   canManage: boolean;
+  gamesOpen: boolean;
 }) {
   const router = useRouter();
   const [localGames, setLocalGames] = useState(games);
@@ -356,8 +358,14 @@ export function SinglesGamesPanel({
         </form>
       ) : (
         <p className="rounded-2xl bg-sand px-4 py-4 text-[0.9rem] text-muted">
-          Marca <strong className="font-medium text-ink">Voy</strong> para
-          agregar o editar games.
+          {!gamesOpen
+            ? "Ya cerró el plazo para agregar o editar games."
+            : (
+              <>
+                Marca <strong className="font-medium text-ink">Voy</strong> para
+                agregar o editar games.
+              </>
+            )}
         </p>
       )}
     </section>

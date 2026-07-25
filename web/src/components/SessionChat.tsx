@@ -203,7 +203,7 @@ export function SessionChat({
         <div className="border-t border-ink/6 px-4 py-3">
           {!open ? (
             <p className="text-[0.85rem] text-muted">
-              Chat cerrado — solo registro.
+              Chat cerrado
             </p>
           ) : canWrite ? (
             <form
