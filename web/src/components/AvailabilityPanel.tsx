@@ -50,7 +50,7 @@ export function AvailabilityPanel({
           </h2>
           {fetchedAt ? (
             <p className="mt-0.5 text-[0.7rem] text-muted">
-              {formatFetchedAt(fetchedAt)}
+              Última actualización: {formatFetchedAt(fetchedAt)}
             </p>
           ) : null}
         </div>
