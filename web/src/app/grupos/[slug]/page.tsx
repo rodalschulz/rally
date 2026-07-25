@@ -52,7 +52,7 @@ export default async function GroupHubPage({
           ) : null}
         </div>
         {group.description ? (
-          <p className="mt-2 max-w-[40ch] text-[0.95rem] leading-relaxed text-muted">
+          <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">
             {group.description}
           </p>
         ) : null}
