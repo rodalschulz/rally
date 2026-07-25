@@ -1,16 +1,13 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
-import { AvailabilityPanel } from "@/components/AvailabilityPanel";
+import { AvailabilitySection } from "@/components/AvailabilitySection";
+import { AvailabilitySkeleton } from "@/components/GroupSkeletons";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
 import {
-  getLatestAvailability,
-  type AvailabilitySlots,
-} from "@/lib/data/availability";
-import {
-  listAttendancesForSessions,
   listGroupPlayers,
   listPlaySessions,
+  toAttendance,
   toSession,
 } from "@/lib/data/queries";
 import { requireGroupMember } from "@/lib/groups";
@@ -25,15 +22,12 @@ export default async function GroupHubPage({
   const { slug } = await params;
   const group = await requireGroupMember(slug);
 
-  const [rows, players, availability] = await Promise.all([
+  const [rows, players] = await Promise.all([
     listPlaySessions(group.id),
     listGroupPlayers(group.id),
-    getLatestAvailability(),
   ]);
   const sessions = rows.map(toSession);
-  const attendances = await listAttendancesForSessions(
-    sessions.map((s) => s.id),
-  );
+  const attendances = rows.flatMap((r) => r.attendances.map(toAttendance));
 
   const upcoming = sessions
     .filter((s) => s.status === "scheduled")
@@ -42,26 +36,18 @@ export default async function GroupHubPage({
     .filter((s) => s.status === "completed")
     .sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt));
 
+  const isOwner = group.membership.role === "owner";
+
   return (
-    <AppShell groupSlug={slug} groupName={group.name}>
+    <>
       <section className="animate-rise mb-8 pt-1">
-        <h1 className="whitespace-nowrap text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
-          ¿Quién juega la próxima?
+        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
+          {group.name}
         </h1>
       </section>
 
-      {group.membership.role === "owner" ? (
-        <>
-          <div className="mb-3 flex justify-end">
-            <Link
-              href={`/grupos/${slug}/ajustes`}
-              className="text-[0.85rem] font-medium text-muted"
-            >
-              Ajustes del grupo
-            </Link>
-          </div>
-          <InviteLinkCard inviteCode={group.inviteCode} isOwner />
-        </>
+      {isOwner ? (
+        <InviteLinkCard inviteCode={group.inviteCode} isOwner />
       ) : null}
 
       <section aria-labelledby="upcoming-heading">
@@ -103,10 +89,9 @@ export default async function GroupHubPage({
         </div>
       </section>
 
-      <AvailabilityPanel
-        slots={(availability?.slots as AvailabilitySlots | null) ?? null}
-        fetchedAt={availability?.fetchedAt?.toISOString() ?? null}
-      />
+      <Suspense fallback={<AvailabilitySkeleton />}>
+        <AvailabilitySection />
+      </Suspense>
 
       {past.length > 0 ? (
         <section className="mt-8" aria-labelledby="past-heading">
@@ -133,6 +118,6 @@ export default async function GroupHubPage({
           </div>
         </section>
       ) : null}
-    </AppShell>
+    </>
   );
 }

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { auth } from "@/auth";
 import { AppShell } from "@/components/AppShell";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { joinPublicGroupAction } from "@/lib/actions/groups";
+import { getSession } from "@/lib/auth-session";
 import { listMyGroups, listPublicGroups } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   const { error } = await searchParams;
   const [publicGroups, mine] = await Promise.all([

@@ -17,12 +17,14 @@ export function InviteLinkCard({
   const url = `${origin}/join/${inviteCode}`;
 
   return (
-    <div className="mb-6 rounded-2xl bg-sand px-4 py-3.5">
-      <p className="text-[0.8rem] font-medium text-muted">Link de invitación</p>
-      <p className="mt-1 break-all text-[0.85rem] text-ink">{url || `/join/${inviteCode}`}</p>
+    <div className="mb-6 flex min-w-0 items-center gap-2 rounded-2xl bg-sand px-4 py-3 text-[0.85rem]">
+      <span className="shrink-0 text-muted">Link:</span>
+      <span className="min-w-0 flex-1 truncate text-ink">
+        {url || `/join/${inviteCode}`}
+      </span>
       <button
         type="button"
-        className="mt-2 text-[0.85rem] font-medium text-ink"
+        className="shrink-0 font-medium text-ink"
         onClick={async () => {
           const full =
             typeof window !== "undefined"
@@ -33,7 +35,7 @@ export function InviteLinkCard({
           setTimeout(() => setCopied(false), 2000);
         }}
       >
-        {copied ? "Copiado" : "Copiar link"}
+        {copied ? "Copiado" : "Copiar"}
       </button>
     </div>
   );

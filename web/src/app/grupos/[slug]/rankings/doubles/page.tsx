@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/AppShell";
 import { RankingList } from "@/components/RankingList";
 import { RankingTabs } from "@/components/RankingTabs";
 import { listGroupPlayers, listMatches } from "@/lib/data/queries";
@@ -24,12 +23,7 @@ export default async function DoublesRankingPage({
   const playersById = new Map(players.map((p) => [p.id, p]));
 
   return (
-    <AppShell
-      groupSlug={slug}
-      groupName={group.name}
-      title="Rankings"
-      subtitle="Dobles"
-    >
+    <>
       <section className="animate-rise mb-5">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
           Dobles
@@ -41,6 +35,6 @@ export default async function DoublesRankingPage({
         playersById={playersById}
         emptyHint="Todavía no hay partidos de dobles."
       />
-    </AppShell>
+    </>
   );
 }

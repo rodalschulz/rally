@@ -19,6 +19,7 @@
   --background: var(--mist);
   --foreground: var(--court-ink);
 
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-h: 4rem;
 
@@ -121,6 +122,11 @@ button {
   display: flex;
   flex-direction: column;
   padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 0.5rem);
+}
+
+/* PWA / iOS: keep sticky header below status bar (time, battery, Dynamic Island) */
+.app-header {
+  padding-top: var(--safe-top);
 }
 
 .app-main {

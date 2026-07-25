@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
-import { AppShell } from "@/components/AppShell";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { updatePlaySessionAction } from "@/lib/actions/sessions";
 import { getPlaySession, toSession } from "@/lib/data/queries";
@@ -17,22 +15,17 @@ export default async function EditSessionPage({
 }) {
   const { slug, id } = await params;
   const group = await requireGroupMember(slug);
-  const sessionAuth = await auth();
   const row = await getPlaySession(id, group.id);
   if (!row) notFound();
 
-  if (sessionAuth?.user?.id !== row.createdById) {
+  if (group.membership.userId !== row.createdById) {
     redirect(`/grupos/${slug}/sessions/${id}`);
   }
 
   const session = toSession(row);
 
   return (
-    <AppShell
-      groupSlug={slug}
-      groupName={group.name}
-      title="Editar fecha"
-    >
+    <>
       <Link
         href={`/grupos/${slug}/sessions/${id}`}
         className="mb-5 inline-flex text-[0.9rem] font-medium text-muted"
@@ -98,6 +91,6 @@ export default async function EditSessionPage({
           Guardar cambios
         </PendingSubmitButton>
       </form>
-    </AppShell>
+    </>
   );
 }

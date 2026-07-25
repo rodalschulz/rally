@@ -1,5 +1,3 @@
-import { auth } from "@/auth";
-import { AppShell } from "@/components/AppShell";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
 import { netBalances } from "@/lib/domain/split";
@@ -18,13 +16,12 @@ export default async function DebtsPage({
 }) {
   const { slug } = await params;
   const group = await requireGroupMember(slug);
+  const me = group.membership.userId;
 
-  const [debts, players, session] = await Promise.all([
+  const [debts, players] = await Promise.all([
     listAllDebts(group.id),
     listGroupPlayers(group.id),
-    auth(),
   ]);
-  const me = session?.user?.id;
   const balances = netBalances(
     debts,
     players.map((p) => p.id),
@@ -35,12 +32,7 @@ export default async function DebtsPage({
   const playersById = new Map(players.map((p) => [p.id, p]));
 
   return (
-    <AppShell
-      groupSlug={slug}
-      groupName={group.name}
-      title="Plata"
-      subtitle="Saldos"
-    >
+    <>
       <section className="animate-rise mb-6">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
           Deudas
@@ -149,7 +141,7 @@ export default async function DebtsPage({
           </ul>
         )}
       </section>
-    </AppShell>
+    </>
   );
 }
 

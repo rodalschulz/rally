@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { auth } from "@/auth";
-import { AppShell } from "@/components/AppShell";
 import { AttendanceBadge, RsvpStrip } from "@/components/AttendanceUi";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
@@ -15,9 +13,8 @@ import {
 } from "@/lib/data/queries";
 import { roundMoney } from "@/lib/domain/split";
 import { formatSessionWhen, formatSoles } from "@/lib/format";
-import { addMatchAction } from "@/lib/actions/sessions";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
-import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { SinglesGamesForm } from "@/components/SinglesGamesForm";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -31,10 +28,10 @@ export default async function SessionDetailPage({
   if (id === "nueva") notFound();
 
   const group = await requireGroupMember(slug);
+  const userId = group.membership.userId;
 
-  const [row, sessionAuth, allPlayers] = await Promise.all([
+  const [row, allPlayers] = await Promise.all([
     getPlaySession(id, group.id),
-    auth(),
     listGroupPlayers(group.id),
   ]);
   if (!row) notFound();
@@ -44,8 +41,7 @@ export default async function SessionDetailPage({
   const sessionAtt = row.attendances.map(toAttendance);
   const attByUser = new Map(sessionAtt.map((a) => [a.playerId, a.status]));
   const myAtt =
-    sessionAtt.find((a) => a.playerId === sessionAuth?.user?.id)?.status ??
-    "pending";
+    sessionAtt.find((a) => a.playerId === userId)?.status ?? "pending";
   const financier = toPlayer(row.financier);
   const going = sessionAtt.filter((a) => a.status === "going");
   const share =
@@ -55,17 +51,10 @@ export default async function SessionDetailPage({
   const goingPlayers = allPlayers.filter((p) =>
     going.some((a) => a.playerId === p.id),
   );
-  const matchPlayers =
-    goingPlayers.length >= 2 ? goingPlayers : allPlayers;
-  const canAddMatch = matchPlayers.length >= 2;
+  const singlesGames = sessionMatches.filter((m) => m.format === "singles");
 
   return (
-    <AppShell
-      groupSlug={slug}
-      groupName={group.name}
-      title={when.weekday}
-      subtitle={when.dayMonth}
-    >
+    <>
       <div className="mb-5 flex items-center justify-between gap-3">
         <Link
           href={`/grupos/${slug}`}
@@ -73,7 +62,7 @@ export default async function SessionDetailPage({
         >
           ← Fechas
         </Link>
-        {sessionAuth?.user?.id === session.createdById ? (
+        {userId === session.createdById ? (
           <Link
             href={`/grupos/${slug}/sessions/${session.id}/editar`}
             className="text-[0.9rem] font-medium text-ink"
@@ -199,150 +188,66 @@ export default async function SessionDetailPage({
 
       <section className="animate-rise mt-8">
         <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Matches
+          Games (singles)
         </h2>
-        {sessionMatches.length === 0 ? (
-          <p className="mb-4 text-[0.9rem] text-muted">Sin resultados todavía.</p>
+        {singlesGames.length === 0 ? (
+          <p className="mb-4 text-[0.9rem] text-muted">Sin games todavía.</p>
         ) : (
           <ul className="mb-4 overflow-hidden rounded-2xl bg-sand">
-            {sessionMatches.map((m) => {
-              const a = m.sideA
-                .map(
-                  (pid) =>
-                    allPlayers.find((p) => p.id === pid)?.displayName ?? "?",
-                )
-                .join(" / ");
-              const b = m.sideB
-                .map(
-                  (pid) =>
-                    allPlayers.find((p) => p.id === pid)?.displayName ?? "?",
-                )
-                .join(" / ");
+            {singlesGames.map((m, i) => {
+              const a =
+                allPlayers.find((p) => p.id === m.sideA[0])?.displayName ?? "?";
+              const b =
+                allPlayers.find((p) => p.id === m.sideB[0])?.displayName ?? "?";
               return (
                 <li
                   key={m.id}
-                  className="border-b border-ink/6 px-4 py-3 last:border-b-0"
+                  className="flex items-center justify-between gap-3 border-b border-ink/6 px-4 py-3 last:border-b-0"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[0.75rem] font-medium capitalize text-muted">
-                      {m.format}
-                    </span>
-                    <span className="text-[0.9rem] font-medium tabular-nums text-ink">
-                      {m.score}
-                    </span>
+                  <div className="min-w-0">
+                    <p className="text-[0.75rem] font-medium text-muted">
+                      Game {i + 1}
+                    </p>
+                    <p className="mt-0.5 text-[0.95rem]">
+                      <span
+                        className={
+                          m.winnerSide === "A"
+                            ? "font-medium text-ink"
+                            : "text-muted"
+                        }
+                      >
+                        {a}
+                      </span>
+                      <span className="mx-1.5 text-muted">vs</span>
+                      <span
+                        className={
+                          m.winnerSide === "B"
+                            ? "font-medium text-ink"
+                            : "text-muted"
+                        }
+                      >
+                        {b}
+                      </span>
+                    </p>
                   </div>
-                  <p className="mt-1 text-[0.95rem]">
-                    <span
-                      className={
-                        m.winnerSide === "A" ? "font-medium text-ink" : "text-muted"
-                      }
-                    >
-                      {a}
-                    </span>
-                    <span className="mx-2 text-muted">vs</span>
-                    <span
-                      className={
-                        m.winnerSide === "B" ? "font-medium text-ink" : "text-muted"
-                      }
-                    >
-                      {b}
-                    </span>
-                  </p>
+                  <span className="shrink-0 text-[1.15rem] font-semibold tabular-nums tracking-tight text-ink">
+                    {m.score}
+                  </span>
                 </li>
               );
             })}
           </ul>
         )}
 
-        {canAddMatch ? (
-          <form
-            action={addMatchAction}
-            className="space-y-3 rounded-2xl bg-sand px-4 py-4"
-          >
-            <p className="text-[0.9rem] font-medium text-ink">Agregar match</p>
-            <p className="text-[0.8rem] text-muted">
-              Elige formato, jugadores, score (ej. 6-4, 6-3) y quién ganó.
-            </p>
-            <input type="hidden" name="playSessionId" value={session.id} />
-            <label className="block text-[0.8rem] text-muted">
-              Formato
-              <select
-                name="format"
-                className="mt-1 w-full rounded-xl bg-mist-2 px-3 py-2.5 text-ink"
-                defaultValue="singles"
-              >
-                <option value="singles">Singles</option>
-                <option value="doubles">Dobles</option>
-              </select>
-            </label>
-            <label className="block text-[0.8rem] text-muted">
-              Lado A
-              <select
-                name="sideA"
-                className="mt-1 w-full rounded-xl bg-mist-2 px-3 py-2.5 text-ink"
-                required
-              >
-                {matchPlayers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-[0.8rem] text-muted">
-              Lado B
-              <select
-                name="sideB"
-                className="mt-1 w-full rounded-xl bg-mist-2 px-3 py-2.5 text-ink"
-                required
-              >
-                {matchPlayers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-[0.8rem] text-muted">
-              Score
-              <input
-                name="score"
-                placeholder="6-4, 6-3"
-                required
-                className="mt-1 w-full rounded-xl bg-mist-2 px-3 py-2.5 text-ink placeholder:text-muted"
-              />
-            </label>
-            <label className="block text-[0.8rem] text-muted">
-              Ganador
-              <select
-                name="winnerSide"
-                className="mt-1 w-full rounded-xl bg-mist-2 px-3 py-2.5 text-ink"
-                defaultValue="A"
-              >
-                <option value="A">Lado A</option>
-                <option value="B">Lado B</option>
-              </select>
-            </label>
-            <PendingSubmitButton
-              pendingLabel="Guardando…"
-              className="w-full rounded-xl bg-ball py-3 text-[0.95rem] font-semibold text-on-ball"
-            >
-              Guardar match
-            </PendingSubmitButton>
-          </form>
-        ) : (
-          <p className="rounded-2xl bg-sand px-4 py-4 text-[0.9rem] text-muted">
-            Para cargar un game hacen falta al menos{" "}
-            <strong className="font-medium text-ink">2 jugadores</strong> en el
-            grupo. Dile a un amigo que entre y marque “Voy”.
-          </p>
-        )}
+        <SinglesGamesForm
+          playSessionId={session.id}
+          players={goingPlayers}
+        />
       </section>
 
-      {(sessionAuth?.user?.id === session.createdById ||
-        sessionAuth?.user?.id === session.financierId) && (
+      {(userId === session.createdById || userId === session.financierId) && (
         <DeleteSessionButton playSessionId={session.id} />
       )}
-    </AppShell>
+    </>
   );
 }

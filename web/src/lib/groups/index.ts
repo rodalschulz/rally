@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/db";
 import {
   hashGroupPassword,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/groups/crypto";
 import type { Group, GroupMember, GroupVisibility } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
+import { cache } from "react";
 
 export type GroupWithRole = Group & { membership: GroupMember };
 
@@ -15,11 +16,11 @@ const DEFAULT_MAX_MEMBERS = 20;
 const MIN_MAX_MEMBERS = 2;
 const ABS_MAX_MEMBERS = 200;
 
-export async function requireUserId(): Promise<string> {
-  const session = await auth();
+export const requireUserId = cache(async (): Promise<string> => {
+  const session = await getSession();
   if (!session?.user?.id) redirect("/login");
   return session.user.id;
-}
+});
 
 export async function listPublicGroups() {
   return prisma.group.findMany({
@@ -39,41 +40,47 @@ export async function listMyGroups(userId: string) {
   });
 }
 
-export async function getGroupBySlug(slug: string) {
+export const getGroupBySlug = cache(async (slug: string) => {
   return prisma.group.findUnique({ where: { slug } });
-}
+});
 
 export async function getGroupByInviteCode(code: string) {
   return prisma.group.findUnique({ where: { inviteCode: code } });
 }
 
-export async function getMembership(groupId: string, userId: string) {
+export const getMembership = cache(async (groupId: string, userId: string) => {
   return prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId, userId } },
   });
-}
+});
 
-/** Member gate for group hub routes. */
-export async function requireGroupMember(slug: string): Promise<GroupWithRole> {
-  const userId = await requireUserId();
-  const group = await getGroupBySlug(slug);
-  if (!group) notFound();
+/** Member gate for group hub routes. Deduped per request via React.cache. */
+export const requireGroupMember = cache(
+  async (slug: string): Promise<GroupWithRole> => {
+    const [userId, group] = await Promise.all([
+      requireUserId(),
+      getGroupBySlug(slug),
+    ]);
+    if (!group) notFound();
 
-  const membership = await getMembership(group.id, userId);
-  if (!membership) {
-    redirect(`/join/${group.inviteCode}`);
-  }
+    const membership = await getMembership(group.id, userId);
+    if (!membership) {
+      redirect(`/join/${group.inviteCode}`);
+    }
 
-  return { ...group, membership };
-}
+    return { ...group, membership };
+  },
+);
 
-export async function requireGroupOwner(slug: string): Promise<GroupWithRole> {
-  const group = await requireGroupMember(slug);
-  if (group.membership.role !== "owner") {
-    redirect(`/grupos/${slug}`);
-  }
-  return group;
-}
+export const requireGroupOwner = cache(
+  async (slug: string): Promise<GroupWithRole> => {
+    const group = await requireGroupMember(slug);
+    if (group.membership.role !== "owner") {
+      redirect(`/grupos/${slug}`);
+    }
+    return group;
+  },
+);
 
 function parseMaxMembers(raw: number | undefined): number {
   const n = Math.floor(raw ?? DEFAULT_MAX_MEMBERS);

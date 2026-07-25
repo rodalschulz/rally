@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
 import { EditGroupForm } from "@/components/EditGroupForm";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { prisma } from "@/lib/db";
@@ -20,7 +19,7 @@ export default async function GroupSettingsPage({
   });
 
   return (
-    <AppShell groupSlug={slug} groupName={group.name} title="Ajustes">
+    <>
       <Link
         href={`/grupos/${slug}`}
         className="mb-5 inline-flex text-[0.9rem] font-medium text-muted"
@@ -46,6 +45,6 @@ export default async function GroupSettingsPage({
         maxMembers={group.maxMembers}
         memberCount={memberCount}
       />
-    </AppShell>
+    </>
   );
 }

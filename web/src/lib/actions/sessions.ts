@@ -176,14 +176,93 @@ export async function deletePlaySessionAction(formData: FormData) {
   redirect(`/grupos/${slug}`);
 }
 
+export async function addSinglesGameAction(
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const userId = await requireUserId();
+    const playSessionId = String(formData.get("playSessionId") || "");
+    const player1Id = String(formData.get("player1Id") || "").trim();
+    const player2Id = String(formData.get("player2Id") || "").trim();
+    const games1 = Number(formData.get("games1"));
+    const games2 = Number(formData.get("games2"));
+
+    if (!playSessionId || !player1Id || !player2Id) {
+      return { ok: false, error: "Elige dos jugadores" };
+    }
+    if (player1Id === player2Id) {
+      return { ok: false, error: "Los jugadores tienen que ser distintos" };
+    }
+    if (
+      !Number.isInteger(games1) ||
+      !Number.isInteger(games2) ||
+      games1 < 0 ||
+      games2 < 0 ||
+      games1 > 99 ||
+      games2 > 99
+    ) {
+      return { ok: false, error: "Games inválidos" };
+    }
+    if (games1 === games2) {
+      return {
+        ok: false,
+        error: "El game no puede empatar — tiene que haber un ganador",
+      };
+    }
+
+    const session = await prisma.playSession.findUnique({
+      where: { id: playSessionId },
+      include: { attendances: true },
+    });
+    if (!session) return { ok: false, error: "Fecha no encontrada" };
+    await requireMemberOfGroup(session.groupId, userId);
+
+    const goingIds = new Set(
+      session.attendances
+        .filter((a) => a.status === "going")
+        .map((a) => a.userId),
+    );
+    if (!goingIds.has(player1Id) || !goingIds.has(player2Id)) {
+      return {
+        ok: false,
+        error: "Solo asistentes (Voy) pueden jugar el game",
+      };
+    }
+
+    const score = `${games1}-${games2}`;
+    const winnerSide = games1 > games2 ? "A" : "B";
+
+    await prisma.match.create({
+      data: {
+        playSessionId,
+        format: "singles",
+        score,
+        winnerSide,
+        sideA: [player1Id],
+        sideB: [player2Id],
+      },
+    });
+
+    const { slug } = await groupPaths(session.groupId);
+    revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
+    revalidatePath(`/grupos/${slug}/rankings/singles`);
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo guardar",
+    };
+  }
+}
+
+/** @deprecated Prefer addSinglesGameAction for singles; kept for doubles. */
 export async function addMatchAction(formData: FormData) {
   const userId = await requireUserId();
   const playSessionId = String(formData.get("playSessionId") || "");
-  const format = String(formData.get("format") || "singles") as
+  const format = String(formData.get("format") || "doubles") as
     | "singles"
     | "doubles";
   const score = String(formData.get("score") || "").trim();
-  const winnerSide = String(formData.get("winnerSide") || "A") as "A" | "B";
   const sideA = String(formData.get("sideA") || "")
     .split(",")
     .map((s) => s.trim())
@@ -196,6 +275,9 @@ export async function addMatchAction(formData: FormData) {
   if (!playSessionId || !score || sideA.length === 0 || sideB.length === 0) {
     throw new Error("Datos de match incompletos");
   }
+
+  const { parseGameScore } = await import("@/lib/domain/gameScore");
+  const { winnerSide } = parseGameScore(score.split(",")[0]?.trim() || score);
 
   const session = await prisma.playSession.findUnique({
     where: { id: playSessionId },

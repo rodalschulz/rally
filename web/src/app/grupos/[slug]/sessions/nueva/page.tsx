@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { createPlaySessionAction } from "@/lib/actions/sessions";
 import { requireGroupMember } from "@/lib/groups";
@@ -15,11 +14,7 @@ export default async function NewSessionPage({
   const group = await requireGroupMember(slug);
 
   return (
-    <AppShell
-      groupSlug={slug}
-      groupName={group.name}
-      title="Nueva fecha"
-    >
+    <>
       <Link
         href={`/grupos/${slug}`}
         className="mb-5 inline-flex text-[0.9rem] font-medium text-muted"
@@ -82,6 +77,6 @@ export default async function NewSessionPage({
           Crear fecha
         </PendingSubmitButton>
       </form>
-    </AppShell>
+    </>
   );
 }

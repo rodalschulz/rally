@@ -40,14 +40,6 @@ export async function getPlaySession(id: string, groupId?: string) {
   });
 }
 
-export async function listAttendancesForSessions(sessionIds: string[]) {
-  if (sessionIds.length === 0) return [];
-  const rows = await prisma.attendance.findMany({
-    where: { playSessionId: { in: sessionIds } },
-  });
-  return rows.map(toAttendance);
-}
-
 export async function listAllDebts(groupId: string) {
   const rows = await prisma.debt.findMany({
     where: { playSession: { groupId } },
