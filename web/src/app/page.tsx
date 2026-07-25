@@ -44,11 +44,6 @@ export default async function HomePage() {
 
       <InstallBanner />
 
-      <AvailabilityPanel
-        slots={(availability?.slots as AvailabilitySlots | null) ?? null}
-        fetchedAt={availability?.fetchedAt ?? null}
-      />
-
       <section aria-labelledby="upcoming-heading">
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2
@@ -86,6 +81,11 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      <AvailabilityPanel
+        slots={(availability?.slots as AvailabilitySlots | null) ?? null}
+        fetchedAt={availability?.fetchedAt?.toISOString() ?? null}
+      />
 
       {past.length > 0 ? (
         <section className="mt-8" aria-labelledby="past-heading">

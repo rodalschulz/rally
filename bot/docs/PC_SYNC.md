@@ -43,10 +43,22 @@ Si ves `Synced to Rally: { ok: true, ... }`, recargá Fechas.
 
 ## Programar en Windows (Task Scheduler)
 
-1. Crear `bot/run_sync.bat` (ya incluido) o usá el existente
-2. Task Scheduler → Create Basic Task → Daily / cada hora
-3. Action: Start a program → `D:\coding\tenis\bot\run_sync.bat`
-4. “Run whether user is logged on or not” solo si querés; para headless Chrome suele bastar “when logged on”
-5. La PC tiene que estar encendida
+Tarea creada: **`RallyMirafloresSync`**
 
-Nota: con `RALLY_API_URL` apuntando a Vercel, **no** hace falta tener `npm run dev` abierto; solo el bot en la PC.
+- Cada **30 minutos**
+- De **07:00 a 00:00** (hora Perú / SA Pacific)
+- Ejecuta: `bot/run_sync.bat`
+- Log: `bot/sync.log`
+
+```bash
+# Ver estado
+schtasks /Query /TN "RallyMirafloresSync" /V /FO LIST
+
+# Correr ahora a mano
+schtasks /Run /TN "RallyMirafloresSync"
+
+# Borrar la tarea
+schtasks /Delete /TN "RallyMirafloresSync" /F
+```
+
+Requisitos: PC encendida y sesión iniciada. Con `RALLY_API_URL` en Vercel no hace falta `npm run dev`.
