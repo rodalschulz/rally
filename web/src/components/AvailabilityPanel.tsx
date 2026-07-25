@@ -31,7 +31,7 @@ export function AvailabilityPanel({
   const hasData = dates.length > 0;
 
   return (
-    <section className="mt-8 mb-8" aria-labelledby="availability-heading">
+    <section className="mt-8" aria-labelledby="availability-heading">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

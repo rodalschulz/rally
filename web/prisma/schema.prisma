@@ -150,6 +150,10 @@ model PlaySession {
   currency    String            @default("PEN")
   status      PlaySessionStatus @default(scheduled)
   note        String?
+  /** null = sin cupo; solo cuenta status going */
+  maxAttendees Int?
+  /** vacío = todos los miembros; si hay ids, solo ellos pueden marcar Voy */
+  allowedUserIds String[]       @default([])
   financierId String
   createdById String
   createdAt   DateTime          @default(now())

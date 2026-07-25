@@ -1,6 +1,5 @@
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
-import Link from "next/link";
 import { BrandMark } from "./BrandMark";
 import { BottomNav } from "./BottomNav";
 import { LiveRefresh } from "./LiveRefresh";
@@ -11,19 +10,17 @@ export async function AppShell({
   children,
   title,
   subtitle,
-  /** When set, shows coordination bottom nav for this group */
+  /** When set, shows group coordination bottom nav */
   groupSlug,
-  /** Owner-only: link to group settings in the top bar */
-  isGroupOwner,
 }: {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
   groupSlug?: string;
-  isGroupOwner?: boolean;
 }) {
   const session = await getSession();
   const inGroup = Boolean(groupSlug);
+  const showNav = Boolean(session?.user);
 
   return (
     <div className="app-shell">
@@ -31,25 +28,8 @@ export async function AppShell({
       {inGroup ? <LiveRefresh /> : null}
       <header className="app-header sticky top-0 z-30 border-b border-ink/6 bg-mist/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-3">
-          {inGroup ? (
-            <Link
-              href="/"
-              className="shrink-0 text-[0.8rem] font-medium text-muted"
-            >
-              ← Grupos
-            </Link>
-          ) : (
-            <BrandMark compact />
-          )}
+          <BrandMark compact />
           <div className="flex min-w-0 items-center gap-3">
-            {inGroup && isGroupOwner && groupSlug ? (
-              <Link
-                href={`/grupos/${groupSlug}/ajustes`}
-                className="shrink-0 text-[0.8rem] font-medium text-muted"
-              >
-                Ajustes de Grupo
-              </Link>
-            ) : null}
             {title ? (
               <div className="min-w-0 text-right">
                 <p className="truncate text-[0.95rem] font-medium text-ink">
@@ -72,10 +52,12 @@ export async function AppShell({
                 }}
               >
                 <PendingSubmitButton
-                  pendingLabel="…"
-                  className="text-[0.8rem] font-medium text-muted"
+                  aria-label="Salir"
+                  title="Salir"
+                  pendingLabel=""
+                  className="size-8 shrink-0 text-muted"
                 >
-                  Salir
+                  <LogoutIcon />
                 </PendingSubmitButton>
               </form>
             ) : null}
@@ -83,7 +65,27 @@ export async function AppShell({
         </div>
       </header>
       <main className="app-main">{children}</main>
-      {groupSlug ? <BottomNav slug={groupSlug} /> : null}
+      {showNav ? <BottomNav slug={groupSlug} /> : null}
     </div>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14 12h6.5M17.5 8.5 21 12l-3.5 3.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

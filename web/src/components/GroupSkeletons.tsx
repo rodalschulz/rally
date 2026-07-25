@@ -17,8 +17,8 @@ export function GroupRouteSkeleton() {
         aria-hidden
       >
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-around px-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-3 w-12 animate-pulse rounded bg-mist-2" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-3 w-10 animate-pulse rounded bg-mist-2" />
           ))}
         </div>
       </div>

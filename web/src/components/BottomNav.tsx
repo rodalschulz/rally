@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const items = [
-  { segment: "", label: "Fechas", icon: CalendarIcon },
-  { segment: "/rankings/singles", label: "Singles", icon: RankIcon },
-  { segment: "/rankings/doubles", label: "Dobles", icon: PairIcon },
-  { segment: "/deudas", label: "Deudas", icon: WalletIcon },
-] as const;
+type NavItem = {
+  key: string;
+  label: string;
+  icon: (p: { active: boolean }) => React.ReactNode;
+  href?: string;
+  disabled?: boolean;
+  isActive: (pathname: string) => boolean;
+};
 
-export function BottomNav({ slug }: { slug: string }) {
+export function BottomNav({ slug }: { slug?: string }) {
   const pathname = usePathname();
-  const base = `/grupos/${slug}`;
+  const items = navItems(slug);
 
   return (
     <nav
@@ -21,31 +23,105 @@ export function BottomNav({ slug }: { slug: string }) {
       aria-label="Principal"
     >
       <ul
-        className="mx-auto grid max-w-lg grid-cols-4 px-1"
+        className="mx-auto grid max-w-lg grid-cols-5 px-0.5"
         style={{ height: "var(--nav-h)" }}
       >
-        {items.map(({ segment, label, icon: Icon }) => {
-          const href = `${base}${segment}`;
-          const active =
-            segment === ""
-              ? pathname === base || pathname.startsWith(`${base}/sessions`)
-              : pathname === href || pathname.startsWith(href);
+        {items.map(({ key, label, icon: Icon, href, disabled, isActive }) => {
+          const active = !disabled && isActive(pathname);
+          const className = `flex h-full flex-col items-center justify-center gap-0.5 text-[0.6rem] transition ${
+            disabled
+              ? "cursor-not-allowed text-muted/35"
+              : active
+                ? "font-medium text-ink"
+                : "font-normal text-muted"
+          }`;
+
           return (
-            <li key={href}>
-              <Link
-                href={href}
-                className={`flex h-full flex-col items-center justify-center gap-0.5 text-[0.65rem] transition ${
-                  active ? "font-medium text-ink" : "font-normal text-muted"
-                }`}
-              >
-                <Icon active={active} />
-                {label}
-              </Link>
+            <li key={key}>
+              {disabled || !href ? (
+                <span
+                  className={className}
+                  aria-disabled="true"
+                  title="Entra a un grupo"
+                >
+                  <Icon active={false} />
+                  {label}
+                </span>
+              ) : (
+                <Link href={href} className={className}>
+                  <Icon active={active} />
+                  {label}
+                </Link>
+              )}
             </li>
           );
         })}
       </ul>
     </nav>
+  );
+}
+
+function navItems(slug?: string): NavItem[] {
+  const base = slug ? `/grupos/${slug}` : null;
+
+  return [
+    {
+      key: "grupos",
+      label: "Grupos",
+      icon: HomeIcon,
+      href: "/",
+      isActive: (p) =>
+        p === "/" || p.startsWith("/grupos/nuevo") || p.startsWith("/join/"),
+    },
+    {
+      key: "fechas",
+      label: "Fechas",
+      icon: CalendarIcon,
+      href: base ?? undefined,
+      disabled: !base,
+      isActive: (p) =>
+        !!base && (p === base || p.startsWith(`${base}/sessions`)),
+    },
+    {
+      key: "ranking",
+      label: "Ranking",
+      icon: RankIcon,
+      href: base ? `${base}/rankings/singles` : undefined,
+      disabled: !base,
+      isActive: (p) => !!base && p.startsWith(`${base}/rankings`),
+    },
+    {
+      key: "deudas",
+      label: "Deudas",
+      icon: WalletIcon,
+      href: base ? `${base}/deudas` : undefined,
+      disabled: !base,
+      isActive: (p) => !!base && p.startsWith(`${base}/deudas`),
+    },
+    {
+      key: "ajustes",
+      label: "Ajustes",
+      icon: GearIcon,
+      href: base ? `${base}/ajustes` : "/ajustes",
+      isActive: (p) =>
+        base
+          ? p.startsWith(`${base}/ajustes`)
+          : p === "/ajustes" || p.startsWith("/ajustes/"),
+    },
+  ];
+}
+
+function HomeIcon({ active }: { active: boolean }) {
+  const w = active ? 1.8 : 1.5;
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z"
+        stroke="currentColor"
+        strokeWidth={w}
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
@@ -84,33 +160,6 @@ function RankIcon({ active }: { active: boolean }) {
   );
 }
 
-function PairIcon({ active }: { active: boolean }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle
-        cx="9"
-        cy="10"
-        r="3"
-        stroke="currentColor"
-        strokeWidth={active ? 1.8 : 1.5}
-      />
-      <circle
-        cx="15.5"
-        cy="10"
-        r="3"
-        stroke="currentColor"
-        strokeWidth={active ? 1.8 : 1.5}
-      />
-      <path
-        d="M4.5 19c.8-2.4 2.6-3.6 4.5-3.6s3.7 1.2 4.5 3.6M10.5 19c.8-2.4 2.6-3.6 4.5-3.6s3.7 1.2 4.5 3.6"
-        stroke="currentColor"
-        strokeWidth={active ? 1.8 : 1.5}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function WalletIcon({ active }: { active: boolean }) {
   const w = active ? 1.8 : 1.5;
   return (
@@ -131,6 +180,21 @@ function WalletIcon({ active }: { active: boolean }) {
         strokeLinecap="round"
       />
       <circle cx="16.5" cy="14.5" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function GearIcon({ active }: { active: boolean }) {
+  const w = active ? 1.8 : 1.5;
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth={w} />
+      <path
+        d="M12 3.5v2.2M12 18.3V20.5M3.5 12h2.2M18.3 12h2.2M6.1 6.1l1.6 1.6M16.3 16.3l1.6 1.6M17.9 6.1l-1.6 1.6M7.7 16.3l-1.6 1.6"
+        stroke="currentColor"
+        strokeWidth={w}
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

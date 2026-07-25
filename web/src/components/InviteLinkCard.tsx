@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+/** Owner control: copies `/join/[code]` — icon only, next to the group name. */
 export function InviteLinkCard({
   inviteCode,
   isOwner,
@@ -12,31 +13,59 @@ export function InviteLinkCard({
   const [copied, setCopied] = useState(false);
   if (!isOwner) return null;
 
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : "";
-  const url = `${origin}/join/${inviteCode}`;
-
   return (
-    <div className="mb-6 flex min-w-0 items-center gap-2 rounded-2xl bg-sand px-4 py-3 text-[0.85rem]">
-      <span className="shrink-0 text-muted">Link:</span>
-      <span className="min-w-0 flex-1 truncate text-ink">
-        {url || `/join/${inviteCode}`}
-      </span>
-      <button
-        type="button"
-        className="shrink-0 font-medium text-ink"
-        onClick={async () => {
-          const full =
-            typeof window !== "undefined"
-              ? `${window.location.origin}/join/${inviteCode}`
-              : `/join/${inviteCode}`;
-          await navigator.clipboard.writeText(full);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        }}
-      >
-        {copied ? "Copiado" : "Copiar"}
-      </button>
-    </div>
+    <button
+      type="button"
+      aria-label={copied ? "Link copiado" : "Copiar link de invitación"}
+      title={copied ? "Copiado" : "Copiar link"}
+      className="inline-flex size-8 shrink-0 items-center justify-center self-center rounded-full leading-none text-muted transition active:scale-95 active:bg-sand"
+      onClick={async () => {
+        const full =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/join/${inviteCode}`
+            : `/join/${inviteCode}`;
+        await navigator.clipboard.writeText(full);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </button>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect
+        x="9"
+        y="9"
+        width="11"
+        height="11"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M5 15V5a2 2 0 0 1 2-2h10"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 12.5 10 17.5 19 7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

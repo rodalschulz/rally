@@ -25,36 +25,38 @@ export default async function HomePage({
     <AppShell>
       <section className="animate-rise mb-8 pt-2">
         <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
-          Coordina tenis con tu grupo
+          Grupos de Tenis
         </h1>
         <p className="mt-2 max-w-[34ch] text-[0.95rem] leading-relaxed text-muted">
-          Fechas, quién paga la cancha, deudas y rankings — en un espacio para ti
-          y tus amigos.
+          Fechas, rankings, deudas. Un espacio para ti y tus amigos.
         </p>
         {error ? (
           <p className="mt-3 text-[0.9rem] text-danger">{error}</p>
         ) : null}
       </section>
 
-      <section className="mb-6">
-        <Link
-          href="/grupos/nuevo"
-          className="flex w-full items-center justify-center rounded-2xl bg-ball py-3.5 text-[1rem] font-semibold text-on-ball"
-        >
-          Crear grupo
-        </Link>
-      </section>
-
-      {mine.length > 0 ? (
-        <section className="mb-8" aria-labelledby="mine-heading">
+      <section className="mb-8" aria-labelledby="mine-heading">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <h2
             id="mine-heading"
-            className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
+            className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
           >
             Mis grupos
           </h2>
-          <ul className="overflow-hidden rounded-2xl bg-sand">
-            {mine.map(({ group }) => (
+          <Link
+            href="/grupos/nuevo"
+            className="rounded-full bg-sand px-3.5 py-1.5 text-[0.8rem] font-medium text-ink ring-1 ring-ink/10"
+          >
+            Crear
+          </Link>
+        </div>
+        <ul className="overflow-hidden rounded-2xl bg-sand">
+          {mine.length === 0 ? (
+            <li className="px-4 py-8 text-center text-[0.9rem] text-muted">
+              Todavía no estás en ningún grupo.
+            </li>
+          ) : (
+            mine.map(({ group }) => (
               <li key={group.id} className="border-b border-ink/6 last:border-b-0">
                 <Link
                   href={`/grupos/${group.slug}`}
@@ -72,10 +74,10 @@ export default async function HomePage({
                   </span>
                 </Link>
               </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+            ))
+          )}
+        </ul>
+      </section>
 
       <section aria-labelledby="public-heading">
         <h2

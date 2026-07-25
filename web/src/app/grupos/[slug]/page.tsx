@@ -3,9 +3,10 @@ import Link from "next/link";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
 import { AvailabilitySkeleton } from "@/components/GroupSkeletons";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
+import { MembersPanel } from "@/components/MembersPanel";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
 import {
-  listGroupPlayers,
+  listGroupMembers,
   listPlaySessions,
   toAttendance,
   toSession,
@@ -22,10 +23,11 @@ export default async function GroupHubPage({
   const { slug } = await params;
   const group = await requireGroupMember(slug);
 
-  const [rows, players] = await Promise.all([
+  const [rows, members] = await Promise.all([
     listPlaySessions(group.id),
-    listGroupPlayers(group.id),
+    listGroupMembers(group.id),
   ]);
+  const players = members.map((m) => m.player);
   const sessions = rows.map(toSession);
   const attendances = rows.flatMap((r) => r.attendances.map(toAttendance));
 
@@ -41,14 +43,15 @@ export default async function GroupHubPage({
   return (
     <>
       <section className="animate-rise mb-8 pt-1">
-        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
-          {group.name}
-        </h1>
+        <div className="flex items-center gap-1">
+          <h1 className="m-0 min-w-0 text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">
+            {group.name}
+          </h1>
+          {isOwner ? (
+            <InviteLinkCard inviteCode={group.inviteCode} isOwner />
+          ) : null}
+        </div>
       </section>
-
-      {isOwner ? (
-        <InviteLinkCard inviteCode={group.inviteCode} isOwner />
-      ) : null}
 
       <section aria-labelledby="upcoming-heading">
         <div className="mb-2 flex items-center justify-between gap-3">
@@ -56,7 +59,7 @@ export default async function GroupHubPage({
             id="upcoming-heading"
             className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
           >
-            Próximas
+            Próximas Fechas
           </h2>
           <Link
             href={`/grupos/${slug}/sessions/nueva`}
@@ -92,6 +95,8 @@ export default async function GroupHubPage({
       <Suspense fallback={<AvailabilitySkeleton />}>
         <AvailabilitySection />
       </Suspense>
+
+      <MembersPanel members={members} />
 
       {past.length > 0 ? (
         <section className="mt-8" aria-labelledby="past-heading">

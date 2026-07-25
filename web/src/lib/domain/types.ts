@@ -23,6 +23,10 @@ export type Session = {
   createdById: PlayerId;
   status: SessionStatus;
   note?: string;
+  /** null / undefined = sin cupo */
+  maxAttendees?: number | null;
+  /** vacío = todos los miembros del grupo */
+  allowedUserIds: PlayerId[];
 };
 
 export type AttendanceStatus = "going" | "not_going" | "maybe" | "pending";

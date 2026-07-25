@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 /** Soft revalidate while the tab is visible. Pauses in background. */
-const INTERVAL_MS = 10_000;
+const INTERVAL_MS = 15_000;
 
 /**
  * Seamless live sync for group pages: `router.refresh()` on an interval

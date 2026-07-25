@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AttendanceBadge, RsvpStrip } from "@/components/AttendanceUi";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
   getPlaySession,
@@ -14,6 +13,7 @@ import {
 import { roundMoney } from "@/lib/domain/split";
 import { formatSessionWhen, formatSoles } from "@/lib/format";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
+import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
 import { SinglesGamesForm } from "@/components/SinglesGamesForm";
 import { requireGroupMember } from "@/lib/groups";
 
@@ -39,11 +39,11 @@ export default async function SessionDetailPage({
   const session = toSession(row);
   const when = formatSessionWhen(session.startsAt);
   const sessionAtt = row.attendances.map(toAttendance);
-  const attByUser = new Map(sessionAtt.map((a) => [a.playerId, a.status]));
-  const myAtt =
-    sessionAtt.find((a) => a.playerId === userId)?.status ?? "pending";
   const financier = toPlayer(row.financier);
-  const going = sessionAtt.filter((a) => a.status === "going");
+  const memberIds = new Set(allPlayers.map((p) => p.id));
+  const going = sessionAtt.filter(
+    (a) => a.status === "going" && memberIds.has(a.playerId),
+  );
   const share =
     going.length > 0 ? roundMoney(session.costAmount / going.length) : 0;
   const sessionDebts = row.debts.map(toDebt);
@@ -52,25 +52,23 @@ export default async function SessionDetailPage({
     going.some((a) => a.playerId === p.id),
   );
   const singlesGames = sessionMatches.filter((m) => m.format === "singles");
+  const attendanceSyncKey = sessionAtt
+    .map((a) => `${a.playerId}:${a.status}`)
+    .sort()
+    .join("|");
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <Link
-          href={`/grupos/${slug}`}
-          className="inline-flex text-[0.9rem] font-medium text-muted"
-        >
-          ← Fechas
-        </Link>
-        {userId === session.createdById ? (
+      {userId === session.createdById ? (
+        <div className="mb-5 flex justify-end">
           <Link
             href={`/grupos/${slug}/sessions/${session.id}/editar`}
             className="text-[0.9rem] font-medium text-ink"
           >
             Editar
           </Link>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <section className="animate-rise">
         <p className="text-[0.8rem] font-medium text-muted">
@@ -80,6 +78,19 @@ export default async function SessionDetailPage({
           {when.time}
         </h1>
         <p className="mt-1 text-[0.95rem] text-muted">{when.label}</p>
+        {(session.maxAttendees != null ||
+          session.allowedUserIds.length > 0) && (
+          <p className="mt-2 text-[0.85rem] text-muted">
+            {session.maxAttendees != null
+              ? `Cupo ${going.length}/${session.maxAttendees}`
+              : null}
+            {session.maxAttendees != null &&
+            session.allowedUserIds.length > 0
+              ? " · "
+              : null}
+            {session.allowedUserIds.length > 0 ? "Solo invitados" : null}
+          </p>
+        )}
         {session.note ? (
           <p className="mt-3 text-[0.95rem] leading-relaxed text-ink-soft">
             {session.note}
@@ -87,46 +98,19 @@ export default async function SessionDetailPage({
         ) : null}
       </section>
 
-      <section className="animate-rise mt-8">
-        <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Tu asistencia
-        </h2>
-        <RsvpStrip playSessionId={session.id} current={myAtt} />
-      </section>
-
-      <section className="animate-rise mt-8">
-        <div className="mb-2 flex items-baseline justify-between gap-3">
-          <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-            Jugadores
-          </h2>
-          <p className="text-[0.8rem] text-muted">{going.length} confirmados</p>
-        </div>
-        <ul className="overflow-hidden rounded-2xl bg-sand">
-          {allPlayers.map((player) => {
-            const status = attByUser.get(player.id) ?? "pending";
-            const isFinancier = player.id === session.financierId;
-            return (
-              <li
-                key={player.id}
-                className="flex items-center gap-3 border-b border-ink/6 px-4 py-3 last:border-b-0"
-              >
-                <PlayerAvatar player={player} />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-ink">
-                    {player.displayName}
-                    {isFinancier ? (
-                      <span className="ml-2 text-[0.75rem] font-normal text-muted">
-                        pagó la cancha
-                      </span>
-                    ) : null}
-                  </p>
-                </div>
-                <AttendanceBadge status={status} />
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      <SessionAttendanceBlock
+        playSessionId={session.id}
+        meId={userId}
+        players={allPlayers}
+        financierId={session.financierId}
+        initialAttendances={sessionAtt.map((a) => ({
+          playerId: a.playerId,
+          status: a.status,
+        }))}
+        syncKey={attendanceSyncKey}
+        maxAttendees={session.maxAttendees}
+        allowedUserIds={session.allowedUserIds}
+      />
 
       <section className="animate-rise mt-8">
         <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">

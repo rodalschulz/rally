@@ -35,6 +35,8 @@ export function toSession(row: PlaySession): DomainSession {
     createdById: row.createdById,
     status: row.status,
     note: row.note ?? undefined,
+    maxAttendees: row.maxAttendees,
+    allowedUserIds: row.allowedUserIds ?? [],
   };
 }
 

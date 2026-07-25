@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { createPlaySessionAction } from "@/lib/actions/sessions";
+import { listGroupPlayers } from "@/lib/data/queries";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -12,16 +13,10 @@ export default async function NewSessionPage({
 }) {
   const { slug } = await params;
   const group = await requireGroupMember(slug);
+  const players = await listGroupPlayers(group.id);
 
   return (
     <>
-      <Link
-        href={`/grupos/${slug}`}
-        className="mb-5 inline-flex text-[0.9rem] font-medium text-muted"
-      >
-        ← Fechas
-      </Link>
-
       <section className="animate-rise mb-6">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
           Nueva fecha
@@ -70,6 +65,12 @@ export default async function NewSessionPage({
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink placeholder:text-muted"
           />
         </label>
+
+        <SessionLimitsFields
+          players={players}
+          creatorId={group.membership.userId}
+        />
+
         <PendingSubmitButton
           pendingLabel="Creando…"
           className="w-full rounded-2xl bg-ball py-3.5 text-[1rem] font-semibold text-on-ball"

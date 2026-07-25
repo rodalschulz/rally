@@ -27,12 +27,5 @@ async function GroupShell({
   const { slug } = await params;
   const group = await requireGroupMember(slug);
 
-  return (
-    <AppShell
-      groupSlug={slug}
-      isGroupOwner={group.membership.role === "owner"}
-    >
-      {children}
-    </AppShell>
-  );
+  return <AppShell groupSlug={slug}>{children}</AppShell>;
 }

@@ -4,13 +4,13 @@ import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/db";
 import { deriveShortName, hueFromString } from "@/lib/user-profile";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   // JWT so middleware can run on Edge without Prisma
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.sub = user.id;
         const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
@@ -20,6 +20,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           dbUser?.shortName || deriveShortName(String(token.displayName));
         token.hue =
           dbUser?.hue ?? hueFromString(user.email ?? user.id ?? "user");
+      }
+      if (trigger === "update" && token.sub) {
+        const dbUser = await prisma.user.findUnique({ where: { id: token.sub } });
+        if (dbUser) {
+          token.displayName =
+            dbUser.displayName || dbUser.name || "Jugador";
+          token.shortName =
+            dbUser.shortName || deriveShortName(String(token.displayName));
+          token.hue = dbUser.hue;
+        }
       }
       return token;
     },

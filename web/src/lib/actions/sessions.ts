@@ -29,30 +29,63 @@ async function groupPaths(groupId: string) {
 export async function setAttendanceAction(
   playSessionId: string,
   status: AttendanceStatus,
-) {
-  const userId = await requireUserId();
-  const session = await prisma.playSession.findUnique({
-    where: { id: playSessionId },
-  });
-  if (!session) throw new Error("Fecha no encontrada");
-  await requireMemberOfGroup(session.groupId, userId);
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const userId = await requireUserId();
+    const session = await prisma.playSession.findUnique({
+      where: { id: playSessionId },
+      include: { attendances: true },
+    });
+    if (!session) return { ok: false, error: "Fecha no encontrada" };
+    await requireMemberOfGroup(session.groupId, userId);
 
-  await prisma.attendance.upsert({
-    where: {
-      playSessionId_userId: { playSessionId, userId },
-    },
-    create: { playSessionId, userId, status },
-    update: { status },
-  });
+    const allowed = session.allowedUserIds ?? [];
+    if (allowed.length > 0 && !allowed.includes(userId)) {
+      return {
+        ok: false,
+        error: "No estás en la lista de asistentes de esta fecha",
+      };
+    }
 
-  await syncOpenDebtsForSession(playSessionId);
-  const { slug } = await groupPaths(session.groupId);
-  revalidatePath(`/grupos/${slug}`);
-  revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
-  revalidatePath(`/grupos/${slug}/deudas`);
+    if (status === "going") {
+      const alreadyGoing = session.attendances.some(
+        (a) => a.userId === userId && a.status === "going",
+      );
+      if (!alreadyGoing && session.maxAttendees != null) {
+        const goingCount = session.attendances.filter((a) => {
+          if (a.status !== "going") return false;
+          if (allowed.length > 0 && !allowed.includes(a.userId)) return false;
+          return true;
+        }).length;
+        if (goingCount >= session.maxAttendees) {
+          return { ok: false, error: "Cupo completo" };
+        }
+      }
+    }
+
+    await prisma.attendance.upsert({
+      where: {
+        playSessionId_userId: { playSessionId, userId },
+      },
+      create: { playSessionId, userId, status },
+      update: { status },
+    });
+
+    await syncOpenDebtsForSession(playSessionId);
+    const { slug } = await groupPaths(session.groupId);
+    revalidatePath(`/grupos/${slug}`);
+    revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`, "page");
+    revalidatePath(`/grupos/${slug}/deudas`);
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo actualizar",
+    };
+  }
 }
 
-function parseSessionFields(formData: FormData) {
+function parseSessionFields(formData: FormData, creatorId: string) {
   const startsAtRaw = String(formData.get("startsAt") || "");
   const courtLabel = String(formData.get("courtLabel") || "").trim() || null;
   const costRaw = String(formData.get("costAmount") || "0");
@@ -68,7 +101,45 @@ function parseSessionFields(formData: FormData) {
     throw new Error("Fecha inválida");
   }
 
-  return { startsAt, courtLabel, costAmount, note };
+  const maxRaw = String(formData.get("maxAttendees") || "").trim();
+  let maxAttendees: number | null = null;
+  if (maxRaw) {
+    maxAttendees = Math.floor(Number(maxRaw));
+    if (!Number.isFinite(maxAttendees) || maxAttendees < 1 || maxAttendees > 99) {
+      throw new Error("Máximo de asistentes inválido");
+    }
+  }
+
+  const allowedUserIds = [
+    ...new Set(
+      formData
+        .getAll("allowedUserIds")
+        .map((v) => String(v).trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (allowedUserIds.length > 0 && !allowedUserIds.includes(creatorId)) {
+    allowedUserIds.push(creatorId);
+  }
+
+  if (
+    maxAttendees != null &&
+    allowedUserIds.length > 0 &&
+    maxAttendees > allowedUserIds.length
+  ) {
+    throw new Error(
+      "El cupo no puede ser mayor que los asistentes permitidos",
+    );
+  }
+
+  return {
+    startsAt,
+    courtLabel,
+    costAmount,
+    note,
+    maxAttendees,
+    allowedUserIds,
+  };
 }
 
 export async function createPlaySessionAction(formData: FormData) {
@@ -77,7 +148,7 @@ export async function createPlaySessionAction(formData: FormData) {
   if (!groupId) throw new Error("Grupo inválido");
   await requireMemberOfGroup(groupId, userId);
 
-  const fields = parseSessionFields(formData);
+  const fields = parseSessionFields(formData, userId);
 
   const created = await prisma.playSession.create({
     data: {
@@ -117,12 +188,24 @@ export async function updatePlaySessionAction(formData: FormData) {
     throw new Error("Solo el creador puede editar esta fecha");
   }
 
-  const fields = parseSessionFields(formData);
+  const fields = parseSessionFields(formData, userId);
 
   await prisma.playSession.update({
     where: { id: playSessionId },
     data: fields,
   });
+
+  // Drop RSVPs for people no longer allowed
+  if (fields.allowedUserIds.length > 0) {
+    await prisma.attendance.updateMany({
+      where: {
+        playSessionId,
+        userId: { notIn: fields.allowedUserIds },
+        status: { in: ["going", "maybe"] },
+      },
+      data: { status: "pending" },
+    });
+  }
 
   await syncOpenDebtsForSession(playSessionId);
   const { slug } = await groupPaths(row.groupId);

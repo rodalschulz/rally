@@ -23,7 +23,7 @@ export function SinglesGamesForm({
   if (players.length < 2) {
     return (
       <p className="rounded-2xl bg-sand px-4 py-4 text-[0.9rem] text-muted">
-        Para cargar un game hacen falta al menos{" "}
+        Para registrar un game hacen falta al menos{" "}
         <strong className="font-medium text-ink">2 asistentes</strong> con
         “Voy”.
       </p>

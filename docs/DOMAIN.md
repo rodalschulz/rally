@@ -44,6 +44,8 @@ En producto: **sesión** o **fecha**. En DB: **`PlaySession`** (evita choque con
 | `createdById` | Quién creó el registro |
 | `status` | `scheduled` \| `completed` \| `cancelled` |
 | `note` | Opcional |
+| `maxAttendees` | Opcional; cupo de `going` |
+| `allowedUserIds` | Vacío = todos; si hay ids, solo ellos pueden marcar Voy |
 
 **Financiador:** “quien adelantó el pago de la cancha”. En UI: “Pagó la cancha” / “Financiador”.
 

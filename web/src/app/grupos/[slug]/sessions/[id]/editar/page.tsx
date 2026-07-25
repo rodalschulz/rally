@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { updatePlaySessionAction } from "@/lib/actions/sessions";
-import { getPlaySession, toSession } from "@/lib/data/queries";
+import { getPlaySession, listGroupPlayers, toSession } from "@/lib/data/queries";
 import { toDatetimeLocalValue } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
 
@@ -15,7 +15,10 @@ export default async function EditSessionPage({
 }) {
   const { slug, id } = await params;
   const group = await requireGroupMember(slug);
-  const row = await getPlaySession(id, group.id);
+  const [row, players] = await Promise.all([
+    getPlaySession(id, group.id),
+    listGroupPlayers(group.id),
+  ]);
   if (!row) notFound();
 
   if (group.membership.userId !== row.createdById) {
@@ -26,19 +29,12 @@ export default async function EditSessionPage({
 
   return (
     <>
-      <Link
-        href={`/grupos/${slug}/sessions/${id}`}
-        className="mb-5 inline-flex text-[0.9rem] font-medium text-muted"
-      >
-        ← Detalle
-      </Link>
-
       <section className="animate-rise mb-6">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
           Editar fecha
         </h1>
         <p className="mt-1 text-[0.95rem] text-muted">
-          Cambiar hora, cancha, costo o nota. Las deudas se recalculan.
+          Hora, cancha, costo, cupo e invitados. Las deudas se recalculan.
         </p>
       </section>
 
@@ -84,6 +80,14 @@ export default async function EditSessionPage({
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink placeholder:text-muted"
           />
         </label>
+
+        <SessionLimitsFields
+          players={players}
+          creatorId={session.createdById}
+          defaultMaxAttendees={session.maxAttendees}
+          defaultAllowedUserIds={session.allowedUserIds}
+        />
+
         <PendingSubmitButton
           pendingLabel="Guardando…"
           className="w-full rounded-2xl bg-ball py-3.5 text-[1rem] font-semibold text-on-ball"
