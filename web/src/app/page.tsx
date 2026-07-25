@@ -28,7 +28,7 @@ export default async function HomePage({
         <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
           Grupos de Tenis
         </h1>
-        <p className="mt-2 max-w-[34ch] text-[0.95rem] leading-relaxed text-muted">
+        <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">
           Fechas, rankings, deudas. Un espacio para ti y tus amigos.
         </p>
         {error ? (
