@@ -8,6 +8,7 @@ import { actionErrorMessage } from "@/lib/action-errors";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { prisma } from "@/lib/db";
 import { getMembership } from "@/lib/groups";
+import { canDeletePlaySession } from "@/lib/sessions/permissions";
 import { parseAppDatetimeLocal } from "@/lib/timezone";
 
 async function requireUserId() {
@@ -240,18 +241,6 @@ export async function settleDebtAction(formData: FormData) {
   const { slug } = await groupPaths(debt.playSession.groupId);
   revalidatePath(`/grupos/${slug}/deudas`);
   revalidatePath(`/grupos/${slug}/sessions/${debt.playSessionId}`);
-}
-
-/** Past fechas: only creator. Upcoming: creator or financier. Matches cascade on delete. */
-export function canDeletePlaySession(
-  row: { createdById: string; financierId: string; startsAt: Date },
-  userId: string,
-  now = new Date(),
-): boolean {
-  if (row.createdById === userId) return true;
-  const isPast = row.startsAt.getTime() < now.getTime();
-  if (isPast) return false;
-  return row.financierId === userId;
 }
 
 export async function deletePlaySessionAction(formData: FormData) {

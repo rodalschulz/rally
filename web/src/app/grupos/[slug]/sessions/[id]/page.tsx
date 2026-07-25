@@ -15,8 +15,8 @@ import {
 } from "@/lib/data/queries";
 import { roundMoney } from "@/lib/domain/split";
 import { formatSessionWhen, formatSoles } from "@/lib/format";
-import { canDeletePlaySession } from "@/lib/actions/sessions";
 import { requireGroupMember } from "@/lib/groups";
+import { canDeletePlaySession } from "@/lib/sessions/permissions";
 
 export const dynamic = "force-dynamic";
 
