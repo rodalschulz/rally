@@ -1,5 +1,6 @@
 import { signOut } from "@/auth";
 import { AppShell } from "@/components/AppShell";
+import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { updateProfileAction } from "@/lib/actions/profile";
 import { getSession } from "@/lib/auth-session";
@@ -67,6 +68,11 @@ export default async function UserSettingsPage() {
           Salir
         </PendingSubmitButton>
       </form>
+
+      <section className="mt-10 animate-rise">
+        <p className="mb-2 text-[0.8rem] text-muted">Zona de peligro</p>
+        <DeleteAccountButton />
+      </section>
     </AppShell>
   );
 }

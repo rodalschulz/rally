@@ -1,8 +1,9 @@
 "use server";
 
-import { unstable_update } from "@/auth";
+import { signOut, unstable_update } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/groups";
+import { deleteUserAccount } from "@/lib/groups/membership";
 import { deriveShortName } from "@/lib/user-profile";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -30,4 +31,10 @@ export async function updateProfileAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/ajustes");
   redirect("/ajustes");
+}
+
+export async function deleteAccountAction() {
+  const userId = await requireUserId();
+  await deleteUserAccount(userId);
+  await signOut({ redirectTo: "/login" });
 }

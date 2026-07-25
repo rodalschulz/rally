@@ -19,7 +19,13 @@ Owner edita nombre y `maxMembers` en `/grupos/[slug]/ajustes` (slug no cambia). 
 
 **Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
 
-**Membresía (`GroupMember`):** `role` = `owner` \| `member`. Owner = creador. Cualquier miembro puede coordinar fechas; solo owner borra/rota invite (MVP: create + copy invite).
+**Membresía (`GroupMember`):** `role` = `owner` \| `member`. Owner = creador. Cualquier miembro puede coordinar fechas; solo owner edita ajustes / invite (MVP: create + copy invite).
+
+**Salir del grupo** (hub `/grupos/[slug]`): cualquier miembro puede abandonar. Si es el único miembro, el grupo se elimina (cascada de fechas/deudas/matches). Si es dueño y hay más integrantes, el dueño pasa al miembro con `joinedAt` más antiguo.
+
+**Eliminar grupo** (`/grupos/[slug]/ajustes`, solo owner): borra el grupo entero y cascada (fechas, deudas, matches, membresías), aunque haya más integrantes.
+
+**Borrar cuenta** (`/ajustes`): el usuario sale de todos los grupos (mismas reglas) y se elimina el `User` (Auth accounts/sessions, asistencias; deudas que lo involucran; scrub de ids en matches).
 
 **Jugadores del grupo** = miembros (`GroupMember` → `User`), no todos los users globales.
 

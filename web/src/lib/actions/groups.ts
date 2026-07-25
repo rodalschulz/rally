@@ -7,6 +7,7 @@ import {
   requireUserId,
   updateGroupSettings,
 } from "@/lib/groups";
+import { deleteGroup, leaveGroup } from "@/lib/groups/membership";
 import type { GroupVisibility } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -82,4 +83,26 @@ export async function joinViaInviteAction(formData: FormData) {
     const msg = e instanceof Error ? e.message : "No se pudo unir";
     redirect(`/join/${inviteCode}?error=${encodeURIComponent(msg)}`);
   }
+}
+
+export async function leaveGroupAction(formData: FormData) {
+  const userId = await requireUserId();
+  const groupId = String(formData.get("groupId") || "");
+  if (!groupId) throw new Error("Grupo inválido");
+
+  await leaveGroup(groupId, userId);
+
+  revalidatePath("/");
+  redirect("/");
+}
+
+export async function deleteGroupAction(formData: FormData) {
+  const userId = await requireUserId();
+  const groupId = String(formData.get("groupId") || "");
+  if (!groupId) throw new Error("Grupo inválido");
+
+  await deleteGroup(groupId, userId);
+
+  revalidatePath("/");
+  redirect("/");
 }

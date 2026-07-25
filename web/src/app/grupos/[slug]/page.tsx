@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
 import { AvailabilitySkeleton } from "@/components/GroupSkeletons";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
+import { LeaveGroupButton } from "@/components/LeaveGroupButton";
 import { MembersPanel } from "@/components/MembersPanel";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
 import {
@@ -39,6 +40,7 @@ export default async function GroupHubPage({
     .sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt));
 
   const isOwner = group.membership.role === "owner";
+  const isSoleMember = members.length === 1;
 
   return (
     <>
@@ -123,6 +125,12 @@ export default async function GroupHubPage({
           </div>
         </section>
       ) : null}
+
+      <LeaveGroupButton
+        groupId={group.id}
+        isSoleMember={isSoleMember}
+        isOwner={isOwner}
+      />
     </>
   );
 }

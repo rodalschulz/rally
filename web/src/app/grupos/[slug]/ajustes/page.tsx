@@ -1,3 +1,4 @@
+import { DeleteGroupButton } from "@/components/DeleteGroupButton";
 import { EditGroupForm } from "@/components/EditGroupForm";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { prisma } from "@/lib/db";
@@ -37,13 +38,19 @@ export default async function GroupSettingsPage({
       </section>
 
       {isOwner ? (
-        <EditGroupForm
-          groupId={group.id}
-          slug={slug}
-          name={group.name}
-          maxMembers={group.maxMembers}
-          memberCount={memberCount}
-        />
+        <>
+          <EditGroupForm
+            groupId={group.id}
+            slug={slug}
+            name={group.name}
+            maxMembers={group.maxMembers}
+            memberCount={memberCount}
+          />
+          <section className="mt-10 animate-rise">
+            <p className="mb-2 text-[0.8rem] text-muted">Zona de peligro</p>
+            <DeleteGroupButton groupId={group.id} />
+          </section>
+        </>
       ) : (
         <div className="animate-rise rounded-2xl bg-sand px-4 py-4">
           <p className="text-[0.8rem] text-muted">Grupo</p>
