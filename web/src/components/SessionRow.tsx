@@ -7,6 +7,7 @@ import {
   relativeDayLabel,
   sessionDayOfMonth,
 } from "@/lib/format";
+import { isSessionPast } from "@/lib/sessions/windows";
 import { PlayerAvatar } from "./PlayerAvatar";
 
 export function SessionRow({
@@ -24,7 +25,8 @@ export function SessionRow({
 }) {
   const when = formatSessionWhen(session.startsAt);
   const rel = relativeDayLabel(session.startsAt);
-  const past = session.status === "completed";
+  const past =
+    session.status === "completed" || isSessionPast(session.startsAt);
 
   return (
     <Link

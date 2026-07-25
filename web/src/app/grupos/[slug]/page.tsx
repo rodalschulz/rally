@@ -12,6 +12,7 @@ import {
   toSession,
 } from "@/lib/data/queries";
 import { requireGroupMember } from "@/lib/groups";
+import { isSessionPast } from "@/lib/sessions/windows";
 
 export const dynamic = "force-dynamic";
 
@@ -28,14 +29,16 @@ export default async function GroupHubPage({
     listGroupMembers(group.id),
   ]);
   const players = members.map((m) => m.player);
-  const sessions = rows.map(toSession);
+  const sessions = rows
+    .map(toSession)
+    .filter((s) => s.status !== "cancelled");
   const attendances = rows.flatMap((r) => r.attendances.map(toAttendance));
 
   const upcoming = sessions
-    .filter((s) => s.status === "scheduled")
+    .filter((s) => !isSessionPast(s.startsAt))
     .sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
   const past = sessions
-    .filter((s) => s.status === "completed")
+    .filter((s) => isSessionPast(s.startsAt))
     .sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt));
 
   const isOwner = group.membership.role === "owner";
@@ -77,7 +80,9 @@ export default async function GroupHubPage({
         <div className="overflow-hidden rounded-2xl bg-sand">
           {upcoming.length === 0 ? (
             <p className="px-4 py-8 text-center text-[0.9rem] text-muted">
-              No hay fechas todavía. Crea la primera.
+              {past.length > 0
+                ? "No hay próximas fechas."
+                : "No hay fechas todavía. Crea la primera."}
             </p>
           ) : (
             upcoming.map((session, i) => {
@@ -109,7 +114,7 @@ export default async function GroupHubPage({
             id="past-heading"
             className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
           >
-            Anteriores
+            Fechas Pasadas
           </h2>
           <div className="overflow-hidden rounded-2xl bg-sand">
             {past.map((session, i) => {

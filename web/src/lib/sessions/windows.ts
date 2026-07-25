@@ -22,3 +22,12 @@ export function isSessionGamesOpen(startsAt: Date, now = new Date()): boolean {
     startsAt.getTime() + SESSION_DURATION_MS + GAMES_GRACE_AFTER_END_MS;
   return now.getTime() < deadline;
 }
+
+/**
+ * Fecha leaves "Próximas" once the games entry window has closed
+ * (end of court slot + 60 min grace).
+ */
+export function isSessionPast(startsAt: Date | string, now = new Date()): boolean {
+  const start = typeof startsAt === "string" ? new Date(startsAt) : startsAt;
+  return !isSessionGamesOpen(start, now);
+}
