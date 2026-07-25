@@ -160,11 +160,16 @@ export async function updateGroupSettings(input: {
   userId: string;
   name: string;
   maxMembers: number;
+  /** If set (private groups), replaces join password. Empty = keep current. */
+  password?: string;
 }) {
   const membership = await getMembership(input.groupId, input.userId);
   if (!membership || membership.role !== "owner") {
     throw new Error("Solo el dueño puede editar el grupo");
   }
+
+  const group = await prisma.group.findUnique({ where: { id: input.groupId } });
+  if (!group) throw new Error("Grupo no encontrado");
 
   const name = input.name.trim();
   if (!name) throw new Error("Nombre requerido");
@@ -179,9 +184,25 @@ export async function updateGroupSettings(input: {
     );
   }
 
+  const data: { name: string; maxMembers: number; passwordHash?: string } = {
+    name,
+    maxMembers,
+  };
+
+  const password = input.password?.trim() ?? "";
+  if (password) {
+    if (group.visibility !== "private") {
+      throw new Error("Solo los grupos privados tienen contraseña");
+    }
+    if (password.length < 4) {
+      throw new Error("Contraseña muy corta (mín. 4 caracteres)");
+    }
+    data.passwordHash = hashGroupPassword(password);
+  }
+
   return prisma.group.update({
     where: { id: input.groupId },
-    data: { name, maxMembers },
+    data,
   });
 }
 

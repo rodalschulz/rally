@@ -39,12 +39,14 @@ export async function updateGroupAction(formData: FormData) {
   const slug = String(formData.get("slug") || "");
   const name = String(formData.get("name") || "");
   const maxMembers = Number(formData.get("maxMembers") || "0");
+  const password = String(formData.get("password") || "");
 
   await updateGroupSettings({
     groupId,
     userId,
     name,
     maxMembers,
+    password: password || undefined,
   });
 
   revalidatePath("/");

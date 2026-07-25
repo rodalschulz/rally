@@ -15,13 +15,13 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 | `maxMembers` | Cupo; join falla si ya hay tantos miembros |
 | `createdById` | Creador |
 
-Owner edita nombre y `maxMembers` en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
+Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
 
 **Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
 
 **Membresía (`GroupMember`):** `role` = `owner` \| `member`. Owner = creador. Cualquier miembro puede coordinar fechas; solo owner edita ajustes / invite (MVP: create + copy invite).
 
-**Salir del grupo** (hub `/grupos/[slug]`): cualquier miembro puede abandonar. Si es el único miembro, el grupo se elimina (cascada de fechas/deudas/matches). Si es dueño y hay más integrantes, el dueño pasa al miembro con `joinedAt` más antiguo.
+**Salir del grupo** (`/grupos/[slug]/ajustes`): cualquier miembro puede abandonar. Si es el único miembro, el grupo se elimina (cascada de fechas/deudas/matches). Si es dueño y hay más integrantes, el dueño pasa al miembro con `joinedAt` más antiguo.
 
 **Eliminar grupo** (`/grupos/[slug]/ajustes`, solo owner): borra el grupo entero y cascada (fechas, deudas, matches, membresías), aunque haya más integrantes.
 

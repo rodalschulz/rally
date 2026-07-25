@@ -16,7 +16,7 @@ export function DeleteGroupButton({ groupId }: { groupId: string }) {
           e.preventDefault();
         }
       }}
-      className="mt-4"
+      className="mt-3"
     >
       <input type="hidden" name="groupId" value={groupId} />
       <PendingSubmitButton

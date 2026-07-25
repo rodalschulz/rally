@@ -1,6 +1,7 @@
 import { DeleteGroupButton } from "@/components/DeleteGroupButton";
 import { EditGroupForm } from "@/components/EditGroupForm";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
+import { LeaveGroupButton } from "@/components/LeaveGroupButton";
 import { prisma } from "@/lib/db";
 import { requireGroupMember } from "@/lib/groups";
 
@@ -18,6 +19,7 @@ export default async function GroupSettingsPage({
   const memberCount = await prisma.groupMember.count({
     where: { groupId: group.id },
   });
+  const isSoleMember = memberCount === 1;
 
   return (
     <>
@@ -32,25 +34,20 @@ export default async function GroupSettingsPage({
         </div>
         <p className="mt-1 text-[0.95rem] text-muted">
           {isOwner
-            ? "Nombre, cupo e invitación del grupo."
+            ? "Nombre, cupo, contraseña e invitación del grupo."
             : "Información del grupo."}
         </p>
       </section>
 
       {isOwner ? (
-        <>
-          <EditGroupForm
-            groupId={group.id}
-            slug={slug}
-            name={group.name}
-            maxMembers={group.maxMembers}
-            memberCount={memberCount}
-          />
-          <section className="mt-10 animate-rise">
-            <p className="mb-2 text-[0.8rem] text-muted">Zona de peligro</p>
-            <DeleteGroupButton groupId={group.id} />
-          </section>
-        </>
+        <EditGroupForm
+          groupId={group.id}
+          slug={slug}
+          name={group.name}
+          maxMembers={group.maxMembers}
+          memberCount={memberCount}
+          isPrivate={group.visibility === "private"}
+        />
       ) : (
         <div className="animate-rise rounded-2xl bg-sand px-4 py-4">
           <p className="text-[0.8rem] text-muted">Grupo</p>
@@ -64,6 +61,16 @@ export default async function GroupSettingsPage({
           </p>
         </div>
       )}
+
+      <section className="mt-10 animate-rise">
+        <p className="mb-2 text-[0.8rem] text-muted">Zona de peligro</p>
+        <LeaveGroupButton
+          groupId={group.id}
+          isSoleMember={isSoleMember}
+          isOwner={isOwner}
+        />
+        {isOwner ? <DeleteGroupButton groupId={group.id} /> : null}
+      </section>
     </>
   );
 }

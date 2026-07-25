@@ -26,7 +26,6 @@ export function LeaveGroupButton({
           e.preventDefault();
         }
       }}
-      className="mt-10"
     >
       <input type="hidden" name="groupId" value={groupId} />
       <PendingSubmitButton
