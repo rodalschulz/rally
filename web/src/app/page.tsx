@@ -20,6 +20,7 @@ export default async function HomePage({
     userId ? listMyGroups(userId) : Promise.resolve([]),
   ]);
   const myGroupIds = new Set(mine.map((m) => m.groupId));
+  const publicToJoin = publicGroups.filter((g) => !myGroupIds.has(g.id));
 
   return (
     <AppShell>
@@ -87,13 +88,14 @@ export default async function HomePage({
           Grupos públicos
         </h2>
         <ul className="overflow-hidden rounded-2xl bg-sand">
-          {publicGroups.length === 0 ? (
+          {publicToJoin.length === 0 ? (
             <li className="px-4 py-8 text-center text-[0.9rem] text-muted">
-              No hay grupos públicos todavía. Crea el primero.
+              {publicGroups.length === 0
+                ? "No hay grupos públicos todavía. Crea el primero."
+                : "Ya estás en todos los grupos públicos."}
             </li>
           ) : (
-            publicGroups.map((group) => {
-              const isMember = myGroupIds.has(group.id);
+            publicToJoin.map((group) => {
               const full = group._count.members >= group.maxMembers;
               return (
                 <li
@@ -107,14 +109,7 @@ export default async function HomePage({
                       {full ? " · lleno" : ""}
                     </p>
                   </div>
-                  {isMember ? (
-                    <Link
-                      href={`/grupos/${group.slug}`}
-                      className="shrink-0 text-[0.85rem] font-medium text-ink"
-                    >
-                      Entrar
-                    </Link>
-                  ) : full ? (
+                  {full ? (
                     <span className="shrink-0 text-[0.85rem] text-muted">
                       Lleno
                     </span>
@@ -123,7 +118,7 @@ export default async function HomePage({
                       <input type="hidden" name="groupId" value={group.id} />
                       <PendingSubmitButton
                         pendingLabel="…"
-                        className="shrink-0 appearance-none bg-transparent p-0 text-[0.85rem] font-medium leading-normal text-ink"
+                        className="shrink-0 appearance-none border-0 bg-transparent p-0 text-[0.85rem] font-medium text-ink"
                       >
                         Unirme
                       </PendingSubmitButton>
