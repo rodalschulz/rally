@@ -45,7 +45,7 @@ Si ves `Synced to Rally: { ok: true, ... }`, recargá Fechas.
 
 Tarea creada: **`RallyMirafloresSync`**
 
-- Cada **30 minutos**
+- Cada **60 minutos**
 - De **07:00 a 00:00** (hora Perú / SA Pacific)
 - Ejecuta: `bot/run_sync.bat`
 - Log: `bot/sync.log`
@@ -53,6 +53,9 @@ Tarea creada: **`RallyMirafloresSync`**
 ```bash
 # Ver estado
 schtasks /Query /TN "RallyMirafloresSync" /V /FO LIST
+
+# Cambiar intervalo a 60 min (si la tarea ya existe)
+schtasks /Change /TN "RallyMirafloresSync" /RI 60
 
 # Correr ahora a mano
 schtasks /Run /TN "RallyMirafloresSync"
