@@ -304,7 +304,7 @@ export function SinglesResultsPanel({
             type="button"
             disabled={pending || players.length < 1}
             onClick={() => openAdd("game")}
-            className="flex-1 rounded-xl bg-ball py-3 text-[0.95rem] font-semibold text-on-ball disabled:opacity-60"
+            className="flex-1 rounded-xl bg-mist-2 py-3 text-[0.95rem] font-semibold text-ink disabled:opacity-60"
           >
             Agregar Game
           </button>
