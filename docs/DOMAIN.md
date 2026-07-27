@@ -18,7 +18,7 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 
 Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
 
-**Borrar fecha:** si `startsAt` ya pasó, solo el `createdById`. Si aún es futura, creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos games dejan de contar en el ranking.
+**Borrar fecha:** si `startsAt` ya pasó, solo el `createdById`. Si aún es futura, creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos resultados dejan de contar en el ranking.
 
 **Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
 
@@ -104,30 +104,38 @@ El financiador ya cubrió `costAmount` al municipio; internamente “pagó” su
 
 Implementación: `web/src/lib/domain/split.ts` + sync en `web/src/lib/debts/sync.ts`.
 
-### Match (partido)
+### Match (resultado)
 
-Resultado jugado en el contexto de una sesión:
+Resultado jugado en el contexto de una sesión. Hay **dos unidades independientes** (sin doble conteo):
+
+| Unidad (`unit`) | Qué es | Entrada | Ranking |
+|-----------------|--------|---------|---------|
+| `game` | Game suelto (rotación 1v1) | 2 jugadores + quién ganó; `score` = `1-0` | Singles **Games**: 1 pt / victoria |
+| `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores + marcador de games (`6-4`) | Singles/Dobles **Sets**: 3 pts / victoria |
+
+Un Set **no** se descompone en N Games para el ranking: el `6-4` es metadata del Set, no genera filas de Game.
 
 | Campo | Notas |
 |-------|--------|
 | `playSessionId` | Obligatorio en MVP |
 | `format` | `singles` \| `doubles` |
+| `unit` | `game` \| `set` (default `set`; games sueltos solo singles en MVP) |
 | `sideA` / `sideB` | Arrays de user ids (1 en singles, 2 en dobles) |
-| `score` | String (encoding simple en MVP) |
+| `score` | Set: ej. `6-4`. Game: `1-0` |
 | `winnerSide` | `A` \| `B` |
 
 ### Ranking
 
 Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 
-- **Singles ranking** — principal  
-- **Doubles ranking** — secundario  
+- **Singles** — pestañas **Games** (1 pt) y **Sets** (3 pts), filtradas por `unit`  
+- **Doubles** — solo Sets (3 pts) en MVP  
 
 Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (fechas futuras no suman).
 
-**MVP cerrado:** 3 puntos por victoria, 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts`. ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
+**MVP cerrado:** puntos por unidad arriba; 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts`. ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
 
-**Games en una fecha:** cualquier asistente `going` puede agregar, editar o borrar singles. Hacen falta dos jugadores distintos al confirmar. Plazo: hasta 60 min después del final del evento (duración asumida 1 h desde `startsAt` → cierre en `startsAt + 2 h`).
+**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar o borrar Games sueltos y Sets singles. Hacen falta dos jugadores distintos al confirmar. Plazo: hasta 60 min después del final del evento (duración asumida 1 h desde `startsAt` → cierre en `startsAt + 2 h`).
 
 **Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` hasta `startsAt + 30 min`; después queda solo como registro. Cascade al borrar la fecha.
 
@@ -159,6 +167,6 @@ Snapshot JSON publicado por el bot (`POST /api/availability/sync`). **Global** (
 | Financiador | Quien pagó la cancha al municipio |
 | Asistencia / RSVP | Confirmación de quién va |
 | Deuda | Cuánto debe A a B por una sesión |
-| Match | Partido con score |
-| Ranking singles/dobles | Ordenamiento por resultados (3 pts/win en MVP) |
+| Match | Resultado (`game` o `set`) con ganador |
+| Ranking Games / Sets | Singles: 1 pt (game) o 3 pts (set); dobles solo sets |
 | Canchas libres | Snapshot Miraflores vía bot (global) |

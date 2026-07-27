@@ -52,13 +52,17 @@ export type Debt = {
 
 export type MatchFormat = "singles" | "doubles";
 
+/** Loose game (1 ranking pt) vs set to 6 (3 pts). Set-internal games are not expanded. */
+export type MatchUnit = "game" | "set";
+
 export type Match = {
   id: string;
   sessionId: SessionId;
   format: MatchFormat;
+  unit: MatchUnit;
   sideA: PlayerId[];
   sideB: PlayerId[];
-  /** e.g. "6-4, 6-3" */
+  /** Set: e.g. "6-4". Game: "1-0". */
   score: string;
   winnerSide: "A" | "B";
 };

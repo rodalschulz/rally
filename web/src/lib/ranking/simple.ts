@@ -1,11 +1,20 @@
-import type { Match, PlayerId, RankingRow } from "../domain/types";
+import type { Match, MatchUnit, PlayerId, RankingRow } from "../domain/types";
 
-/** Simple W-L + 3pts win / 0 loss. Easy to swap later for ELO. */
+const POINTS_BY_UNIT: Record<MatchUnit, number> = {
+  game: 1,
+  set: 3,
+};
+
+/** W-L + points by unit. Sets do not expand into loose games. */
 export function buildRanking(
   matches: Match[],
   format: "singles" | "doubles",
+  unit: MatchUnit = "set",
 ): RankingRow[] {
-  const filtered = matches.filter((m) => m.format === format);
+  const pointsPerWin = POINTS_BY_UNIT[unit];
+  const filtered = matches.filter(
+    (m) => m.format === format && m.unit === unit,
+  );
   const stats = new Map<PlayerId, RankingRow>();
 
   const bump = (id: PlayerId) => {
@@ -24,7 +33,7 @@ export function buildRanking(
       const r = bump(id);
       r.played += 1;
       r.wins += 1;
-      r.points += 3;
+      r.points += pointsPerWin;
     }
     for (const id of losers) {
       const r = bump(id);

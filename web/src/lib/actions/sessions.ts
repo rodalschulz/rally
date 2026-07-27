@@ -287,25 +287,43 @@ export async function deletePlaySessionAction(formData: FormData) {
   redirect(`/grupos/${slug}`);
 }
 
-type SinglesGameParsed =
+type SinglesSidesParsed =
   | {
       ok: true;
       playSessionId: string;
       player1Id: string;
       player2Id: string;
-      games1: number;
-      games2: number;
+    }
+  | { ok: false; error: string };
+
+type SinglesSetParsed =
+  | {
+      ok: true;
+      playSessionId: string;
+      player1Id: string;
+      player2Id: string;
       score: string;
       winnerSide: "A" | "B";
     }
   | { ok: false; error: string };
 
-function parseSinglesGameForm(formData: FormData): SinglesGameParsed {
+type SinglesLooseGameParsed =
+  | {
+      ok: true;
+      playSessionId: string;
+      player1Id: string;
+      player2Id: string;
+      winnerSide: "A" | "B";
+    }
+  | { ok: false; error: string };
+
+function parseSinglesSides(
+  formData: FormData,
+  noun: string,
+): SinglesSidesParsed {
   const playSessionId = String(formData.get("playSessionId") || "");
   const player1Id = String(formData.get("player1Id") || "").trim();
   const player2Id = String(formData.get("player2Id") || "").trim();
-  const games1 = Number(formData.get("games1"));
-  const games2 = Number(formData.get("games2"));
 
   if (!playSessionId) {
     return { ok: false, error: "Fecha inválida" };
@@ -313,12 +331,21 @@ function parseSinglesGameForm(formData: FormData): SinglesGameParsed {
   if (!player1Id || !player2Id) {
     return {
       ok: false,
-      error: "Hacen falta dos jugadores distintos para registrar el game",
+      error: `Hacen falta dos jugadores distintos para registrar el ${noun}`,
     };
   }
   if (player1Id === player2Id) {
     return { ok: false, error: "Los jugadores tienen que ser distintos" };
   }
+  return { ok: true, playSessionId, player1Id, player2Id };
+}
+
+function parseSinglesSetForm(formData: FormData): SinglesSetParsed {
+  const sides = parseSinglesSides(formData, "set");
+  if (!sides.ok) return sides;
+
+  const games1 = Number(formData.get("games1"));
+  const games2 = Number(formData.get("games2"));
   if (
     !Number.isInteger(games1) ||
     !Number.isInteger(games2) ||
@@ -327,24 +354,46 @@ function parseSinglesGameForm(formData: FormData): SinglesGameParsed {
     games1 > 99 ||
     games2 > 99
   ) {
-    return { ok: false, error: "Games inválidos" };
+    return { ok: false, error: "Marcador inválido" };
   }
   if (games1 === games2) {
     return {
       ok: false,
-      error: "El game no puede empatar — tiene que haber un ganador",
+      error: "El set no puede empatar — tiene que haber un ganador",
+    };
+  }
+  if (games1 < 6 && games2 < 6) {
+    return {
+      ok: false,
+      error: "En un set al menos un lado debe llegar a 6",
     };
   }
 
   return {
     ok: true,
-    playSessionId,
-    player1Id,
-    player2Id,
-    games1,
-    games2,
+    playSessionId: sides.playSessionId,
+    player1Id: sides.player1Id,
+    player2Id: sides.player2Id,
     score: `${games1}-${games2}`,
     winnerSide: games1 > games2 ? "A" : "B",
+  };
+}
+
+function parseSinglesLooseGameForm(formData: FormData): SinglesLooseGameParsed {
+  const sides = parseSinglesSides(formData, "game");
+  if (!sides.ok) return sides;
+
+  const winnerSideRaw = String(formData.get("winnerSide") || "").trim();
+  if (winnerSideRaw !== "A" && winnerSideRaw !== "B") {
+    return { ok: false, error: "Elige quién ganó el game" };
+  }
+
+  return {
+    ok: true,
+    playSessionId: sides.playSessionId,
+    player1Id: sides.player1Id,
+    player2Id: sides.player2Id,
+    winnerSide: winnerSideRaw,
   };
 }
 
@@ -367,13 +416,13 @@ async function assertGoingCanManageGames(
   if (!goingIds.has(userId)) {
     return {
       ok: false as const,
-      error: "Solo quien marcó Voy puede gestionar games",
+      error: "Solo quien marcó Voy puede gestionar resultados",
     };
   }
   if (!isSessionGamesOpen(session.startsAt)) {
     return {
       ok: false as const,
-      error: "Ya cerró el plazo para agregar o editar games",
+      error: "Ya cerró el plazo para agregar o editar resultados",
     };
   }
   return { ok: true as const, session, goingIds };
@@ -385,31 +434,45 @@ async function revalidateSessionGames(groupId: string, playSessionId: string) {
   revalidatePath(`/grupos/${slug}/rankings/singles`);
 }
 
-export async function addSinglesGameAction(
+async function assertGoingPlayers(
+  goingIds: Set<string>,
+  player1Id: string,
+  player2Id: string,
+  noun: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!goingIds.has(player1Id) || !goingIds.has(player2Id)) {
+    return {
+      ok: false,
+      error: `Solo asistentes (Voy) pueden jugar el ${noun}`,
+    };
+  }
+  return { ok: true };
+}
+
+export async function addSinglesSetAction(
   formData: FormData,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const userId = await requireUserId();
-    const parsed = parseSinglesGameForm(formData);
+    const parsed = parseSinglesSetForm(formData);
     if (!parsed.ok) return parsed;
 
     const gate = await assertGoingCanManageGames(parsed.playSessionId, userId);
     if (!gate.ok) return gate;
 
-    if (
-      !gate.goingIds.has(parsed.player1Id) ||
-      !gate.goingIds.has(parsed.player2Id)
-    ) {
-      return {
-        ok: false,
-        error: "Solo asistentes (Voy) pueden jugar el game",
-      };
-    }
+    const playersOk = await assertGoingPlayers(
+      gate.goingIds,
+      parsed.player1Id,
+      parsed.player2Id,
+      "set",
+    );
+    if (!playersOk.ok) return playersOk;
 
     await prisma.match.create({
       data: {
         playSessionId: parsed.playSessionId,
         format: "singles",
+        unit: "set",
         score: parsed.score,
         winnerSide: parsed.winnerSide,
         sideA: [parsed.player1Id],
@@ -424,37 +487,35 @@ export async function addSinglesGameAction(
   }
 }
 
-export async function updateSinglesGameAction(
+export async function updateSinglesSetAction(
   formData: FormData,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const userId = await requireUserId();
     const matchId = String(formData.get("matchId") || "");
-    if (!matchId) return { ok: false, error: "Game inválido" };
+    if (!matchId) return { ok: false, error: "Set inválido" };
 
-    const parsed = parseSinglesGameForm(formData);
+    const parsed = parseSinglesSetForm(formData);
     if (!parsed.ok) return parsed;
 
     const match = await prisma.match.findUnique({ where: { id: matchId } });
     if (!match || match.playSessionId !== parsed.playSessionId) {
-      return { ok: false, error: "Game no encontrado" };
+      return { ok: false, error: "Set no encontrado" };
     }
-    if (match.format !== "singles") {
-      return { ok: false, error: "Solo se editan games singles" };
+    if (match.format !== "singles" || match.unit !== "set") {
+      return { ok: false, error: "Solo se editan sets singles" };
     }
 
     const gate = await assertGoingCanManageGames(parsed.playSessionId, userId);
     if (!gate.ok) return gate;
 
-    if (
-      !gate.goingIds.has(parsed.player1Id) ||
-      !gate.goingIds.has(parsed.player2Id)
-    ) {
-      return {
-        ok: false,
-        error: "Solo asistentes (Voy) pueden jugar el game",
-      };
-    }
+    const playersOk = await assertGoingPlayers(
+      gate.goingIds,
+      parsed.player1Id,
+      parsed.player2Id,
+      "set",
+    );
+    if (!playersOk.ok) return playersOk;
 
     await prisma.match.update({
       where: { id: matchId },
@@ -473,7 +534,45 @@ export async function updateSinglesGameAction(
   }
 }
 
-export async function deleteSinglesGameAction(
+export async function addSinglesLooseGameAction(
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const userId = await requireUserId();
+    const parsed = parseSinglesLooseGameForm(formData);
+    if (!parsed.ok) return parsed;
+
+    const gate = await assertGoingCanManageGames(parsed.playSessionId, userId);
+    if (!gate.ok) return gate;
+
+    const playersOk = await assertGoingPlayers(
+      gate.goingIds,
+      parsed.player1Id,
+      parsed.player2Id,
+      "game",
+    );
+    if (!playersOk.ok) return playersOk;
+
+    await prisma.match.create({
+      data: {
+        playSessionId: parsed.playSessionId,
+        format: "singles",
+        unit: "game",
+        score: "1-0",
+        winnerSide: parsed.winnerSide,
+        sideA: [parsed.player1Id],
+        sideB: [parsed.player2Id],
+      },
+    });
+
+    await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
+  }
+}
+
+export async function updateSinglesLooseGameAction(
   formData: FormData,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
@@ -481,8 +580,58 @@ export async function deleteSinglesGameAction(
     const matchId = String(formData.get("matchId") || "");
     if (!matchId) return { ok: false, error: "Game inválido" };
 
+    const parsed = parseSinglesLooseGameForm(formData);
+    if (!parsed.ok) return parsed;
+
     const match = await prisma.match.findUnique({ where: { id: matchId } });
-    if (!match) return { ok: false, error: "Game no encontrado" };
+    if (!match || match.playSessionId !== parsed.playSessionId) {
+      return { ok: false, error: "Game no encontrado" };
+    }
+    if (match.format !== "singles" || match.unit !== "game") {
+      return { ok: false, error: "Solo se editan games sueltos" };
+    }
+
+    const gate = await assertGoingCanManageGames(parsed.playSessionId, userId);
+    if (!gate.ok) return gate;
+
+    const playersOk = await assertGoingPlayers(
+      gate.goingIds,
+      parsed.player1Id,
+      parsed.player2Id,
+      "game",
+    );
+    if (!playersOk.ok) return playersOk;
+
+    await prisma.match.update({
+      where: { id: matchId },
+      data: {
+        score: "1-0",
+        winnerSide: parsed.winnerSide,
+        sideA: [parsed.player1Id],
+        sideB: [parsed.player2Id],
+      },
+    });
+
+    await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
+  }
+}
+
+export async function deleteSinglesResultAction(
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const userId = await requireUserId();
+    const matchId = String(formData.get("matchId") || "");
+    if (!matchId) return { ok: false, error: "Resultado inválido" };
+
+    const match = await prisma.match.findUnique({ where: { id: matchId } });
+    if (!match) return { ok: false, error: "Resultado no encontrado" };
+    if (match.format !== "singles") {
+      return { ok: false, error: "Solo se borran resultados singles" };
+    }
 
     const gate = await assertGoingCanManageGames(match.playSessionId, userId);
     if (!gate.ok) return gate;
@@ -495,7 +644,7 @@ export async function deleteSinglesGameAction(
   }
 }
 
-/** @deprecated Prefer addSinglesGameAction for singles; kept for doubles. */
+/** @deprecated Prefer set/game singles actions; kept for doubles. */
 export async function addMatchAction(formData: FormData) {
   const userId = await requireUserId();
   const playSessionId = String(formData.get("playSessionId") || "");
@@ -516,8 +665,8 @@ export async function addMatchAction(formData: FormData) {
     throw new Error("Datos de match incompletos");
   }
 
-  const { parseGameScore } = await import("@/lib/domain/gameScore");
-  const { winnerSide } = parseGameScore(score.split(",")[0]?.trim() || score);
+  const { parseSetScore } = await import("@/lib/domain/gameScore");
+  const { winnerSide } = parseSetScore(score.split(",")[0]?.trim() || score);
 
   const session = await prisma.playSession.findUnique({
     where: { id: playSessionId },
@@ -529,6 +678,7 @@ export async function addMatchAction(formData: FormData) {
     data: {
       playSessionId,
       format,
+      unit: "set",
       score,
       winnerSide,
       sideA,

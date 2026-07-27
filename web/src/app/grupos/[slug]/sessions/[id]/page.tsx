@@ -4,7 +4,7 @@ import { FreshOnMount } from "@/components/FreshOnMount";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
 import { SessionChat } from "@/components/SessionChat";
-import { SinglesGamesPanel } from "@/components/SinglesGamesPanel";
+import { SinglesResultsPanel } from "@/components/SinglesResultsPanel";
 import { getSession } from "@/lib/auth-session";
 import {
   getPlaySession,
@@ -62,7 +62,7 @@ export default async function SessionDetailPage({
   const goingPlayers = allPlayers.filter((p) =>
     going.some((a) => a.playerId === p.id),
   );
-  const singlesGames = sessionMatches.filter((m) => m.format === "singles");
+  const singlesResults = sessionMatches.filter((m) => m.format === "singles");
   const attendanceSyncKey = sessionAtt
     .map((a) => `${a.playerId}:${a.status}`)
     .sort()
@@ -201,11 +201,11 @@ export default async function SessionDetailPage({
         )}
       </section>
 
-      <SinglesGamesPanel
+      <SinglesResultsPanel
         playSessionId={session.id}
         players={goingPlayers}
         labelPlayers={allPlayers}
-        games={singlesGames}
+        results={singlesResults}
         canManage={canManageGames}
         gamesOpen={gamesOpen}
       />

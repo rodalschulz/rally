@@ -65,6 +65,7 @@ export function toMatch(row: Match): DomainMatch {
     id: row.id,
     sessionId: row.playSessionId,
     format: row.format,
+    unit: row.unit,
     sideA: row.sideA,
     sideB: row.sideB,
     score: row.score,

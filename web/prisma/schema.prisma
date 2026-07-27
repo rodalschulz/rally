@@ -33,6 +33,12 @@ enum MatchFormat {
   doubles
 }
 
+/** Loose game (1 pt) vs set to 6 (3 pts). Set score games are not expanded. */
+enum MatchUnit {
+  game
+  set
+}
+
 enum WinnerSide {
   A
   B
@@ -209,6 +215,7 @@ model Match {
   id            String      @id @default(cuid())
   playSessionId String
   format        MatchFormat
+  unit          MatchUnit   @default(set)
   sideA         String[]
   sideB         String[]
   score         String
@@ -216,6 +223,8 @@ model Match {
   createdAt     DateTime    @default(now())
 
   playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+
+  @@index([playSessionId, unit])
 }
 
 /** Chat for a fecha: Voy/Quizás can post until startsAt is past. */

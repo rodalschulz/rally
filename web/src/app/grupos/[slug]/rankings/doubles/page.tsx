@@ -19,7 +19,7 @@ export default async function DoublesRankingPage({
     listRankingMatches(group.id),
     listGroupPlayers(group.id),
   ]);
-  const rows = buildRanking(matches, "doubles");
+  const rows = buildRanking(matches, "doubles", "set");
   const playersById = new Map(players.map((p) => [p.id, p]));
 
   return (
@@ -29,14 +29,14 @@ export default async function DoublesRankingPage({
           Dobles
         </h1>
         <p className="mt-1 text-[0.85rem] text-muted">
-          Solo cuentan games de fechas ya pasadas.
+          Solo cuentan sets de fechas ya pasadas (3 pts por victoria).
         </p>
       </section>
       <RankingTabs slug={slug} active="doubles" />
       <RankingList
         rows={rows}
         playersById={playersById}
-        emptyHint="Todavía no hay partidos de dobles de fechas pasadas."
+        emptyHint="Todavía no hay sets de dobles de fechas pasadas."
       />
     </>
   );
