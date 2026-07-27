@@ -10,7 +10,7 @@ export function DeleteSessionButton({ playSessionId }: { playSessionId: string }
       onSubmit={(e) => {
         if (
           !window.confirm(
-            "¿Borrar esta fecha? Se eliminan asistencias, deudas y games. Los puntajes de esos games dejan de contar en el ranking.",
+            "¿Borrar esta fecha? Se eliminan asistencias, deudas y resultados. Esos resultados dejan de contar en el ranking.",
           )
         ) {
           e.preventDefault();

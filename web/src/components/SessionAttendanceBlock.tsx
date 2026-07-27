@@ -27,6 +27,7 @@ export function SessionAttendanceBlock({
   syncKey,
   maxAttendees,
   allowedUserIds,
+  canChange,
 }: {
   playSessionId: string;
   meId: string;
@@ -36,6 +37,8 @@ export function SessionAttendanceBlock({
   syncKey: string;
   maxAttendees?: number | null;
   allowedUserIds: string[];
+  /** False for fechas pasadas — RSVP is read-only. */
+  canChange: boolean;
 }) {
   const router = useRouter();
   const [attByUser, setAttByUser] = useState(() => toMap(initialAttendances));
@@ -83,6 +86,13 @@ export function SessionAttendanceBlock({
           <p className="rounded-2xl bg-sand px-4 py-3.5 text-[0.9rem] text-muted">
             Esta fecha es solo para invitados. No estás en la lista.
           </p>
+        ) : !canChange ? (
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-sand px-4 py-3.5">
+            <p className="text-[0.85rem] text-muted">
+              Esta fecha ya pasó — la asistencia no se puede cambiar.
+            </p>
+            <AttendanceBadge status={myAtt} />
+          </div>
         ) : (
           <>
             <div

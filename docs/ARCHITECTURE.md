@@ -82,27 +82,31 @@ src/
   lib/
     groups/                  # create, join, requireMember, crypto
     domain/                  # tipos + split de costo
-    ranking/                 # 3 pts/win (simple.ts)
+    ranking/                 # buildRanking por format + unit (game 1pt / set 3pt)
+    sessions/                # ventanas chat/resultados, permisos, chat helpers
     debts/                   # sync de deudas open
     actions/                 # Server Actions (groups + sessions)
     data/                    # queries scoped por groupId
   auth.ts / auth.config.ts
 ```
 
+Tests de dominio: Vitest (`npm test` en `web/`). Ver [`TESTING.md`](TESTING.md).
+
 ### Páginas (MVP UI)
 
 1. Root discovery: marca, mis grupos, públicos, crear  
 2. Crear grupo / join por invite  
 3. Hub del grupo: sesiones + canchas libres  
-4. Detalle de sesión: RSVP, financiador, deudas, matches  
-5. Ranking singles / dobles (por grupo)  
-6. Deudas del grupo  
-7. Login Google  
+4. Detalle de sesión: RSVP, financiador, deudas, resultados (Games/Sets), chat  
+5. Ranking singles (Games \| Sets) / dobles Sets (por grupo)  
+6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta)  
+7. Deudas del grupo  
+8. Login Google  
 
 ### Datos y consistencia
 
 - Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
-- Rankings: on-read vía `buildRanking` filtrando matches del grupo.
+- Rankings: on-read vía `buildRanking` filtrando matches del grupo por `format` + `unit`.
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad
@@ -131,13 +135,15 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Multi-grupo | Root = discovery; coordinación bajo `/grupos/[slug]` |
 | Grupos privados | Invite + contraseña; no listados en root |
 | Canchas libres | Globales (sin groupId) |
-| Algoritmo de ranking | MVP: 3 pts/win; ELO abierto |
+| Algoritmo de ranking | MVP: Games 1 pt / Sets 3 pts; sin doble conteo; ELO abierto |
+| Tests | Vitest en módulos puros (`docs/TESTING.md`) |
 | Nombre de marca UI | **rally** |
 | Setup local | `web/docs/SETUP.md` |
 | Puente bot ↔ web | PC + `CRON_SECRET` (`bot/docs/PC_SYNC.md`) |
 | ¿Financiador cuenta en el split si no asiste? | Propuesta en DOMAIN.md; confirmar con el grupo |
 | Monorepo tool (pnpm / Turborepo) | No necesario por ahora |
 | Roles granulares / kick / billing | Fuera de alcance MVP multi-grupo |
+| Fecha pasada | Solo lectura; borrar solo `GroupMember.role = owner` |
 
 ## Orden de implementación (histórico / pendientes)
 

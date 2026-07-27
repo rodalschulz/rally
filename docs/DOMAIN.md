@@ -18,7 +18,7 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 
 Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
 
-**Borrar fecha:** si `startsAt` ya pasó, solo el `createdById`. Si aún es futura, creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos resultados dejan de contar en el ranking.
+**Fechas pasadas (hub):** cuando cierra la ventana de resultados (`startsAt + 2 h`), la fecha es de solo lectura: nadie cambia asistencia, edita ni carga resultados. **Borrar** solo el **owner del grupo** (admin). Mientras no sea pasada: editar = creador; borrar = creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos resultados dejan de contar en el ranking.
 
 **Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
 
@@ -58,6 +58,22 @@ En producto: **sesión** o **fecha**. En DB: **`PlaySession`** (evita choque con
 | `allowedUserIds` | Vacío = todos; si hay ids, solo ellos pueden marcar Voy |
 
 **Financiador:** “quien adelantó el pago de la cancha”. En UI: “Pagó la cancha” / “Financiador”.
+
+**Regalo de cancha:** `financierCoversAll = true` → no se generan deudas (el financiador cubre todo).
+
+**Hora de creación:** el input de fecha usa pared `America/Lima` (24h); al guardar, los minutos se fijan a `:00` (slots horarios).
+
+### Ventanas temporales de una fecha
+
+Duración de cancha asumida: **1 h** desde `startsAt`. Implementación: `web/src/lib/sessions/windows.ts`.
+
+| Ventana | Abierta mientras | Uso |
+|---------|------------------|-----|
+| Chat | `now < startsAt + 30 min` | Escribir en el hilo (solo `going` / `maybe`) |
+| Resultados (Games/Sets) | `now < startsAt + 1 h + 60 min` | Agregar/editar/borrar resultados (solo `going`) |
+| Hub “Fechas Pasadas” | cuando cierra la ventana de resultados | Deja de listarse en Próximas; fecha solo lectura (salvo borrar por owner) |
+
+**Ranking:** cuentan matches de fechas con `startsAt < now` (no espera a que cierre la ventana de resultados). Ver `listRankingMatches`.
 
 ### Attendance (asistencia / RSVP)
 
@@ -131,13 +147,13 @@ Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 - **Singles** — pestañas **Games** (1 pt) y **Sets** (3 pts), filtradas por `unit`  
 - **Doubles** — solo Sets (3 pts) en MVP  
 
-Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (fechas futuras no suman).
+Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras no suman).
 
-**MVP cerrado:** puntos por unidad arriba; 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts`. ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
+**MVP cerrado:** puntos por unidad arriba; 0 por derrota; desempate por wins, luego id. Módulo: `web/src/lib/ranking/simple.ts` (tests en `simple.test.ts`). ELO u otro algoritmo queda como evolución futura (cambiar el módulo puro sin tocar UI de más).
 
-**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar o borrar Games sueltos y Sets singles. Hacen falta dos jugadores distintos al confirmar. Plazo: hasta 60 min después del final del evento (duración asumida 1 h desde `startsAt` → cierre en `startsAt + 2 h`).
+**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar o borrar Games sueltos y Sets singles. Hacen falta dos jugadores distintos al confirmar. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
 
-**Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` hasta `startsAt + 30 min`; después queda solo como registro. Cascade al borrar la fecha.
+**Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` mientras el chat esté abierto (`startsAt + 30 min`); después queda solo como registro. Cascade al borrar la fecha. Cuerpo máx. 500 chars.
 
 ### AvailabilitySnapshot (canchas libres)
 
@@ -169,4 +185,5 @@ Snapshot JSON publicado por el bot (`POST /api/availability/sync`). **Global** (
 | Deuda | Cuánto debe A a B por una sesión |
 | Match | Resultado (`game` o `set`) con ganador |
 | Ranking Games / Sets | Singles: 1 pt (game) o 3 pts (set); dobles solo sets |
+| Regalo de cancha | `financierCoversAll` — sin deudas |
 | Canchas libres | Snapshot Miraflores vía bot (global) |

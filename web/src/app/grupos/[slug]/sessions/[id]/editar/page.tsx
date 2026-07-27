@@ -6,6 +6,7 @@ import { updatePlaySessionAction } from "@/lib/actions/sessions";
 import { getPlaySession, listGroupPlayers, toSession } from "@/lib/data/queries";
 import { toDatetimeLocalValue } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
+import { canEditPlaySession } from "@/lib/sessions/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,12 @@ export default async function EditSessionPage({
   ]);
   if (!row) redirect("/");
 
-  if (group.membership.userId !== row.createdById) {
+  if (
+    !canEditPlaySession(
+      { createdById: row.createdById, startsAt: row.startsAt },
+      group.membership.userId,
+    )
+  ) {
     redirect(`/grupos/${slug}/sessions/${id}`);
   }
 

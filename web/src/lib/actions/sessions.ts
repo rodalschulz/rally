@@ -8,7 +8,11 @@ import { actionErrorMessage } from "@/lib/action-errors";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { prisma } from "@/lib/db";
 import { getMembership } from "@/lib/groups";
-import { canDeletePlaySession } from "@/lib/sessions/permissions";
+import {
+  canChangeAttendance,
+  canDeletePlaySession,
+  canEditPlaySession,
+} from "@/lib/sessions/permissions";
 import { isSessionGamesOpen } from "@/lib/sessions/windows";
 import {
   appZonedParts,
@@ -46,6 +50,13 @@ export async function setAttendanceAction(
     });
     if (!session) return { ok: false, error: "Fecha no encontrada" };
     await requireMemberOfGroup(session.groupId, userId);
+
+    if (!canChangeAttendance(session.startsAt)) {
+      return {
+        ok: false,
+        error: "Esta fecha ya pasó — la asistencia no se puede cambiar",
+      };
+    }
 
     const allowed = session.allowedUserIds ?? [];
     if (allowed.length > 0 && !allowed.includes(userId)) {
@@ -207,8 +218,12 @@ export async function updatePlaySessionAction(formData: FormData) {
   if (!row) throw new Error("Fecha no encontrada");
   await requireMemberOfGroup(row.groupId, userId);
 
-  if (row.createdById !== userId) {
-    throw new Error("Solo el creador puede editar esta fecha");
+  if (!canEditPlaySession(row, userId)) {
+    throw new Error(
+      canChangeAttendance(row.startsAt)
+        ? "Solo el creador puede editar esta fecha"
+        : "Esta fecha ya pasó — no se puede editar",
+    );
   }
 
   const fields = parseSessionFields(formData, userId);
@@ -267,12 +282,13 @@ export async function deletePlaySessionAction(formData: FormData) {
     where: { id: playSessionId },
   });
   if (!row) throw new Error("Fecha no encontrada");
-  await requireMemberOfGroup(row.groupId, userId);
+  const membership = await requireMemberOfGroup(row.groupId, userId);
+  const isGroupOwner = membership.role === "owner";
 
-  if (!canDeletePlaySession(row, userId)) {
+  if (!canDeletePlaySession(row, userId, { isGroupOwner })) {
     throw new Error(
-      row.startsAt.getTime() < Date.now()
-        ? "Solo el creador puede borrar una fecha pasada"
+      !canChangeAttendance(row.startsAt)
+        ? "Solo el admin del grupo puede borrar una fecha pasada"
         : "No tienes permiso para borrar esta fecha",
     );
   }

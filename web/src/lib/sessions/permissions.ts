@@ -1,11 +1,31 @@
-/** Past fechas: only creator. Upcoming: creator or financier. */
+import { isSessionPast } from "@/lib/sessions/windows";
+
+/** Upcoming: creator or financier. Past (hub “Fechas Pasadas”): only group owner. */
 export function canDeletePlaySession(
-  row: { createdById: string; financierId: string; startsAt: Date },
+  row: { createdById: string; financierId: string; startsAt: Date | string },
+  userId: string,
+  opts: { isGroupOwner: boolean; now?: Date },
+): boolean {
+  if (isSessionPast(row.startsAt, opts.now)) {
+    return opts.isGroupOwner;
+  }
+  return row.createdById === userId || row.financierId === userId;
+}
+
+/** Only the creator, and only while the fecha is not past. */
+export function canEditPlaySession(
+  row: { createdById: string; startsAt: Date | string },
   userId: string,
   now = new Date(),
 ): boolean {
-  if (row.createdById === userId) return true;
-  const isPast = row.startsAt.getTime() < now.getTime();
-  if (isPast) return false;
-  return row.financierId === userId;
+  if (isSessionPast(row.startsAt, now)) return false;
+  return row.createdById === userId;
+}
+
+/** RSVP locked once the fecha is past (including for the creator). */
+export function canChangeAttendance(
+  startsAt: Date | string,
+  now = new Date(),
+): boolean {
+  return !isSessionPast(startsAt, now);
 }

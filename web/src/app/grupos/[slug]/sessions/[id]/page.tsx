@@ -23,7 +23,11 @@ import {
   canPostSessionChat,
   isSessionChatOpen,
 } from "@/lib/sessions/chat";
-import { canDeletePlaySession } from "@/lib/sessions/permissions";
+import {
+  canChangeAttendance,
+  canDeletePlaySession,
+  canEditPlaySession,
+} from "@/lib/sessions/permissions";
 import { isSessionGamesOpen } from "@/lib/sessions/windows";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +75,20 @@ export default async function SessionDetailPage({
   const gamesOpen = isSessionGamesOpen(startsAtDate);
   const canManageGames =
     gamesOpen && going.some((a) => a.playerId === userId);
+  const attendanceOpen = canChangeAttendance(startsAtDate);
+  const canEdit = canEditPlaySession(
+    { createdById: session.createdById, startsAt: startsAtDate },
+    userId,
+  );
+  const canDelete = canDeletePlaySession(
+    {
+      createdById: session.createdById,
+      financierId: session.financierId,
+      startsAt: startsAtDate,
+    },
+    userId,
+    { isGroupOwner: group.membership.role === "owner" },
+  );
   const myAtt = sessionAtt.find((a) => a.playerId === userId)?.status;
   const chatOpen = isSessionChatOpen(startsAtDate);
   const chatCanPost = chatOpen && canPostSessionChat(myAtt);
@@ -79,7 +97,7 @@ export default async function SessionDetailPage({
   return (
     <>
       <FreshOnMount />
-      {userId === session.createdById ? (
+      {canEdit ? (
         <div className="mb-5 flex justify-end">
           <Link
             href={`/grupos/${slug}/sessions/${session.id}/editar`}
@@ -130,6 +148,7 @@ export default async function SessionDetailPage({
         syncKey={attendanceSyncKey}
         maxAttendees={session.maxAttendees}
         allowedUserIds={session.allowedUserIds}
+        canChange={attendanceOpen}
       />
 
       <section className="animate-rise mt-8">
@@ -227,14 +246,7 @@ export default async function SessionDetailPage({
         meHue={mePlayer?.hue ?? authSession?.user?.hue ?? 160}
       />
 
-      {canDeletePlaySession(
-        {
-          createdById: session.createdById,
-          financierId: session.financierId,
-          startsAt: new Date(session.startsAt),
-        },
-        userId,
-      ) ? (
+      {canDelete ? (
         <DeleteSessionButton playSessionId={session.id} />
       ) : null}
     </>
