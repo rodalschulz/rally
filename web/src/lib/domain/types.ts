@@ -45,9 +45,16 @@ export type Debt = {
   id: string;
   fromPlayerId: PlayerId;
   toPlayerId: PlayerId;
+  /** PlaySession that generated this debt — always one fecha, never aggregated. */
   sessionId: SessionId;
   amount: number;
   status: DebtStatus;
+};
+
+/** Debt plus fecha context for list UIs. */
+export type DebtWithSession = Debt & {
+  sessionStartsAt: string;
+  sessionCourtLabel?: string;
 };
 
 export type MatchFormat = "singles" | "doubles";

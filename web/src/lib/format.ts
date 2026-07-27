@@ -66,7 +66,21 @@ export function formatSessionWhen(iso: string): {
 
 export function formatSessionChip(iso: string): string {
   const d = new Date(iso);
-  return `${capitalize(weekdayShort.format(d))} ${dayMonth.format(d)}`;
+  return `${shortWeekday(d)} ${dayMonth.format(d)}`;
+}
+
+/** Compact list chip: weekday + month under the day number (e.g. "Vie · Jul."). */
+export function formatSessionListSub(iso: string): string {
+  const d = new Date(iso);
+  const month = new Intl.DateTimeFormat("es-PE", {
+    ...dateOpts,
+    month: "short",
+  }).format(d);
+  return `${shortWeekday(d)} · ${capitalize(month).replace(/\.$/, "")}`;
+}
+
+function shortWeekday(d: Date): string {
+  return capitalize(weekdayShort.format(d)).replace(/\.$/, "");
 }
 
 function capitalize(s: string): string {

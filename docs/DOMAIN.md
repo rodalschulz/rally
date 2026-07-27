@@ -101,12 +101,12 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 |-------|--------|
 | `fromUserId` | Quien debe |
 | `toUserId` | Quien recibe (casi siempre el financiador) |
-| `playSessionId` | Origen |
+| `playSessionId` | Origen — cada deuda es de **una** fecha (nunca se fusionan entre fechas) |
 | `amount` | |
 | `status` | `open` \| `settled` |
 | `settledAt` | Opcional |
 
-Scoped al grupo al filtrar deudas por `playSession.groupId`.
+Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle.
 
 Fórmula base (financiador asiste, N asistentes `going`):
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Attendance, Player, Session } from "@/lib/domain/types";
 import {
-  formatSessionChip,
+  formatSessionListSub,
   formatSoles,
   formatSessionWhen,
   relativeDayLabel,
@@ -34,12 +34,12 @@ export function SessionRow({
       className="animate-rise group flex items-center gap-3 border-b border-ink/6 px-4 py-3.5 last:border-b-0 active:bg-mist"
       style={{ animationDelay: `${index * 40}ms` }}
     >
-      <div className="w-11 shrink-0 text-center">
+      <div className="w-12 shrink-0 text-center">
         <p className="text-[1.35rem] font-semibold leading-none tracking-[-0.03em] text-ink">
           {sessionDayOfMonth(session.startsAt)}
         </p>
-        <p className="mt-1 text-[0.7rem] font-medium capitalize text-muted">
-          {formatSessionChip(session.startsAt).split(" ").slice(1).join(" ")}
+        <p className="mt-1 text-[0.65rem] font-medium leading-tight text-muted">
+          {formatSessionListSub(session.startsAt)}
         </p>
       </div>
 

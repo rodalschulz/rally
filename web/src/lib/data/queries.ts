@@ -58,8 +58,16 @@ export async function getPlaySession(id: string, groupId?: string) {
 export async function listAllDebts(groupId: string) {
   const rows = await prisma.debt.findMany({
     where: { playSession: { groupId } },
+    include: {
+      playSession: { select: { startsAt: true, courtLabel: true } },
+    },
+    orderBy: [{ playSession: { startsAt: "desc" } }, { createdAt: "asc" }],
   });
-  return rows.map(toDebt);
+  return rows.map((row) => ({
+    ...toDebt(row),
+    sessionStartsAt: row.playSession.startsAt.toISOString(),
+    sessionCourtLabel: row.playSession.courtLabel ?? undefined,
+  }));
 }
 
 export async function listMatches(groupId: string) {

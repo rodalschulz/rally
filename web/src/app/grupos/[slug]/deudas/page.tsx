@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
 import { netBalances } from "@/lib/domain/split";
-import { formatSoles } from "@/lib/format";
+import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
 import { settleDebtAction } from "@/lib/actions/sessions";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { requireGroupMember } from "@/lib/groups";
@@ -38,7 +39,8 @@ export default async function DebtsPage({
           Deudas
         </h1>
         <p className="mt-1 max-w-[36ch] text-[0.95rem] text-muted">
-          Reparto de cancha. Positivo = te deben. Negativo = debes.
+          Cada deuda pertenece a una fecha. Positivo = te deben. Negativo =
+          debes.
         </p>
       </section>
 
@@ -108,33 +110,48 @@ export default async function DebtsPage({
             {open.map((d) => {
               const from = playersById.get(d.fromPlayerId);
               const to = playersById.get(d.toPlayerId);
+              const when = formatSessionWhen(d.sessionStartsAt);
+              const fechaLabel = `${formatSessionChip(d.sessionStartsAt)} · ${when.time}`;
               return (
                 <li
                   key={d.id}
-                  className="flex items-center justify-between gap-3 border-b border-ink/6 px-4 py-3 text-[0.9rem] last:border-b-0"
+                  className="border-b border-ink/6 px-4 py-3 text-[0.9rem] last:border-b-0"
                 >
-                  <span>
-                    <span className="font-medium text-ink">
-                      {from?.displayName}
-                    </span>
-                    <span className="text-muted"> → {to?.displayName}</span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="font-medium tabular-nums">
-                      {formatSoles(d.amount)}
-                    </span>
-                    {(me === d.toPlayerId || me === d.fromPlayerId) && (
-                      <form action={settleDebtAction}>
-                        <input type="hidden" name="debtId" value={d.id} />
-                        <PendingSubmitButton
-                          pendingLabel="…"
-                          className="text-[0.75rem] font-medium text-muted"
-                        >
-                          Saldar
-                        </PendingSubmitButton>
-                      </form>
-                    )}
-                  </span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p>
+                        <span className="font-medium text-ink">
+                          {from?.displayName}
+                        </span>
+                        <span className="text-muted"> → {to?.displayName}</span>
+                      </p>
+                      <Link
+                        href={`/grupos/${slug}/sessions/${d.sessionId}`}
+                        className="mt-0.5 block truncate text-[0.8rem] text-muted hover:text-ink"
+                      >
+                        {fechaLabel}
+                        {d.sessionCourtLabel
+                          ? ` · ${d.sessionCourtLabel}`
+                          : ""}
+                      </Link>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="font-medium tabular-nums text-ink">
+                        {formatSoles(d.amount)}
+                      </span>
+                      {(me === d.toPlayerId || me === d.fromPlayerId) && (
+                        <form action={settleDebtAction}>
+                          <input type="hidden" name="debtId" value={d.id} />
+                          <PendingSubmitButton
+                            pendingLabel="…"
+                            className="text-[0.75rem] font-medium text-muted"
+                          >
+                            Saldar
+                          </PendingSubmitButton>
+                        </form>
+                      )}
+                    </div>
+                  </div>
                 </li>
               );
             })}
