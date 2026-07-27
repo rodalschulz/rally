@@ -302,7 +302,7 @@ export function SinglesResultsPanel({
         <div className="flex gap-2">
           <button
             type="button"
-            disabled={pending || players.length < 2}
+            disabled={pending || players.length < 1}
             onClick={() => openAdd("game")}
             className="flex-1 rounded-xl bg-ball py-3 text-[0.95rem] font-semibold text-on-ball disabled:opacity-60"
           >
@@ -310,7 +310,7 @@ export function SinglesResultsPanel({
           </button>
           <button
             type="button"
-            disabled={pending || players.length < 2}
+            disabled={pending || players.length < 1}
             onClick={() => openAdd("set")}
             className="flex-1 rounded-xl bg-mist-2 py-3 text-[0.95rem] font-semibold text-ink disabled:opacity-60"
           >
@@ -381,10 +381,21 @@ export function SinglesResultsPanel({
             </div>
           </div>
 
+          {players.length < 2 ? (
+            <p className="text-[0.85rem] text-muted">
+              Falta otro asistente con Voy para poder guardar.
+            </p>
+          ) : null}
           {error ? <p className="text-[0.9rem] text-danger">{error}</p> : null}
 
           <FormActions
             pending={pending}
+            canSubmit={
+              players.length >= 2 &&
+              Boolean(setDraft.player1Id) &&
+              Boolean(setDraft.player2Id) &&
+              setDraft.player1Id !== setDraft.player2Id
+            }
             editing={Boolean(editingId)}
             onCancel={resetForm}
             submitLabel={editingId ? "Guardar set" : "Aceptar set"}
@@ -449,10 +460,21 @@ export function SinglesResultsPanel({
             </div>
           </div>
 
+          {players.length < 2 ? (
+            <p className="text-[0.85rem] text-muted">
+              Falta otro asistente con Voy para poder guardar.
+            </p>
+          ) : null}
           {error ? <p className="text-[0.9rem] text-danger">{error}</p> : null}
 
           <FormActions
             pending={pending}
+            canSubmit={
+              players.length >= 2 &&
+              Boolean(gameDraft.player1Id) &&
+              Boolean(gameDraft.player2Id) &&
+              gameDraft.player1Id !== gameDraft.player2Id
+            }
             editing={Boolean(editingId)}
             onCancel={resetForm}
             submitLabel={editingId ? "Guardar game" : "Aceptar game"}
@@ -538,11 +560,13 @@ function PlayerSelects({
 
 function FormActions({
   pending,
+  canSubmit,
   editing,
   onCancel,
   submitLabel,
 }: {
   pending: boolean;
+  canSubmit: boolean;
   editing: boolean;
   onCancel: () => void;
   submitLabel: string;
@@ -559,7 +583,7 @@ function FormActions({
       </button>
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || !canSubmit}
         className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-ball py-3 text-[0.95rem] font-semibold text-on-ball disabled:opacity-60"
       >
         {pending ? (
