@@ -50,6 +50,7 @@ No subas solo `/web` al repo: conviene mantener `bot/` y `docs/` juntos.
 ## Documentación
 
 1. [Visión del producto](docs/VISION.md) — qué construimos y por qué  
-2. [Modelo de dominio](docs/DOMAIN.md) — sesiones, RSVP, financiador, deudas, rankings  
+2. [Modelo de dominio](docs/DOMAIN.md) — sesiones, RSVP, financiador, deudas, Games/Sets  
 3. [Arquitectura](docs/ARCHITECTURE.md) — stack, datos, despliegue  
-4. [AGENTS.md](AGENTS.md) — reglas y contexto para agentes de código  
+4. [Testing](docs/TESTING.md) — Vitest en módulos puros (qué sí / qué no)  
+5. [AGENTS.md](AGENTS.md) — reglas y contexto para agentes de código  

@@ -16,8 +16,8 @@ Stack actual: **Next.js + TypeScript + Tailwind** en **Vercel**, con **Auth.js (
 
 1. **Coordinación de asistencia** — Alguien reserva una fecha/hora; el resto marca si asiste. Todos ven la lista.
 2. **Dinero de la cancha** — Quien paga al municipio aparece como **financiador**. El costo se reparte entre asistentes; el resto queda en deuda con el financiador hasta saldar.
-3. **Resultados** — Registrar puntajes de los matches de esa sesión.
-4. **Rankings** — Dos tablas: **singles** (prioridad) y **dobles**, derivadas de esos resultados.
+3. **Resultados** — Registrar **Games** sueltos (quién ganó) y **Sets** (marcador tipo 6-4) en esa fecha, sin doble conteo.
+4. **Rankings** — Singles con pestañas Games / Sets; dobles solo Sets. Prioridad UX: singles.
 5. **Canchas libres (opcional)** — El bot de Miraflores alimenta un snapshot en Neon para ver horarios disponibles en Fechas.
 
 ## Flujos principales (MVP)
@@ -42,9 +42,9 @@ Con N asistentes: `costo / N` por cabeza. El financiador ya “pagó” su parte
 
 Más adelante: marcar deudas como pagadas, saldos netos entre personas, historial.
 
-### 4. Matches y rankings
+### 4. Resultados y rankings
 
-Tras (o durante) la sesión se cargan resultados (singles y/o dobles). Los rankings se recalculan a partir de esos resultados. El ranking de **singles** es el más visible / importante.
+Tras (o durante) la sesión se cargan Games y/o Sets. Los rankings se calculan on-read por unidad (`game` vs `set`). El ranking de **singles** es el más visible / importante.
 
 ## Fuera de alcance (por ahora)
 

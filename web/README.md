@@ -23,9 +23,13 @@ Abre [http://localhost:3000](http://localhost:3000) → Continuar con Google.
 |---------|-----|
 | `npm run dev` | Desarrollo |
 | `npm run build` | `prisma generate` + build |
+| `npm test` | Unit tests (Vitest, dominio) |
+| `npm run test:watch` | Vitest en watch |
 | `npm run db:migrate` | Migraciones |
 | `npm run db:studio` | Prisma Studio |
 | `node scripts/generate-icons.mjs` | Regenerar iconos PWA |
+
+Tests: solo módulos puros por ahora — ver [`../docs/TESTING.md`](../docs/TESTING.md).
 
 ## Rutas principales
 
@@ -36,9 +40,12 @@ Abre [http://localhost:3000](http://localhost:3000) → Continuar con Google.
 | `/grupos/nuevo` | Crear grupo |
 | `/join/[code]` | Unirse por invite (+ password si privado) |
 | `/grupos/[slug]` | Hub Fechas + canchas libres (global) |
-| `/grupos/[slug]/sessions/*` | Crear / detalle, RSVP, matches |
-| `/grupos/[slug]/rankings/*` | Rankings singles / dobles |
+| `/grupos/[slug]/sessions/*` | Crear / detalle, RSVP, resultados, chat |
+| `/grupos/[slug]/rankings/singles` | Ranking Games \| Sets |
+| `/grupos/[slug]/rankings/doubles` | Ranking Sets (dobles) |
 | `/grupos/[slug]/deudas` | Saldos del grupo |
+| `/grupos/[slug]/ajustes` | Salir / editar / borrar grupo |
+| `/ajustes` | Cuenta (borrar cuenta) |
 
 ## Diseño
 
