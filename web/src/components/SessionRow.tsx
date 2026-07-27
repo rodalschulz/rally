@@ -35,15 +35,13 @@ export function SessionRow({
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <div className="w-12 shrink-0 text-center">
-        <p className="flex items-baseline justify-center gap-1 leading-none">
-          <span className="text-[1.35rem] font-semibold tracking-[-0.03em] text-ink">
-            {dateParts.day}
-          </span>
-          <span className="text-[0.7rem] font-medium text-muted">
-            {dateParts.month}
-          </span>
+        <p className="text-[1.35rem] font-semibold leading-none tracking-[-0.03em] text-ink">
+          {dateParts.day}
         </p>
         <p className="mt-1 text-[0.7rem] font-medium leading-none text-muted">
+          {dateParts.month}
+        </p>
+        <p className="mt-0.5 text-[0.7rem] font-medium leading-none text-muted">
           {dateParts.weekday}
         </p>
       </div>
