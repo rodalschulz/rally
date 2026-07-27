@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
+import { canSettleDebt } from "@/lib/debts/permissions";
 import { netBalances } from "@/lib/domain/split";
 import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
 import { settleDebtAction } from "@/lib/actions/sessions";
@@ -39,8 +40,8 @@ export default async function DebtsPage({
           Deudas
         </h1>
         <p className="mt-1 max-w-[36ch] text-[0.95rem] text-muted">
-          Cada deuda pertenece a una fecha. Positivo = te deben. Negativo =
-          debes.
+          Cada deuda pertenece a una fecha. Saldar solo el acreedor, y solo
+          cuando esa fecha ya pasó. Positivo = te deben. Negativo = debes.
         </p>
       </section>
 
@@ -100,9 +101,24 @@ export default async function DebtsPage({
       </section>
 
       <section>
-        <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Abiertas
-        </h2>
+        <div className="mb-2 flex items-center gap-1.5">
+          <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+            Abiertas
+          </h2>
+          <details className="relative">
+            <summary
+              className="flex size-6 cursor-pointer list-none items-center justify-center rounded-full text-muted transition hover:bg-mist-2 hover:text-ink [&::-webkit-details-marker]:hidden"
+              aria-label="Cómo saldar una deuda"
+            >
+              <InfoIcon />
+            </summary>
+            <p className="absolute left-0 top-full z-10 mt-1.5 w-[16.5rem] rounded-xl bg-sand px-3 py-2.5 text-[0.8rem] leading-snug text-muted shadow-sm ring-1 ring-ink/8">
+              Solo quien recibe el pago puede{" "}
+              <span className="font-medium text-ink">Saldar</span>, y recién
+              cuando esa fecha ya pasó y los asistentes fueron confirmados.
+            </p>
+          </details>
+        </div>
         {open.length === 0 ? (
           <p className="text-[0.95rem] text-muted">Nadie se debe nada.</p>
         ) : (
@@ -139,7 +155,11 @@ export default async function DebtsPage({
                       <span className="font-medium tabular-nums text-ink">
                         {formatSoles(d.amount)}
                       </span>
-                      {me === d.toPlayerId ? (
+                      {canSettleDebt({
+                        creditorId: d.toPlayerId,
+                        userId: me,
+                        sessionStartsAt: d.sessionStartsAt,
+                      }) ? (
                         <form action={settleDebtAction}>
                           <input type="hidden" name="debtId" value={d.id} />
                           <PendingSubmitButton
@@ -182,5 +202,20 @@ function Stat({
         {value}
       </p>
     </div>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M12 10.5v6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="7.25" r="1" fill="currentColor" />
+    </svg>
   );
 }

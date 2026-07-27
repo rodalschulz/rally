@@ -106,7 +106,11 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 | `status` | `open` \| `settled` |
 | `settledAt` | Opcional |
 
-Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle. **Saldar** solo lo puede el acreedor (`toUserId`), al confirmar que le pagaron; el deudor no.
+Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle.
+
+**Saldar:** solo el acreedor (`toUserId`), y solo cuando la fecha ya es pasada (misma regla que el hub: ventana de resultados cerrada). El deudor no puede saldar. Así se evita confirmar un pago mientras el RSVP todavía puede cambiar.
+
+**Sync al cambiar Voy / costo / financiador** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”). Módulo: `web/src/lib/debts/reconcile.ts`.
 
 Fórmula base (financiador asiste, N asistentes `going`):
 

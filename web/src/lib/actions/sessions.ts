@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { actionErrorMessage } from "@/lib/action-errors";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
+import { canSettleDebt } from "@/lib/debts/permissions";
 import { prisma } from "@/lib/db";
 import { getMembership } from "@/lib/groups";
 import {
@@ -264,9 +265,18 @@ export async function settleDebtAction(formData: FormData) {
   if (!debt) throw new Error("Deuda no encontrada");
   await requireMemberOfGroup(debt.playSession.groupId, userId);
 
-  // Only the creditor confirms payment was received.
-  if (debt.toUserId !== userId) {
-    throw new Error("Solo quien recibe el pago puede marcar la deuda como saldada");
+  if (
+    !canSettleDebt({
+      creditorId: debt.toUserId,
+      userId,
+      sessionStartsAt: debt.playSession.startsAt,
+    })
+  ) {
+    throw new Error(
+      debt.toUserId !== userId
+        ? "Solo quien recibe el pago puede marcar la deuda como saldada"
+        : "Solo se puede saldar cuando la fecha ya pasó",
+    );
   }
   if (debt.status !== "open") {
     throw new Error("Esta deuda ya está saldada");

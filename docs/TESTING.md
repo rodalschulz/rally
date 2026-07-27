@@ -27,6 +27,9 @@ npm run test:watch
 | `lib/domain/split.ts` | Reparto, regalo de cancha, saldos netos |
 | `lib/sessions/windows.ts` | Plazos de chat, resultados y “fecha pasada” en hub |
 | `lib/sessions/chat.ts` | Quién puede postear + límites de cuerpo |
+| `lib/sessions/permissions.ts` | Borrar/editar/RSVP en fechas pasadas |
+| `lib/debts/permissions.ts` | Saldar solo acreedor + fecha pasada |
+| `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 
 ## Qué no (aún)
 
