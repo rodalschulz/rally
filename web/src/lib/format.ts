@@ -69,14 +69,22 @@ export function formatSessionChip(iso: string): string {
   return `${shortWeekday(d)} ${dayMonth.format(d)}`;
 }
 
-/** Compact list chip: weekday + month under the day number (e.g. "Vie · Jul."). */
-export function formatSessionListSub(iso: string): string {
+/** Parts for session list date column: day + month on one line, weekday below. */
+export function formatSessionListParts(iso: string): {
+  day: number;
+  month: string;
+  weekday: string;
+} {
   const d = new Date(iso);
   const month = new Intl.DateTimeFormat("es-PE", {
     ...dateOpts,
     month: "short",
   }).format(d);
-  return `${shortWeekday(d)} · ${capitalize(month).replace(/\.$/, "")}`;
+  return {
+    day: sessionDayOfMonth(iso),
+    month: capitalize(month).replace(/\.$/, ""),
+    weekday: shortWeekday(d),
+  };
 }
 
 function shortWeekday(d: Date): string {

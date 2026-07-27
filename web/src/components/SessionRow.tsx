@@ -1,11 +1,10 @@
 import Link from "next/link";
 import type { Attendance, Player, Session } from "@/lib/domain/types";
 import {
-  formatSessionListSub,
+  formatSessionListParts,
   formatSoles,
   formatSessionWhen,
   relativeDayLabel,
-  sessionDayOfMonth,
 } from "@/lib/format";
 import { isSessionPast } from "@/lib/sessions/windows";
 import { PlayerAvatar } from "./PlayerAvatar";
@@ -27,6 +26,7 @@ export function SessionRow({
   const rel = relativeDayLabel(session.startsAt);
   const past =
     session.status === "completed" || isSessionPast(session.startsAt);
+  const dateParts = formatSessionListParts(session.startsAt);
 
   return (
     <Link
@@ -35,11 +35,16 @@ export function SessionRow({
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <div className="w-12 shrink-0 text-center">
-        <p className="text-[1.35rem] font-semibold leading-none tracking-[-0.03em] text-ink">
-          {sessionDayOfMonth(session.startsAt)}
+        <p className="flex items-baseline justify-center gap-1 leading-none">
+          <span className="text-[1.35rem] font-semibold tracking-[-0.03em] text-ink">
+            {dateParts.day}
+          </span>
+          <span className="text-[0.7rem] font-medium text-muted">
+            {dateParts.month}
+          </span>
         </p>
-        <p className="mt-1 text-[0.65rem] font-medium leading-tight text-muted">
-          {formatSessionListSub(session.startsAt)}
+        <p className="mt-1 text-[0.7rem] font-medium leading-none text-muted">
+          {dateParts.weekday}
         </p>
       </div>
 

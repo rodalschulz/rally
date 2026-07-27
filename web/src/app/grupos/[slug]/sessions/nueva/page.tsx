@@ -26,7 +26,7 @@ export default async function NewSessionPage({
         <p className="mt-1 text-[0.95rem] text-muted">
           Quedas como financiador y con asistencia “Voy”. Cada fecha dura{" "}
           <span className="font-medium text-ink">1 hora</span>. Si reservaste
-          más, creá una fecha por cada hora (con el costo de esa hora).
+          más, crea una fecha por cada hora (con el costo de esa hora).
         </p>
       </section>
 
