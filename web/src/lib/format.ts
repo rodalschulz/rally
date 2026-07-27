@@ -124,6 +124,8 @@ export function sessionDayOfMonth(iso: string): number {
   return appZonedParts(iso).day;
 }
 
+/** Chat timestamp: date + time in America/Lima (e.g. "27 jul. · 16:05"). */
 export function formatChatTime(iso: string): string {
-  return chatTimeFmt.format(new Date(iso));
+  const d = new Date(iso);
+  return `${dayMonth.format(d)} · ${chatTimeFmt.format(d)}`;
 }
