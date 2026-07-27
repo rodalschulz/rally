@@ -28,6 +28,7 @@ import {
   canDeletePlaySession,
   canEditPlaySession,
 } from "@/lib/sessions/permissions";
+import { userIsAppAdmin } from "@/lib/admin";
 import { isSessionGamesOpen } from "@/lib/sessions/windows";
 
 export const dynamic = "force-dynamic";
@@ -44,10 +45,11 @@ export default async function SessionDetailPage({
   const userId = group.membership.userId;
   const authSession = await getSession();
 
-  const [row, allPlayers, chatMessages] = await Promise.all([
+  const [row, allPlayers, chatMessages, isAppAdmin] = await Promise.all([
     getPlaySession(id, group.id),
     listGroupPlayers(group.id),
     listSessionChatMessages(id),
+    userIsAppAdmin(userId),
   ]);
   if (!row) redirect("/");
 
@@ -79,6 +81,7 @@ export default async function SessionDetailPage({
   const canEdit = canEditPlaySession(
     { createdById: session.createdById, startsAt: startsAtDate },
     userId,
+    { isAppAdmin },
   );
   const canDelete = canDeletePlaySession(
     {
@@ -87,7 +90,10 @@ export default async function SessionDetailPage({
       startsAt: startsAtDate,
     },
     userId,
-    { isGroupOwner: group.membership.role === "owner" },
+    {
+      isGroupOwner: group.membership.role === "owner",
+      isAppAdmin,
+    },
   );
   const myAtt = sessionAtt.find((a) => a.playerId === userId)?.status;
   const chatOpen = isSessionChatOpen(startsAtDate);

@@ -22,9 +22,10 @@ Leer antes de implementar features de producto:
 3. **No commitear** `.env` (ni el de `bot/`). Usar `.env.example`. No commitear `bot/sync.log`.
 4. **MVP primero:** grupos + asistencia + financiador + split de deudas + resultados + rankings. Sin pagos online reales.
 5. **Singles ranking > doubles** en prioridad de UX y de implementación. Sets no expanden a Games en ranking.
-6. Preferir lógica de negocio en módulos puros (`lib/domain`, `lib/ranking`, `lib/sessions`, `lib/debts`, `lib/groups`) testeables, no solo en componentes React. Ver [`docs/TESTING.md`](docs/TESTING.md).
+6. Preferir lógica de negocio en módulos puros (`lib/domain`, `lib/ranking`, `lib/sessions`, `lib/debts`, `lib/groups`, `lib/admin`) testeables, no solo en componentes React. Ver [`docs/TESTING.md`](docs/TESTING.md).
 7. Si una decisión de producto no está en `docs/`, preguntar o documentarla en `docs/` antes de inventar comportamiento silencioso.
 8. Coordinación es **por grupo** (membresía). Root = discovery de grupos públicos + mis grupos. Canchas libres son **globales**.
+9. **Admin de app** (`User.isAdmin`) ≠ owner de grupo. Privilegios: editar/borrar fechas y saldar deudas pasadas; no implica gestionar ajustes del grupo.
 
 ## Dónde tocar código
 

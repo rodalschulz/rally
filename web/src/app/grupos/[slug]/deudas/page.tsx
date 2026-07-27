@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
 import { canSettleDebt } from "@/lib/debts/permissions";
+import { userIsAppAdmin } from "@/lib/admin";
 import { netBalances } from "@/lib/domain/split";
 import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
 import { settleDebtAction } from "@/lib/actions/sessions";
@@ -20,9 +21,10 @@ export default async function DebtsPage({
   const group = await requireGroupMember(slug);
   const me = group.membership.userId;
 
-  const [debts, players] = await Promise.all([
+  const [debts, players, isAppAdmin] = await Promise.all([
     listAllDebts(group.id),
     listGroupPlayers(group.id),
+    userIsAppAdmin(me),
   ]);
   const balances = netBalances(
     debts,
@@ -113,7 +115,7 @@ export default async function DebtsPage({
               <InfoIcon />
             </summary>
             <p className="absolute left-0 top-full z-10 mt-1.5 w-[16.5rem] rounded-xl bg-sand px-3 py-2.5 text-[0.8rem] leading-snug text-muted shadow-sm ring-1 ring-ink/8">
-              Solo quien recibe el pago puede{" "}
+              Solo quien recibe el pago (o un admin) puede{" "}
               <span className="font-medium text-ink">Saldar</span>, y recién
               cuando esa fecha ya pasó y los asistentes fueron confirmados.
             </p>
@@ -159,6 +161,7 @@ export default async function DebtsPage({
                         creditorId: d.toPlayerId,
                         userId: me,
                         sessionStartsAt: d.sessionStartsAt,
+                        isAppAdmin,
                       }) ? (
                         <form action={settleDebtAction}>
                           <input type="hidden" name="debtId" value={d.id} />

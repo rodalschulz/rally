@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { updateProfileAction } from "@/lib/actions/profile";
+import { userIsAppAdmin } from "@/lib/admin";
 import { getSession } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 
@@ -12,6 +13,7 @@ export const metadata = { title: "Ajustes" };
 export default async function UserSettingsPage() {
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
+  const isAppAdmin = await userIsAppAdmin(session.user.id);
 
   return (
     <AppShell title="Cuenta">
@@ -22,6 +24,16 @@ export default async function UserSettingsPage() {
         <p className="mt-1 text-[0.95rem] text-muted">
           Tu perfil en rally.
         </p>
+        {isAppAdmin ? (
+          <p className="mt-3 rounded-xl bg-sand px-3 py-2.5 text-[0.85rem] text-ink ring-1 ring-ink/8">
+            <span className="font-medium">Admin de la app</span>
+            <span className="text-muted">
+              {" "}
+              · puedes editar/borrar fechas y saldar deudas de fechas pasadas
+              en los grupos donde eres miembro.
+            </span>
+          </p>
+        ) : null}
       </section>
 
       <form action={updateProfileAction} className="animate-rise space-y-4">

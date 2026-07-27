@@ -143,7 +143,8 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | ¿Financiador cuenta en el split si no asiste? | Propuesta en DOMAIN.md; confirmar con el grupo |
 | Monorepo tool (pnpm / Turborepo) | No necesario por ahora |
 | Roles granulares / kick / billing | Fuera de alcance MVP multi-grupo |
-| Fecha pasada | Solo lectura; borrar solo `GroupMember.role = owner` |
+| Fecha pasada | Solo lectura para miembros; admin de app puede editar/borrar; owner puede borrar |
+| Admin de app (`User.isAdmin`) | Editar/borrar cualquier fecha; saldar cualquier deuda pasada (como miembro) |
 
 ## Orden de implementación (histórico / pendientes)
 

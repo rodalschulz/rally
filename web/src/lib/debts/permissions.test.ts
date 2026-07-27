@@ -40,5 +40,30 @@ describe("canSettleDebt", () => {
         duringResults,
       ),
     ).toBe(false);
+    expect(
+      canSettleDebt(
+        {
+          creditorId: "fin",
+          userId: "admin",
+          sessionStartsAt: startsAt,
+          isAppAdmin: true,
+        },
+        duringResults,
+      ),
+    ).toBe(false);
+  });
+
+  it("allows app admin to settle any debt once past", () => {
+    expect(
+      canSettleDebt(
+        {
+          creditorId: "fin",
+          userId: "admin",
+          sessionStartsAt: startsAt,
+          isAppAdmin: true,
+        },
+        afterPast,
+      ),
+    ).toBe(true);
   });
 });

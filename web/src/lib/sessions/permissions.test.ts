@@ -40,7 +40,7 @@ describe("canDeletePlaySession", () => {
     ).toBe(false);
   });
 
-  it("allows only group owner once the fecha is past", () => {
+  it("allows group owner once past; creator alone cannot", () => {
     expect(
       canDeletePlaySession(row, "creator", {
         isGroupOwner: false,
@@ -54,13 +54,49 @@ describe("canDeletePlaySession", () => {
       }),
     ).toBe(true);
   });
+
+  it("allows app admin for upcoming and past fechas", () => {
+    expect(
+      canDeletePlaySession(row, "app-admin", {
+        isGroupOwner: false,
+        isAppAdmin: true,
+        now: beforeStart,
+      }),
+    ).toBe(true);
+    expect(
+      canDeletePlaySession(row, "app-admin", {
+        isGroupOwner: false,
+        isAppAdmin: true,
+        now: afterPast,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("canEditPlaySession", () => {
   it("allows creator only while not past", () => {
-    expect(canEditPlaySession(row, "creator", duringResults)).toBe(true);
-    expect(canEditPlaySession(row, "creator", afterPast)).toBe(false);
-    expect(canEditPlaySession(row, "financier", beforeStart)).toBe(false);
+    expect(
+      canEditPlaySession(row, "creator", { now: duringResults }),
+    ).toBe(true);
+    expect(canEditPlaySession(row, "creator", { now: afterPast })).toBe(false);
+    expect(
+      canEditPlaySession(row, "financier", { now: beforeStart }),
+    ).toBe(false);
+  });
+
+  it("allows app admin even when not creator or when past", () => {
+    expect(
+      canEditPlaySession(row, "app-admin", {
+        isAppAdmin: true,
+        now: beforeStart,
+      }),
+    ).toBe(true);
+    expect(
+      canEditPlaySession(row, "app-admin", {
+        isAppAdmin: true,
+        now: afterPast,
+      }),
+    ).toBe(true);
   });
 });
 

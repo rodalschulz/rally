@@ -18,7 +18,7 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 
 Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
 
-**Fechas pasadas (hub):** cuando cierra la ventana de resultados (`startsAt + 2 h`), la fecha es de solo lectura: nadie cambia asistencia, edita ni carga resultados. **Borrar** solo el **owner del grupo** (admin). Mientras no sea pasada: editar = creador; borrar = creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos resultados dejan de contar en el ranking.
+**Fechas pasadas (hub):** cuando cierra la ventana de resultados (`startsAt + 2 h`), la fecha es de solo lectura: nadie cambia asistencia, edita ni carga resultados. **Borrar** solo el **owner del grupo** o un **admin de app**. Mientras no sea pasada: editar = creador; borrar = creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos resultados dejan de contar en el ranking.
 
 **Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
 
@@ -37,6 +37,14 @@ Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grup
 ### Player (jugador / miembro)
 
 Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google OAuth + `displayName` / `shortName` (derivados del perfil). Scoped al grupo vía `GroupMember`.
+
+**Admin de app (`User.isAdmin`):** flag global, independiente del owner de un grupo. Privilegios (siempre como miembro del grupo):
+
+- Editar cualquier fecha (también pasadas), sin ser el creador  
+- Borrar cualquier fecha (próxima o pasada)  
+- Saldar cualquier deuda abierta de una fecha ya pasada  
+
+No sustituye al `GroupMember.role = owner` para ajustes del grupo (nombre, invite, borrar grupo).
 
 ### Session (sesión / fecha de cancha)
 
@@ -71,7 +79,7 @@ Duración de cancha asumida: **1 h** desde `startsAt`. Implementación: `web/src
 |---------|------------------|-----|
 | Chat | `now < startsAt + 30 min` | Escribir en el hilo (solo `going` / `maybe`) |
 | Resultados (Games/Sets) | `now < startsAt + 1 h + 60 min` | Agregar/editar/borrar resultados (solo `going`) |
-| Hub “Fechas Pasadas” | cuando cierra la ventana de resultados | Deja de listarse en Próximas; fecha solo lectura (salvo borrar por owner) |
+| Hub “Fechas Pasadas” | cuando cierra la ventana de resultados | Deja de listarse en Próximas; fecha solo lectura (salvo editar/borrar por admin de app; borrar también por owner) |
 
 **Ranking:** cuentan matches de fechas con `startsAt < now` (no espera a que cierre la ventana de resultados). Ver `listRankingMatches`.
 
@@ -108,7 +116,7 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 
 Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle.
 
-**Saldar:** solo el acreedor (`toUserId`), y solo cuando la fecha ya es pasada (misma regla que el hub: ventana de resultados cerrada). El deudor no puede saldar. Así se evita confirmar un pago mientras el RSVP todavía puede cambiar.
+**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Así se evita confirmar un pago mientras el RSVP todavía puede cambiar.
 
 **Sync al cambiar Voy / costo / financiador** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”). Módulo: `web/src/lib/debts/reconcile.ts`.
 

@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { actionErrorMessage } from "@/lib/action-errors";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { canSettleDebt } from "@/lib/debts/permissions";
+import { userIsAppAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { getMembership } from "@/lib/groups";
 import {
@@ -14,7 +15,7 @@ import {
   canDeletePlaySession,
   canEditPlaySession,
 } from "@/lib/sessions/permissions";
-import { isSessionGamesOpen } from "@/lib/sessions/windows";
+import { isSessionGamesOpen, isSessionPast } from "@/lib/sessions/windows";
 import {
   appZonedParts,
   fromAppZonedDateTime,
@@ -218,16 +219,18 @@ export async function updatePlaySessionAction(formData: FormData) {
   });
   if (!row) throw new Error("Fecha no encontrada");
   await requireMemberOfGroup(row.groupId, userId);
+  const isAppAdmin = await userIsAppAdmin(userId);
 
-  if (!canEditPlaySession(row, userId)) {
+  if (!canEditPlaySession(row, userId, { isAppAdmin })) {
     throw new Error(
       canChangeAttendance(row.startsAt)
-        ? "Solo el creador puede editar esta fecha"
-        : "Esta fecha ya pasó — no se puede editar",
+        ? "Solo el creador o un admin puede editar esta fecha"
+        : "Esta fecha ya pasó — solo un admin puede editarla",
     );
   }
 
-  const fields = parseSessionFields(formData, userId);
+  // Always anchor invite list to the original creator, not the editor.
+  const fields = parseSessionFields(formData, row.createdById);
 
   await prisma.playSession.update({
     where: { id: playSessionId },
@@ -264,18 +267,20 @@ export async function settleDebtAction(formData: FormData) {
   });
   if (!debt) throw new Error("Deuda no encontrada");
   await requireMemberOfGroup(debt.playSession.groupId, userId);
+  const isAppAdmin = await userIsAppAdmin(userId);
 
   if (
     !canSettleDebt({
       creditorId: debt.toUserId,
       userId,
       sessionStartsAt: debt.playSession.startsAt,
+      isAppAdmin,
     })
   ) {
     throw new Error(
-      debt.toUserId !== userId
-        ? "Solo quien recibe el pago puede marcar la deuda como saldada"
-        : "Solo se puede saldar cuando la fecha ya pasó",
+      !isSessionPast(debt.playSession.startsAt)
+        ? "Solo se puede saldar cuando la fecha ya pasó"
+        : "Solo el acreedor o un admin puede marcar la deuda como saldada",
     );
   }
   if (debt.status !== "open") {
@@ -302,11 +307,12 @@ export async function deletePlaySessionAction(formData: FormData) {
   if (!row) throw new Error("Fecha no encontrada");
   const membership = await requireMemberOfGroup(row.groupId, userId);
   const isGroupOwner = membership.role === "owner";
+  const isAppAdmin = await userIsAppAdmin(userId);
 
-  if (!canDeletePlaySession(row, userId, { isGroupOwner })) {
+  if (!canDeletePlaySession(row, userId, { isGroupOwner, isAppAdmin })) {
     throw new Error(
       !canChangeAttendance(row.startsAt)
-        ? "Solo el admin del grupo puede borrar una fecha pasada"
+        ? "Solo el admin del grupo o un admin de la app puede borrar una fecha pasada"
         : "No tienes permiso para borrar esta fecha",
     );
   }

@@ -63,6 +63,8 @@ model User {
   displayName   String?
   shortName     String?
   hue           Int       @default(160)
+  /** App-wide admin (not group owner). */
+  isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

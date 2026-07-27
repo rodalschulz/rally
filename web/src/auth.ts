@@ -15,21 +15,36 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.sub = user.id;
         const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
         token.displayName =
-          dbUser?.displayName || user.name || user.email?.split("@")[0] || "Jugador";
+          dbUser?.displayName ||
+          user.name ||
+          user.email?.split("@")[0] ||
+          "Jugador";
         token.shortName =
           dbUser?.shortName || deriveShortName(String(token.displayName));
         token.hue =
           dbUser?.hue ?? hueFromString(user.email ?? user.id ?? "user");
+        token.isAdmin = Boolean(dbUser?.isAdmin);
       }
       if (trigger === "update" && token.sub) {
-        const dbUser = await prisma.user.findUnique({ where: { id: token.sub } });
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+        });
         if (dbUser) {
           token.displayName =
             dbUser.displayName || dbUser.name || "Jugador";
           token.shortName =
             dbUser.shortName || deriveShortName(String(token.displayName));
           token.hue = dbUser.hue;
+          token.isAdmin = Boolean(dbUser.isAdmin);
         }
+      }
+      // Existing sessions before isAdmin existed: load once into the JWT.
+      if (token.sub && token.isAdmin === undefined) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { isAdmin: true },
+        });
+        token.isAdmin = Boolean(dbUser?.isAdmin);
       }
       return token;
     },
@@ -39,6 +54,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         session.user.displayName = String(token.displayName ?? "Jugador");
         session.user.shortName = String(token.shortName ?? "J");
         session.user.hue = Number(token.hue ?? 160);
+        session.user.isAdmin = Boolean(token.isAdmin);
       }
       return session;
     },
