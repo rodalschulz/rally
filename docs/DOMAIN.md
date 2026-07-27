@@ -106,7 +106,7 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 | `status` | `open` \| `settled` |
 | `settledAt` | Opcional |
 
-Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle.
+Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle. **Saldar** solo lo puede el acreedor (`toUserId`), al confirmar que le pagaron; el deudor no.
 
 Fórmula base (financiador asiste, N asistentes `going`):
 

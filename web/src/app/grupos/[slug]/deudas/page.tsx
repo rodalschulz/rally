@@ -139,7 +139,7 @@ export default async function DebtsPage({
                       <span className="font-medium tabular-nums text-ink">
                         {formatSoles(d.amount)}
                       </span>
-                      {(me === d.toPlayerId || me === d.fromPlayerId) && (
+                      {me === d.toPlayerId ? (
                         <form action={settleDebtAction}>
                           <input type="hidden" name="debtId" value={d.id} />
                           <PendingSubmitButton
@@ -149,7 +149,7 @@ export default async function DebtsPage({
                             Saldar
                           </PendingSubmitButton>
                         </form>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </li>
