@@ -144,7 +144,7 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Monorepo tool (pnpm / Turborepo) | No necesario por ahora |
 | Roles granulares / kick / billing | Fuera de alcance MVP multi-grupo |
 | Fecha pasada | Solo lectura para miembros; admin de app puede editar/borrar; owner puede borrar |
-| Admin de app (`User.isAdmin`) | Editar/borrar cualquier fecha; saldar cualquier deuda pasada (como miembro) |
+| Admin de app (`User.isAdmin`) | Editar/borrar cualquier fecha; cambiar RSVP de miembros; saldar deudas pasadas (como miembro) |
 
 ## Orden de implementación (histórico / pendientes)
 

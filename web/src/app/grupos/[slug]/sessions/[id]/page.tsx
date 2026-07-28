@@ -155,6 +155,7 @@ export default async function SessionDetailPage({
         maxAttendees={session.maxAttendees}
         allowedUserIds={session.allowedUserIds}
         canChange={attendanceOpen}
+        isAppAdmin={isAppAdmin}
       />
 
       <section className="animate-rise mt-8">

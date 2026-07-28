@@ -29,8 +29,8 @@ export default async function UserSettingsPage() {
             <span className="font-medium">Admin de la app</span>
             <span className="text-muted">
               {" "}
-              · puedes editar/borrar fechas y saldar deudas de fechas pasadas
-              en los grupos donde eres miembro.
+              · puedes editar/borrar fechas, cambiar asistencias y saldar
+              deudas de fechas pasadas en los grupos donde eres miembro.
             </span>
           </p>
         ) : null}

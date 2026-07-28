@@ -42,6 +42,7 @@ Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google
 
 - Editar cualquier fecha (también pasadas), sin ser el creador  
 - Borrar cualquier fecha (próxima o pasada)  
+- Cambiar la asistencia (Voy / Quizás / No voy / Pendiente) de cualquier miembro en una fecha (también pasadas; recalcula deudas)  
 - Saldar cualquier deuda abierta de una fecha ya pasada  
 
 No sustituye al `GroupMember.role = owner` para ajustes del grupo (nombre, invite, borrar grupo).
@@ -93,6 +94,8 @@ Relación Player ↔ Session (`userId` + `playSessionId`):
 | `updatedAt` | |
 
 Regla MVP: entran al **reparto de costo** solo los `going`.
+
+**Admin en UI:** la lista de jugadores muestra el mismo badge que un miembro normal; al tocar el estado se abre un select (Pendiente / Voy / Quizás / No voy) y un confirm antes de guardar.
 
 **Default (simple):**
 

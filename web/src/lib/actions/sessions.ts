@@ -43,25 +43,49 @@ async function groupPaths(groupId: string) {
 export async function setAttendanceAction(
   playSessionId: string,
   status: AttendanceStatus,
+  /** When set by an app admin, change this member's RSVP instead of the actor's. */
+  targetUserId?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const userId = await requireUserId();
+    const actorId = await requireUserId();
     const session = await prisma.playSession.findUnique({
       where: { id: playSessionId },
       include: { attendances: true },
     });
     if (!session) return { ok: false, error: "Fecha no encontrada" };
-    await requireMemberOfGroup(session.groupId, userId);
+    await requireMemberOfGroup(session.groupId, actorId);
 
-    if (!canChangeAttendance(session.startsAt)) {
+    const isAppAdmin = await userIsAppAdmin(actorId);
+    const subjectId =
+      targetUserId && targetUserId !== actorId ? targetUserId : actorId;
+
+    if (subjectId !== actorId && !isAppAdmin) {
+      return {
+        ok: false,
+        error: "Solo un admin puede cambiar la asistencia de otros",
+      };
+    }
+
+    if (!canChangeAttendance(session.startsAt) && !isAppAdmin) {
       return {
         ok: false,
         error: "Esta fecha ya pasó — la asistencia no se puede cambiar",
       };
     }
 
+    if (subjectId !== actorId) {
+      const subjectMember = await getMembership(session.groupId, subjectId);
+      if (!subjectMember) {
+        return { ok: false, error: "Ese usuario no es miembro del grupo" };
+      }
+    }
+
     const allowed = session.allowedUserIds ?? [];
-    if (allowed.length > 0 && !allowed.includes(userId)) {
+    if (
+      allowed.length > 0 &&
+      !allowed.includes(subjectId) &&
+      !isAppAdmin
+    ) {
       return {
         ok: false,
         error: "No estás en la lista de asistentes de esta fecha",
@@ -70,7 +94,7 @@ export async function setAttendanceAction(
 
     if (status === "going") {
       const alreadyGoing = session.attendances.some(
-        (a) => a.userId === userId && a.status === "going",
+        (a) => a.userId === subjectId && a.status === "going",
       );
       if (!alreadyGoing && session.maxAttendees != null) {
         const goingCount = session.attendances.filter((a) => {
@@ -86,9 +110,9 @@ export async function setAttendanceAction(
 
     await prisma.attendance.upsert({
       where: {
-        playSessionId_userId: { playSessionId, userId },
+        playSessionId_userId: { playSessionId, userId: subjectId },
       },
-      create: { playSessionId, userId, status },
+      create: { playSessionId, userId: subjectId, status },
       update: { status },
     });
 

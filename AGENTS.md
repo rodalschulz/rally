@@ -25,7 +25,7 @@ Leer antes de implementar features de producto:
 6. Preferir lógica de negocio en módulos puros (`lib/domain`, `lib/ranking`, `lib/sessions`, `lib/debts`, `lib/groups`, `lib/admin`) testeables, no solo en componentes React. Ver [`docs/TESTING.md`](docs/TESTING.md).
 7. Si una decisión de producto no está en `docs/`, preguntar o documentarla en `docs/` antes de inventar comportamiento silencioso.
 8. Coordinación es **por grupo** (membresía). Root = discovery de grupos públicos + mis grupos. Canchas libres son **globales**.
-9. **Admin de app** (`User.isAdmin`) ≠ owner de grupo. Privilegios: editar/borrar fechas y saldar deudas pasadas; no implica gestionar ajustes del grupo.
+9. **Admin de app** (`User.isAdmin`) ≠ owner de grupo. Privilegios: editar/borrar fechas, cambiar RSVP de miembros y saldar deudas pasadas; no implica gestionar ajustes del grupo.
 
 ## Dónde tocar código
 
