@@ -1,13 +1,16 @@
 import Link from "next/link";
-import type { Attendance, Player, Session } from "@/lib/domain/types";
+import type { Player, Session } from "@/lib/domain/types";
 import {
   formatSessionListParts,
   formatSoles,
   formatSessionWhen,
   relativeDayLabel,
 } from "@/lib/format";
+import { goingFrom } from "@/lib/sessions/goingPlayers";
 import { isSessionPast } from "@/lib/sessions/windows";
 import { PlayerAvatar } from "./PlayerAvatar";
+
+export { goingFrom };
 
 export function SessionRow({
   session,
@@ -84,18 +87,4 @@ export function SessionRow({
       </span>
     </Link>
   );
-}
-
-export function goingFrom(
-  sessionId: string,
-  attendances: Attendance[],
-  players: Player[],
-): { players: Player[]; count: number } {
-  const ids = new Set(
-    attendances
-      .filter((a) => a.sessionId === sessionId && a.status === "going")
-      .map((a) => a.playerId),
-  );
-  const list = players.filter((p) => ids.has(p.id));
-  return { players: list, count: list.length };
 }
