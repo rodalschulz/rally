@@ -28,6 +28,7 @@ npm run test:watch
 | `lib/sessions/windows.ts` | Plazos de chat, resultados y “fecha pasada” en hub |
 | `lib/sessions/chat.ts` | Quién puede postear + límites de cuerpo |
 | `lib/sessions/permissions.ts` | Borrar/editar/RSVP en fechas pasadas |
+| `lib/sessions/goingPlayers.ts` | Orden de avatares going: creador + A–Z |
 | `lib/debts/permissions.ts` | Saldar solo acreedor + fecha pasada |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 

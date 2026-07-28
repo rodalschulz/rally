@@ -101,7 +101,12 @@ export default async function GroupHubPage({
             </p>
           ) : (
             upcoming.map((session, i) => {
-              const g = goingFrom(session.id, attendances, players);
+              const g = goingFrom(
+                session.id,
+                attendances,
+                players,
+                session.createdById,
+              );
               return (
                 <SessionRow
                   key={session.id}
@@ -133,7 +138,12 @@ export default async function GroupHubPage({
           </h2>
           <div className="overflow-hidden rounded-2xl bg-sand">
             {past.map((session, i) => {
-              const g = goingFrom(session.id, attendances, players);
+              const g = goingFrom(
+                session.id,
+                attendances,
+                players,
+                session.createdById,
+              );
               return (
                 <SessionRow
                   key={session.id}

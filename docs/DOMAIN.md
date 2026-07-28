@@ -95,6 +95,8 @@ Relación Player ↔ Session (`userId` + `playSessionId`):
 
 Regla MVP: entran al **reparto de costo** solo los `going`.
 
+**Orden de avatares en el listado de Fechas (hub):** solo `going`. Primero el **creador de la fecha** (`createdById`) si está en Voy; el resto A–Z por `displayName` (`es`). No usa owner del grupo ni financiador.
+
 **Admin en UI:** la lista de jugadores muestra el mismo badge que un miembro normal; al tocar el estado se abre un select (Pendiente / Voy / Quizás / No voy) y un confirm antes de guardar.
 
 **Default (simple):**
