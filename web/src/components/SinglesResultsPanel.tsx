@@ -236,6 +236,8 @@ export function SinglesResultsPanel({
           {local.map((m) => {
             const a = nameOf(labelPlayers, m.sideA[0]);
             const b = nameOf(labelPlayers, m.sideB[0]);
+            const winnerName = m.winnerSide === "A" ? a : b;
+            const loserName = m.winnerSide === "A" ? b : a;
             return (
               <li
                 key={m.id}
@@ -244,27 +246,37 @@ export function SinglesResultsPanel({
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="mb-1">{unitBadge(m.unit)}</div>
-                    <p className="text-[0.95rem]">
-                      <span
-                        className={
-                          m.winnerSide === "A"
-                            ? "font-medium text-ink"
-                            : "text-muted"
-                        }
-                      >
-                        {a}
-                      </span>
-                      <span className="mx-1.5 text-muted">vs</span>
-                      <span
-                        className={
-                          m.winnerSide === "B"
-                            ? "font-medium text-ink"
-                            : "text-muted"
-                        }
-                      >
-                        {b}
-                      </span>
-                    </p>
+                    {m.unit === "game" ? (
+                      <p className="text-[0.95rem] leading-snug">
+                        <span className="font-semibold text-ink">
+                          {winnerName}
+                        </span>
+                        <span className="text-muted"> ganó a </span>
+                        <span className="text-muted">{loserName}</span>
+                      </p>
+                    ) : (
+                      <p className="text-[0.95rem] leading-snug">
+                        <span
+                          className={
+                            m.winnerSide === "A"
+                              ? "font-semibold text-ink"
+                              : "text-muted"
+                          }
+                        >
+                          {a}
+                        </span>
+                        <span className="mx-1.5 text-muted">vs</span>
+                        <span
+                          className={
+                            m.winnerSide === "B"
+                              ? "font-semibold text-ink"
+                              : "text-muted"
+                          }
+                        >
+                          {b}
+                        </span>
+                      </p>
+                    )}
                   </div>
                   {m.unit === "set" ? (
                     <span className="shrink-0 text-[1.15rem] font-semibold tabular-nums tracking-tight text-ink">
@@ -430,16 +442,20 @@ export function SinglesResultsPanel({
 
           <div>
             <p className="mb-2 text-[0.8rem] text-muted">Ganó</p>
-            <div className="flex gap-2">
+            <div
+              className="flex gap-1 rounded-xl bg-mist-2 p-1"
+              role="group"
+              aria-label="Quién ganó el game"
+            >
               <button
                 type="button"
                 onClick={() =>
                   setGameDraft((d) => ({ ...d, winnerSide: "A" }))
                 }
-                className={`flex-1 rounded-xl py-3 text-[0.9rem] font-medium ${
+                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
                   gameDraft.winnerSide === "A"
-                    ? "bg-ball text-on-ball"
-                    : "bg-mist-2 text-ink"
+                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                    : "text-muted"
                 }`}
               >
                 {nameOf(players, gameDraft.player1Id)}
@@ -449,10 +465,10 @@ export function SinglesResultsPanel({
                 onClick={() =>
                   setGameDraft((d) => ({ ...d, winnerSide: "B" }))
                 }
-                className={`flex-1 rounded-xl py-3 text-[0.9rem] font-medium ${
+                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
                   gameDraft.winnerSide === "B"
-                    ? "bg-ball text-on-ball"
-                    : "bg-mist-2 text-ink"
+                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                    : "text-muted"
                 }`}
               >
                 {nameOf(players, gameDraft.player2Id)}
@@ -528,7 +544,11 @@ function PlayerSelects({
             <option value="">Sin asistentes</option>
           ) : (
             players.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option
+                key={p.id}
+                value={p.id}
+                disabled={Boolean(player2Id) && p.id === player2Id}
+              >
                 {p.displayName}
               </option>
             ))
@@ -547,7 +567,11 @@ function PlayerSelects({
             <option value="">Falta otro asistente</option>
           ) : (
             players.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option
+                key={p.id}
+                value={p.id}
+                disabled={Boolean(player1Id) && p.id === player1Id}
+              >
                 {p.displayName}
               </option>
             ))
