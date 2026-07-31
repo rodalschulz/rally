@@ -28,13 +28,15 @@ function compareMatches(a: Match, b: Match): number {
 
 /**
  * Classic Elo for singles, one ladder per unit. Sets do not expand into games.
- * `memberIds` seeds every group member at the initial rating (0–0) so the board
- * is never empty just because nobody has played yet.
+ * Only players with at least one result appear — except when the ladder has no
+ * results yet: then seed all `memberIds` at 1000 so the board is never empty.
+ * Sort: Elo desc, then display name (es), then playerId.
  */
 export function buildEloRanking(
   matches: Match[],
   unit: MatchUnit,
   memberIds: PlayerId[] = [],
+  displayNameById: ReadonlyMap<PlayerId, string> = new Map(),
 ): RankingRow[] {
   const k = ELO_K_BY_UNIT[unit];
   const filtered = matches
@@ -54,8 +56,6 @@ export function buildEloRanking(
     }
     return row;
   };
-
-  for (const id of memberIds) bump(id);
 
   const ratingOf = (id: PlayerId) => {
     bump(id);
@@ -87,9 +87,23 @@ export function buildEloRanking(
     l.points = Math.round(nextB);
   }
 
-  return [...stats.values()].sort((a, b) => {
+  const anyonePlayed = [...stats.values()].some((r) => r.played > 0);
+  // Nobody has played this ladder yet → show all members at 1000.
+  if (!anyonePlayed) {
+    for (const id of memberIds) bump(id);
+  }
+
+  const nameOf = (id: PlayerId) => displayNameById.get(id) ?? id;
+  const rows = anyonePlayed
+    ? [...stats.values()].filter((r) => r.played > 0)
+    : [...stats.values()];
+
+  return rows.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
-    if (b.wins !== a.wins) return b.wins - a.wins;
+    const byName = nameOf(a.playerId).localeCompare(nameOf(b.playerId), "es", {
+      sensitivity: "base",
+    });
+    if (byName !== 0) return byName;
     return a.playerId.localeCompare(b.playerId);
   });
 }

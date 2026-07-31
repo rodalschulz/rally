@@ -166,11 +166,11 @@ Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 
 Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras no suman).
 
-**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Todos los miembros del grupo aparecen con **1000** (0–0) hasta que jueguen; W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; desempate por wins, luego id. Games y Sets no se mezclan.
+**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Si nadie tiene resultados en el ladder, todos los miembros aparecen con **1000** (0–0); en cuanto hay al menos un resultado, solo figuran quienes ya jugaron. W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; lista ordenada por Elo desc, luego nombre (`es`). Games y Sets no se mezclan.
 
 **Dobles puntos** (`web/src/lib/ranking/simple.ts`): 3 pts / set; 0 por derrota; desempate por wins, luego id.
 
-**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar o borrar Games sueltos y Sets singles. Hacen falta dos jugadores distintos al confirmar. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
+**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar o borrar Games sueltos y Sets singles. Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
 
 **Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` mientras el chat esté abierto (`startsAt + 30 min`); después queda solo como registro. Cascade al borrar la fecha. Cuerpo máx. 500 chars.
 

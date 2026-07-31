@@ -31,20 +31,36 @@ describe("buildEloRanking", () => {
     ]);
   });
 
-  it("keeps unplayed members at 1000 after others play", () => {
+  it("sorts by Elo then display name when ratings tie", () => {
+    const names = new Map([
+      ["id-z", "Zeta"],
+      ["id-a", "Ana"],
+      ["id-m", "Marco"],
+    ]);
+    const rows = buildEloRanking([], "set", ["id-z", "id-m", "id-a"], names);
+    expect(rows.map((r) => r.playerId)).toEqual(["id-a", "id-m", "id-z"]);
+  });
+
+  it("sorts higher Elo above lower Elo regardless of name", () => {
+    const names = new Map([
+      ["a", "Ana"],
+      ["b", "Bruno"],
+    ]);
+    const matches: Match[] = [
+      match({ id: "1", sideA: ["b"], sideB: ["a"], winnerSide: "A" }),
+    ];
+    const rows = buildEloRanking(matches, "set", ["a", "b"], names);
+    expect(rows.map((r) => r.playerId)).toEqual(["b", "a"]);
+    expect(rows[0]!.points).toBeGreaterThan(rows[1]!.points);
+  });
+
+  it("hides unplayed members once anyone has a result", () => {
     const matches: Match[] = [
       match({ id: "1", unit: "set", winnerSide: "A" }),
     ];
     const rows = buildEloRanking(matches, "set", ["a", "b", "c"]);
-    const byId = Object.fromEntries(rows.map((r) => [r.playerId, r]));
-    expect(byId.c).toEqual({
-      playerId: "c",
-      played: 0,
-      wins: 0,
-      losses: 0,
-      points: ELO_INITIAL,
-    });
-    expect(rows).toHaveLength(3);
+    expect(rows.map((r) => r.playerId).sort()).toEqual(["a", "b"]);
+    expect(rows.every((r) => r.played > 0)).toBe(true);
   });
 
   it("updates ratings after a set win and ignores games / doubles", () => {
@@ -168,7 +184,7 @@ describe("buildEloRanking", () => {
     expect(byId.c.points).toBe(Math.round(rc));
   });
 
-  it("sorts by rating, then wins, then playerId", () => {
+  it("sorts by Elo when ratings diverge after play", () => {
     const matches: Match[] = [
       match({
         id: "1",
@@ -185,9 +201,14 @@ describe("buildEloRanking", () => {
         createdAt: "2026-01-01T15:00:00.000Z",
       }),
     ];
-    // z beats m, then a beats m (m is weaker) — a and z both 1–0;
-    // a faces a lower-rated m so gains less than z; z should rank above a.
-    const rows = buildEloRanking(matches, "set");
+    // z beats m, then a beats m (m is weaker) — a faces lower-rated m so
+    // gains less than z; z ranks above a by Elo.
+    const names = new Map([
+      ["a", "Ana"],
+      ["m", "Marco"],
+      ["z", "Zeta"],
+    ]);
+    const rows = buildEloRanking(matches, "set", [], names);
     expect(rows.map((r) => r.playerId)).toEqual(["z", "a", "m"]);
   });
 });

@@ -10,7 +10,11 @@ export function RankingTabs({
   const base = `/grupos/${slug}/rankings`;
   return (
     <div className="mb-4 flex gap-1 rounded-xl bg-mist-2 p-1">
-      <Tab href={`${base}/singles`} label="Singles" active={active === "singles"} />
+      <Tab
+        href={`${base}/singles?unit=game`}
+        label="Singles"
+        active={active === "singles"}
+      />
       <Tab href={`${base}/doubles`} label="Dobles" active={active === "doubles"} />
     </div>
   );

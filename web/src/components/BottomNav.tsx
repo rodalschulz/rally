@@ -86,7 +86,7 @@ function navItems(slug?: string): NavItem[] {
       key: "ranking",
       label: "Ranking",
       icon: RankIcon,
-      href: base ? `${base}/rankings/singles` : undefined,
+      href: base ? `${base}/rankings/singles?unit=game` : undefined,
       disabled: !base,
       isActive: (p) => !!base && p.startsWith(`${base}/rankings`),
     },

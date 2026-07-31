@@ -6,12 +6,15 @@ export function RankingList({
   playersById,
   emptyHint,
   scoreLabel = "pts",
+  playedLabel = "partidos",
 }: {
   rows: RankingRow[];
   playersById: Map<string, Player>;
   emptyHint: string;
   /** Column caption under the numeric score (e.g. pts / Elo). */
   scoreLabel?: string;
+  /** Noun after the played count (e.g. Games / Sets / partidos). */
+  playedLabel?: string;
 }) {
   if (rows.length === 0) {
     return (
@@ -41,7 +44,7 @@ export function RankingList({
                 {player.displayName}
               </p>
               <p className="text-[0.8rem] text-muted">
-                {row.wins}G · {row.losses}P · {row.played} partidos
+                {row.wins}G · {row.losses}P · {row.played} {playedLabel}
               </p>
             </div>
             <div className="text-right">
