@@ -30,7 +30,11 @@ export default async function SinglesRankingPage({
     listRankingMatches(group.id),
     listGroupPlayers(group.id),
   ]);
-  const rows = buildEloRanking(matches, unit);
+  const rows = buildEloRanking(
+    matches,
+    unit,
+    players.map((p) => p.id),
+  );
   const playersById = new Map(players.map((p) => [p.id, p]));
 
   return (
@@ -40,8 +44,9 @@ export default async function SinglesRankingPage({
           Singles
         </h1>
         <p className="mt-1 text-[0.85rem] text-muted">
-          Ranking Elo (parte en 1000). Games y Sets son ladders separados: un
-          set no suma como games. Solo cuentan resultados de fechas ya pasadas.
+          Ranking Elo (todos parten en 1000). Games y Sets son ladders
+          separados: un set no suma como games. Solo cuentan resultados de
+          fechas ya pasadas.
         </p>
       </section>
       <RankingTabs slug={slug} active="singles" />
@@ -50,11 +55,7 @@ export default async function SinglesRankingPage({
         rows={rows}
         playersById={playersById}
         scoreLabel="Elo"
-        emptyHint={
-          unit === "game"
-            ? "Todavía no hay games sueltos de fechas pasadas."
-            : "Todavía no hay sets de fechas pasadas."
-        }
+        emptyHint="Todavía no hay miembros en este grupo."
       />
     </>
   );

@@ -166,7 +166,7 @@ Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 
 Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras no suman).
 
-**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Inicial 1000; W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; desempate por wins, luego id. Games y Sets no se mezclan.
+**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Todos los miembros del grupo aparecen con **1000** (0–0) hasta que jueguen; W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; desempate por wins, luego id. Games y Sets no se mezclan.
 
 **Dobles puntos** (`web/src/lib/ranking/simple.ts`): 3 pts / set; 0 por derrota; desempate por wins, luego id.
 

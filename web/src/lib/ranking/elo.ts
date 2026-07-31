@@ -26,10 +26,15 @@ function compareMatches(a: Match, b: Match): number {
   return aid.localeCompare(bid);
 }
 
-/** Classic Elo for singles, one ladder per unit. Sets do not expand into games. */
+/**
+ * Classic Elo for singles, one ladder per unit. Sets do not expand into games.
+ * `memberIds` seeds every group member at the initial rating (0–0) so the board
+ * is never empty just because nobody has played yet.
+ */
 export function buildEloRanking(
   matches: Match[],
   unit: MatchUnit,
+  memberIds: PlayerId[] = [],
 ): RankingRow[] {
   const k = ELO_K_BY_UNIT[unit];
   const filtered = matches
@@ -49,6 +54,8 @@ export function buildEloRanking(
     }
     return row;
   };
+
+  for (const id of memberIds) bump(id);
 
   const ratingOf = (id: PlayerId) => {
     bump(id);

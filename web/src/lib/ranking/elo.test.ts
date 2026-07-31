@@ -23,8 +23,28 @@ function match(
 }
 
 describe("buildEloRanking", () => {
-  it("starts everyone at the initial rating with no matches", () => {
+  it("seeds all members at the initial rating with no matches", () => {
     expect(buildEloRanking([], "set")).toEqual([]);
+    expect(buildEloRanking([], "set", ["b", "a"])).toEqual([
+      { playerId: "a", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
+      { playerId: "b", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
+    ]);
+  });
+
+  it("keeps unplayed members at 1000 after others play", () => {
+    const matches: Match[] = [
+      match({ id: "1", unit: "set", winnerSide: "A" }),
+    ];
+    const rows = buildEloRanking(matches, "set", ["a", "b", "c"]);
+    const byId = Object.fromEntries(rows.map((r) => [r.playerId, r]));
+    expect(byId.c).toEqual({
+      playerId: "c",
+      played: 0,
+      wins: 0,
+      losses: 0,
+      points: ELO_INITIAL,
+    });
+    expect(rows).toHaveLength(3);
   });
 
   it("updates ratings after a set win and ignores games / doubles", () => {
