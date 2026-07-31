@@ -86,6 +86,11 @@ export async function listRankingMatches(groupId: string) {
         startsAt: { lt: new Date() },
       },
     },
+    include: { playSession: { select: { startsAt: true } } },
+    orderBy: [
+      { playSession: { startsAt: "asc" } },
+      { createdAt: "asc" },
+    ],
   });
   return rows.map(toMatch);
 }

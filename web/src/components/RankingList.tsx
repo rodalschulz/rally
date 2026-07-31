@@ -5,10 +5,13 @@ export function RankingList({
   rows,
   playersById,
   emptyHint,
+  scoreLabel = "pts",
 }: {
   rows: RankingRow[];
   playersById: Map<string, Player>;
   emptyHint: string;
+  /** Column caption under the numeric score (e.g. pts / Elo). */
+  scoreLabel?: string;
 }) {
   if (rows.length === 0) {
     return (
@@ -55,7 +58,7 @@ export function RankingList({
               <p className="text-[1.1rem] font-semibold tabular-nums tracking-[-0.02em] text-ink">
                 {row.points}
               </p>
-              <p className="text-[0.7rem] text-muted">pts</p>
+              <p className="text-[0.7rem] text-muted">{scoreLabel}</p>
             </div>
           </li>
         );

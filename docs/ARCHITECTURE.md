@@ -82,7 +82,7 @@ src/
   lib/
     groups/                  # create, join, requireMember, crypto
     domain/                  # tipos + split de costo
-    ranking/                 # buildRanking por format + unit (game 1pt / set 3pt)
+    ranking/                 # Elo singles (por unit) + puntos dobles
     sessions/                # ventanas chat/resultados, permisos, chat helpers
     debts/                   # sync de deudas open
     actions/                 # Server Actions (groups + sessions)
@@ -106,7 +106,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Ver [`TESTING.md`](TESTING.md).
 ### Datos y consistencia
 
 - Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
-- Rankings: on-read vía `buildRanking` filtrando matches del grupo por `format` + `unit`.
+- Rankings: on-read — Singles `buildEloRanking` por `unit`; Dobles `buildRanking` (puntos).
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad
@@ -135,7 +135,7 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Multi-grupo | Root = discovery; coordinación bajo `/grupos/[slug]` |
 | Grupos privados | Invite + contraseña; no listados en root |
 | Canchas libres | Globales (sin groupId) |
-| Algoritmo de ranking | MVP: Games 1 pt / Sets 3 pts; sin doble conteo; ELO abierto |
+| Algoritmo de ranking | Singles: Elo por unit (K_game=24, K_set=32); Dobles: 3 pts / set; sin doble conteo |
 | Tests | Vitest en módulos puros (`docs/TESTING.md`) |
 | Nombre de marca UI | **rally** |
 | Setup local | `web/docs/SETUP.md` |
@@ -150,4 +150,4 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 
 Hecho: scaffold web, DB + auth, sesiones + RSVP + financiador + deudas, matches, rankings, puente bot, **multi-grupo** (discovery + hub).
 
-Pendiente / nice-to-have: rotar invite/password UI completa, ELO, bot sin PC, notificaciones.
+Pendiente / nice-to-have: rotar invite/password UI completa, Elo unificado / margen de set, bot sin PC, notificaciones.

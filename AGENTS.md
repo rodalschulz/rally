@@ -44,7 +44,7 @@ Leer antes de implementar features de producto:
 - `bot/` operativo como script local (`open_chrome.py`); sync opcional a rally con `RALLY_CRON_SECRET`.
 - `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA.
 - Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas + canchas), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/login`.
-- Setup: `web/docs/SETUP.md`. Ranking MVP = Games 1 pt / Sets 3 pts (`web/src/lib/ranking/simple.ts`). Tests: `cd web && npm test`.
+- Setup: `web/docs/SETUP.md`. Ranking Singles = Elo por unit (`web/src/lib/ranking/elo.ts`); Dobles = 3 pts (`simple.ts`). Tests: `cd web && npm test`.
 - Modelo tenis `PlaySession` (no confundir con Auth `Session`). Scoped por `groupId`.
 - Documentación: `docs/DOMAIN.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`.
 

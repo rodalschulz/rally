@@ -60,7 +60,9 @@ export function toDebt(row: Debt): DomainDebt {
   };
 }
 
-export function toMatch(row: Match): DomainMatch {
+export function toMatch(
+  row: Match & { playSession?: { startsAt: Date } },
+): DomainMatch {
   return {
     id: row.id,
     sessionId: row.playSessionId,
@@ -70,5 +72,7 @@ export function toMatch(row: Match): DomainMatch {
     sideB: row.sideB,
     score: row.score,
     winnerSide: row.winnerSide,
+    createdAt: row.createdAt.toISOString(),
+    sessionStartsAt: row.playSession?.startsAt.toISOString(),
   };
 }

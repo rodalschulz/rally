@@ -59,7 +59,7 @@ export type DebtWithSession = Debt & {
 
 export type MatchFormat = "singles" | "doubles";
 
-/** Loose game (1 ranking pt) vs set to 6 (3 pts). Set-internal games are not expanded. */
+/** Loose game vs set to 6. Set-internal games are not expanded into the games ladder. */
 export type MatchUnit = "game" | "set";
 
 export type Match = {
@@ -72,6 +72,9 @@ export type Match = {
   /** Set: e.g. "6-4". Game: "1-0". */
   score: string;
   winnerSide: "A" | "B";
+  /** Present on ranking queries — Elo processes matches in this order. */
+  sessionStartsAt?: string;
+  createdAt?: string;
 };
 
 export type RankingRow = {

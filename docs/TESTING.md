@@ -22,7 +22,8 @@ npm run test:watch
 
 | Módulo | Por qué |
 |--------|---------|
-| `lib/ranking/simple.ts` | Games (1 pt) vs Sets (3 pts); no doble conteo |
+| `lib/ranking/elo.ts` | Singles Elo por unit (K, orden cronológico, no doble conteo) |
+| `lib/ranking/simple.ts` | Dobles / puntos por unit; no doble conteo |
 | `lib/domain/gameScore.ts` | Marcador de set válido / empate / ≥6 |
 | `lib/domain/split.ts` | Reparto, regalo de cancha, saldos netos |
 | `lib/sessions/windows.ts` | Plazos de chat, resultados y “fecha pasada” en hub |

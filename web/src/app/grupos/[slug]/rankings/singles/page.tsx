@@ -4,7 +4,7 @@ import { SinglesUnitTabs } from "@/components/SinglesUnitTabs";
 import { listGroupPlayers, listRankingMatches } from "@/lib/data/queries";
 import type { MatchUnit } from "@/lib/domain/types";
 import { requireGroupMember } from "@/lib/groups";
-import { buildRanking } from "@/lib/ranking/simple";
+import { buildEloRanking } from "@/lib/ranking/elo";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Ranking singles" };
@@ -30,9 +30,8 @@ export default async function SinglesRankingPage({
     listRankingMatches(group.id),
     listGroupPlayers(group.id),
   ]);
-  const rows = buildRanking(matches, "singles", unit);
+  const rows = buildEloRanking(matches, unit);
   const playersById = new Map(players.map((p) => [p.id, p]));
-  const pointsLabel = unit === "game" ? "1 pt por victoria" : "3 pts por victoria";
 
   return (
     <>
@@ -41,8 +40,8 @@ export default async function SinglesRankingPage({
           Singles
         </h1>
         <p className="mt-1 text-[0.85rem] text-muted">
-          Solo cuentan resultados de fechas ya pasadas. {pointsLabel}. Los games
-          internos de un set no suman aparte.
+          Ranking Elo (parte en 1000). Games y Sets son ladders separados: un
+          set no suma como games. Solo cuentan resultados de fechas ya pasadas.
         </p>
       </section>
       <RankingTabs slug={slug} active="singles" />
@@ -50,6 +49,7 @@ export default async function SinglesRankingPage({
       <RankingList
         rows={rows}
         playersById={playersById}
+        scoreLabel="Elo"
         emptyHint={
           unit === "game"
             ? "Todavía no hay games sueltos de fechas pasadas."

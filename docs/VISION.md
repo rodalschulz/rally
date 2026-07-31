@@ -44,7 +44,7 @@ Más adelante: marcar deudas como pagadas, saldos netos entre personas, historia
 
 ### 4. Resultados y rankings
 
-Tras (o durante) la sesión se cargan Games y/o Sets. Los rankings se calculan on-read por unidad (`game` vs `set`). El ranking de **singles** es el más visible / importante.
+Tras (o durante) la sesión se cargan Games y/o Sets. Singles usa Elo on-read por unidad (`game` vs `set`); dobles usa puntos por set. El ranking de **singles** es el más visible / importante.
 
 ## Fuera de alcance (por ahora)
 
