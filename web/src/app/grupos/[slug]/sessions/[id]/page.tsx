@@ -10,6 +10,7 @@ import {
   getPlaySession,
   listGroupPlayers,
   listSessionChatMessages,
+  listSessionMatchChangeLogs,
   toAttendance,
   toDebt,
   toMatch,
@@ -45,12 +46,14 @@ export default async function SessionDetailPage({
   const userId = group.membership.userId;
   const authSession = await getSession();
 
-  const [row, allPlayers, chatMessages, isAppAdmin] = await Promise.all([
-    getPlaySession(id, group.id),
-    listGroupPlayers(group.id),
-    listSessionChatMessages(id),
-    userIsAppAdmin(userId),
-  ]);
+  const [row, allPlayers, chatMessages, changeLog, isAppAdmin] =
+    await Promise.all([
+      getPlaySession(id, group.id),
+      listGroupPlayers(group.id),
+      listSessionChatMessages(id),
+      listSessionMatchChangeLogs(id),
+      userIsAppAdmin(userId),
+    ]);
   if (!row) redirect("/");
 
   const session = toSession(row);
@@ -68,7 +71,9 @@ export default async function SessionDetailPage({
   const goingPlayers = allPlayers.filter((p) =>
     going.some((a) => a.playerId === p.id),
   );
-  const singlesResults = sessionMatches.filter((m) => m.format === "singles");
+  const singlesResults = sessionMatches.filter(
+    (m) => m.format === "singles" && !m.deletedAt,
+  );
   const attendanceSyncKey = sessionAtt
     .map((a) => `${a.playerId}:${a.status}`)
     .sort()
@@ -232,6 +237,7 @@ export default async function SessionDetailPage({
         players={goingPlayers}
         labelPlayers={allPlayers}
         results={singlesResults}
+        changeLog={changeLog}
         canManage={canManageGames}
         gamesOpen={gamesOpen}
       />

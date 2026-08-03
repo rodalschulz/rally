@@ -31,6 +31,14 @@ export default async function DebtsPage({
     players.map((p) => p.id),
   );
   const open = debts.filter((d) => d.status === "open");
+  const settled = debts
+    .filter((d) => d.status === "settled")
+    .slice()
+    .sort((a, b) => {
+      const aMs = a.settledAt ? Date.parse(a.settledAt) : 0;
+      const bMs = b.settledAt ? Date.parse(b.settledAt) : 0;
+      return bMs - aMs;
+    });
   const owedToMe = open.filter((d) => d.toPlayerId === me);
   const iOwe = open.filter((d) => d.fromPlayerId === me);
   const playersById = new Map(players.map((p) => [p.id, p]));
@@ -174,6 +182,67 @@ export default async function DebtsPage({
                         </form>
                       ) : null}
                     </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-8 mb-4">
+        <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+          Historial
+        </h2>
+        {settled.length === 0 ? (
+          <p className="text-[0.95rem] text-muted">
+            Todavía no hay deudas saldadas.
+          </p>
+        ) : (
+          <ul className="overflow-hidden rounded-2xl bg-sand">
+            {settled.map((d) => {
+              const from = playersById.get(d.fromPlayerId);
+              const to = playersById.get(d.toPlayerId);
+              const when = formatSessionWhen(d.sessionStartsAt);
+              const fechaLabel = `${formatSessionChip(d.sessionStartsAt)} · ${when.time}`;
+              const settledWhen = d.settledAt
+                ? formatSessionWhen(d.settledAt)
+                : null;
+              return (
+                <li
+                  key={d.id}
+                  className="border-b border-ink/6 px-4 py-3 text-[0.9rem] last:border-b-0"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p>
+                        <span className="font-medium text-ink">
+                          {from?.displayName}
+                        </span>
+                        <span className="text-muted"> → {to?.displayName}</span>
+                      </p>
+                      <Link
+                        href={`/grupos/${slug}/sessions/${d.sessionId}`}
+                        className="mt-0.5 block truncate text-[0.8rem] text-muted hover:text-ink"
+                      >
+                        {fechaLabel}
+                        {d.sessionCourtLabel
+                          ? ` · ${d.sessionCourtLabel}`
+                          : ""}
+                      </Link>
+                      {settledWhen ? (
+                        <p className="mt-0.5 text-[0.75rem] text-muted">
+                          Saldada {settledWhen.dayMonth} · {settledWhen.time}
+                        </p>
+                      ) : (
+                        <p className="mt-0.5 text-[0.75rem] text-muted">
+                          Saldada
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 font-medium tabular-nums text-muted">
+                      {formatSoles(d.amount)}
+                    </span>
                   </div>
                 </li>
               );
