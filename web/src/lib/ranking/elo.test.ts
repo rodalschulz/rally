@@ -184,6 +184,71 @@ describe("buildEloRanking", () => {
     expect(byId.c.points).toBe(Math.round(rc));
   });
 
+  it("ignores in-progress matches (null winnerSide)", () => {
+    const matches: Match[] = [
+      match({ id: "open", winnerSide: null, score: "" }),
+      match({ id: "done", winnerSide: "A" }),
+    ];
+    const rows = buildEloRanking(matches, "set");
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.playerId).sort()).toEqual(["a", "b"]);
+    expect(rows.every((r) => r.played === 1)).toBe(true);
+  });
+
+  it("ignores soft-deleted matches", () => {
+    const matches: Match[] = [
+      match({
+        id: "gone",
+        winnerSide: "A",
+        deletedAt: "2026-01-01T15:00:00.000Z",
+      }),
+      match({ id: "live", winnerSide: "B", createdAt: "2026-01-01T16:00:00.000Z" }),
+    ];
+    const rows = buildEloRanking(matches, "set");
+    expect(rows.map((r) => r.playerId)).toEqual(["b", "a"]);
+    expect(rows.every((r) => r.played === 1)).toBe(true);
+  });
+
+  it("rebuilds as if an edited or deleted match always had the final state", () => {
+    const k = ELO_K_BY_UNIT.game;
+    const afterAWins = buildEloRanking(
+      [
+        match({
+          id: "g1",
+          unit: "game",
+          score: "1-0",
+          winnerSide: "A",
+        }),
+      ],
+      "game",
+    );
+    expect(afterAWins[0]?.playerId).toBe("a");
+    expect(afterAWins[0]?.points).toBe(Math.round(ELO_INITIAL + k * 0.5));
+
+    // Edit: flip winner to B — same as if B had always won.
+    const afterEdit = buildEloRanking(
+      [
+        match({
+          id: "g1",
+          unit: "game",
+          score: "1-0",
+          winnerSide: "B",
+        }),
+      ],
+      "game",
+    );
+    expect(afterEdit[0]?.playerId).toBe("b");
+    expect(afterEdit[0]?.points).toBe(Math.round(ELO_INITIAL + k * 0.5));
+    expect(afterEdit[1]?.playerId).toBe("a");
+    expect(afterEdit[1]?.points).toBe(Math.round(ELO_INITIAL - k * 0.5));
+
+    // Delete: empty ladder again.
+    expect(buildEloRanking([], "game", ["a", "b"])).toEqual([
+      { playerId: "a", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
+      { playerId: "b", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
+    ]);
+  });
+
   it("sorts by Elo when ratings diverge after play", () => {
     const matches: Match[] = [
       match({

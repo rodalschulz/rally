@@ -119,9 +119,9 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 | `status` | `open` \| `settled` |
 | `settledAt` | Opcional |
 
-Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle.
+Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle. La sección **Historial** lista las deudas `settled` (más reciente primero, con `settledAt`).
 
-**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Así se evita confirmar un pago mientras el RSVP todavía puede cambiar.
+**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Así se evita confirmar un pago mientras el RSVP todavía puede cambiar. Las saldadas quedan en **Historial** en `/deudas` (orden por `settledAt` desc).
 
 **Sync al cambiar Voy / costo / financiador** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”). Módulo: `web/src/lib/debts/reconcile.ts`.
 
@@ -143,8 +143,8 @@ Resultado jugado en el contexto de una sesión. Hay **dos unidades independiente
 
 | Unidad (`unit`) | Qué es | Entrada | Ranking |
 |-----------------|--------|---------|---------|
-| `game` | Game suelto (rotación 1v1) | 2 jugadores + quién ganó; `score` = `1-0` | Singles **Games**: ladder Elo (K=24) |
-| `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores + marcador de games (`6-4`) | Singles **Sets**: Elo (K=32); Dobles: 3 pts / victoria |
+| `game` | Game suelto (rotación 1v1) | 2 jugadores; ganador opcional al crear (`En curso` → luego ganador); `score` = `1-0` | Singles **Games**: ladder Elo (K=24) |
+| `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores; marcador opcional al crear (`En curso` → luego `6-4`) | Singles **Sets**: Elo (K=32); Dobles: 3 pts / victoria |
 
 Un Set **no** se descompone en N Games para el ranking: el `6-4` es metadata del Set, no genera filas de Game.
 
@@ -154,8 +154,15 @@ Un Set **no** se descompone en N Games para el ranking: el `6-4` es metadata del
 | `format` | `singles` \| `doubles` |
 | `unit` | `game` \| `set` (default `set`; games sueltos solo singles en MVP) |
 | `sideA` / `sideB` | Arrays de user ids (1 en singles, 2 en dobles) |
-| `score` | Set: ej. `6-4`. Game: `1-0` |
-| `winnerSide` | `A` \| `B` |
+| `score` | Set: ej. `6-4`. Game: `1-0`. Vacío si En curso |
+| `winnerSide` | `A` \| `B` \| `null`. `null` = **En curso** (jugadores elegidos, sin ganador); no cuenta en ranking |
+| `deletedAt` / `deletedById` | Soft-delete: no cuenta en ranking ni aparece en Resultados; queda para auditoría y **Restaurar** |
+
+### MatchChangeLog (historial de resultados)
+
+Registro append-only por fecha: quién agregó / editó / borró / restauró un resultado y cuándo. Visible para todos los miembros del grupo en el detalle de la fecha. Resumen en español + snapshot `before`/`after` (JSON). Módulo: `web/src/lib/matches/changelog.ts`.
+
+**Borrar:** soft-delete (no hard delete). Cualquier `going` (ventana de resultados abierta) puede **Restaurar** desde el historial.
 
 ### Ranking
 
@@ -164,13 +171,15 @@ Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 - **Singles** — pestañas **Games** y **Sets**, ladders Elo **independientes** filtrados por `unit`  
 - **Doubles** — solo Sets, 3 pts por victoria  
 
-Solo cuentan matches cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras no suman).
+Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt` null), cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras y En curso no suman). Al editar, soft-borrar o restaurar, el ladder se recalcula on-read (no hay ratings persistidos).
 
 **Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Si nadie tiene resultados en el ladder, todos los miembros aparecen con **1000** (0–0); en cuanto hay al menos un resultado, solo figuran quienes ya jugaron. W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; lista ordenada por Elo desc, luego nombre (`es`). Games y Sets no se mezclan.
 
 **Dobles puntos** (`web/src/lib/ranking/simple.ts`): 3 pts / set; 0 por derrota; desempate por wins, luego id.
 
-**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar o borrar Games sueltos y Sets singles. Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
+**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar, soft-borrar o restaurar Games sueltos y Sets singles (quien no marcó Voy no gestiona resultados). Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Se puede dejar **En curso** sin ganador y completarlo después. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
+
+**Ranking al editar/borrar:** Elo/puntos se recalculan on-read desde los matches activos con ganador; soft-borrar o restaurar regenera el ladder en la siguiente carga.
 
 **Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` mientras el chat esté abierto (`startsAt + 30 min`); después queda solo como registro. Cascade al borrar la fecha. Cuerpo máx. 500 chars.
 

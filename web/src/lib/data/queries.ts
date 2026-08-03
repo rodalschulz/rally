@@ -6,6 +6,7 @@ import {
   toPlayer,
   toSession,
 } from "@/lib/mappers";
+import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
 import type { ChatMessageDTO } from "@/lib/sessions/chat";
 
 export async function listGroupPlayers(groupId: string) {
@@ -72,15 +73,17 @@ export async function listAllDebts(groupId: string) {
 
 export async function listMatches(groupId: string) {
   const rows = await prisma.match.findMany({
-    where: { playSession: { groupId } },
+    where: { playSession: { groupId }, deletedAt: null },
   });
   return rows.map(toMatch);
 }
 
-/** Matches that count for ranking: only fechas already in the past. */
+/** Matches that count for ranking: past fechas with a winner (not En curso / deleted). */
 export async function listRankingMatches(groupId: string) {
   const rows = await prisma.match.findMany({
     where: {
+      winnerSide: { not: null },
+      deletedAt: null,
       playSession: {
         groupId,
         startsAt: { lt: new Date() },
@@ -93,6 +96,33 @@ export async function listRankingMatches(groupId: string) {
     ],
   });
   return rows.map(toMatch);
+}
+
+export async function listSessionMatchChangeLogs(
+  playSessionId: string,
+): Promise<MatchChangeLogEntry[]> {
+  const rows = await prisma.matchChangeLog.findMany({
+    where: { playSessionId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      actor: { select: { id: true, displayName: true, name: true } },
+      match: { select: { id: true, deletedAt: true } },
+    },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    matchId: row.matchId,
+    actorId: row.actorId,
+    actorDisplayName: row.actor.displayName || row.actor.name || "Jugador",
+    action: row.action,
+    unit: row.unit,
+    summary: row.summary,
+    createdAt: row.createdAt.toISOString(),
+    restorable:
+      row.action === "deleted" &&
+      Boolean(row.matchId) &&
+      row.match?.deletedAt != null,
+  }));
 }
 
 export async function listSessionChatMessages(

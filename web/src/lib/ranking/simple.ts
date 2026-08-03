@@ -27,6 +27,9 @@ export function buildRanking(
   };
 
   for (const m of filtered) {
+    // Soft-deleted / En curso do not affect ranking.
+    if (m.deletedAt) continue;
+    if (m.winnerSide !== "A" && m.winnerSide !== "B") continue;
     const winners = m.winnerSide === "A" ? m.sideA : m.sideB;
     const losers = m.winnerSide === "A" ? m.sideB : m.sideA;
     for (const id of winners) {

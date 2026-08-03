@@ -83,6 +83,7 @@ src/
     groups/                  # create, join, requireMember, crypto
     domain/                  # tipos + split de costo
     ranking/                 # Elo singles (por unit) + puntos dobles
+    matches/                 # textos del historial de resultados (anti-cheat)
     sessions/                # ventanas chat/resultados, permisos, chat helpers
     debts/                   # sync de deudas open
     actions/                 # Server Actions (groups + sessions)
@@ -97,7 +98,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Ver [`TESTING.md`](TESTING.md).
 1. Root discovery: marca, mis grupos, públicos, crear  
 2. Crear grupo / join por invite  
 3. Hub del grupo: sesiones + canchas libres  
-4. Detalle de sesión: RSVP, financiador, deudas, resultados (Games/Sets), chat  
+4. Detalle de sesión: RSVP, financiador, deudas, resultados (Games/Sets + En curso / soft-delete + historial de cambios), chat  
 5. Ranking singles (Games \| Sets) / dobles Sets (por grupo)  
 6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta)  
 7. Deudas del grupo  

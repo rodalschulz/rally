@@ -63,6 +63,9 @@ export function buildEloRanking(
   };
 
   for (const m of filtered) {
+    // Soft-deleted / En curso do not affect Elo.
+    if (m.deletedAt) continue;
+    if (m.winnerSide !== "A" && m.winnerSide !== "B") continue;
     const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0];
     const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0];
     if (!winnerId || !loserId || winnerId === loserId) continue;

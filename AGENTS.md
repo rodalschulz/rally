@@ -45,6 +45,7 @@ Leer antes de implementar features de producto:
 - `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA.
 - Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas + canchas), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/login`.
 - Setup: `web/docs/SETUP.md`. Ranking Singles = Elo por unit (`web/src/lib/ranking/elo.ts`); Dobles = 3 pts (`simple.ts`). Tests: `cd web && npm test`.
+- Resultados: En curso (sin ganador), soft-delete + historial de cambios por fecha (`lib/matches`), UX optimista. Deudas: Historial de saldadas.
 - Modelo tenis `PlaySession` (no confundir con Auth `Session`). Scoped por `groupId`.
 - Documentación: `docs/DOMAIN.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`.
 
@@ -53,6 +54,6 @@ Leer antes de implementar features de producto:
 - Mobile-first, bottom nav **dentro del grupo**, dark by default, `viewport-fit=cover` + safe areas.
 - Español (es-PE, tú), soles (`PEN`).
 - Tipografía de sistema — UI minimal.
-- Lógica de negocio en `src/lib/domain`, `src/lib/ranking`, `src/lib/debts`, `src/lib/groups`.
+- Lógica de negocio en `src/lib/domain`, `src/lib/ranking`, `src/lib/matches`, `src/lib/debts`, `src/lib/groups`.
 - Usuario actual = `auth()` de Auth.js. Nunca hardcodear player ids.
 - Acciones de coordinación: validar membresía + `groupId`.

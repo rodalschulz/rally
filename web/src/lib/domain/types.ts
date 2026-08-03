@@ -49,6 +49,8 @@ export type Debt = {
   sessionId: SessionId;
   amount: number;
   status: DebtStatus;
+  /** Set when status becomes settled. */
+  settledAt?: string;
 };
 
 /** Debt plus fecha context for list UIs. */
@@ -69,9 +71,13 @@ export type Match = {
   unit: MatchUnit;
   sideA: PlayerId[];
   sideB: PlayerId[];
-  /** Set: e.g. "6-4". Game: "1-0". */
+  /** Set: e.g. "6-4". Game: "1-0". Empty while En curso. */
   score: string;
-  winnerSide: "A" | "B";
+  /** null = En curso (no winner yet); excluded from ranking. */
+  winnerSide: "A" | "B" | null;
+  /** Soft-delete timestamp; excluded from ranking while set. */
+  deletedAt?: string | null;
+  deletedById?: string | null;
   /** Present on ranking queries — Elo processes matches in this order. */
   sessionStartsAt?: string;
   createdAt?: string;

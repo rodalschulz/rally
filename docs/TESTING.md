@@ -32,6 +32,7 @@ npm run test:watch
 | `lib/sessions/goingPlayers.ts` | Orden de avatares going: creador + A–Z |
 | `lib/debts/permissions.ts` | Saldar solo acreedor + fecha pasada |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
+| `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
 
 ## Qué no (aún)
 

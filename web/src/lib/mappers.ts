@@ -57,6 +57,7 @@ export function toDebt(row: Debt): DomainDebt {
     sessionId: row.playSessionId,
     amount: Number(row.amount),
     status: row.status,
+    settledAt: row.settledAt?.toISOString(),
   };
 }
 
@@ -72,6 +73,8 @@ export function toMatch(
     sideB: row.sideB,
     score: row.score,
     winnerSide: row.winnerSide,
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+    deletedById: row.deletedById ?? null,
     createdAt: row.createdAt.toISOString(),
     sessionStartsAt: row.playSession?.startsAt.toISOString(),
   };

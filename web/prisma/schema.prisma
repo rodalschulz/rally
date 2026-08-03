@@ -44,6 +44,13 @@ enum WinnerSide {
   B
 }
 
+enum MatchChangeAction {
+  created
+  updated
+  deleted
+  restored
+}
+
 enum GroupVisibility {
   public
   private
@@ -77,6 +84,8 @@ model User {
   debtsFrom            Debt[]        @relation("DebtFrom")
   debtsTo              Debt[]        @relation("DebtTo")
   sessionChatMessages  SessionChatMessage[]
+  matchChangeLogs      MatchChangeLog[]
+  softDeletedMatches   Match[]       @relation("MatchDeletedBy")
 
   createdGroups Group[]       @relation("GroupCreator")
   memberships   GroupMember[]
@@ -173,10 +182,11 @@ model PlaySession {
   group       Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   financier   User         @relation("Financier", fields: [financierId], references: [id])
   createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
-  attendances Attendance[]
-  debts       Debt[]
-  matches     Match[]
-  chatMessages SessionChatMessage[]
+  attendances     Attendance[]
+  debts           Debt[]
+  matches         Match[]
+  matchChangeLogs MatchChangeLog[]
+  chatMessages    SessionChatMessage[]
 
   @@index([groupId, startsAt])
 }
@@ -220,13 +230,42 @@ model Match {
   unit          MatchUnit   @default(set)
   sideA         String[]
   sideB         String[]
-  score         String
-  winnerSide    WinnerSide
+  /** Empty while in progress (En curso). Set e.g. "6-4"; game "1-0". */
+  score         String      @default("")
+  /** null = En curso (players set, no winner yet). Does not count for ranking. */
+  winnerSide    WinnerSide?
+  /** Soft-delete: hidden from results/ranking but kept for audit + restore. */
+  deletedAt     DateTime?
+  deletedById   String?
   createdAt     DateTime    @default(now())
 
-  playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+  playSession PlaySession      @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+  deletedBy   User?            @relation("MatchDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+  changeLogs  MatchChangeLog[]
 
   @@index([playSessionId, unit])
+  @@index([playSessionId, deletedAt])
+}
+
+/** Append-only audit of result changes on a fecha (anti-cheat / transparency). */
+model MatchChangeLog {
+  id            String            @id @default(cuid())
+  playSessionId String
+  matchId       String?
+  actorId       String
+  action        MatchChangeAction
+  unit          MatchUnit
+  /** Spanish summary for UI, e.g. "Borró Game: Ana ganó a Bruno". */
+  summary       String
+  before        Json?
+  after         Json?
+  createdAt     DateTime          @default(now())
+
+  playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
+  match       Match?      @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  actor       User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([playSessionId, createdAt])
 }
 
 /** Chat for a fecha: Voy/Quizás can post until startsAt is past. */

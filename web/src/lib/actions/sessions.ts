@@ -3,13 +3,23 @@
 import { auth } from "@/auth";
 import type { AttendanceStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { actionErrorMessage } from "@/lib/action-errors";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
 import { canSettleDebt } from "@/lib/debts/permissions";
 import { userIsAppAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
+import type { Match as DomainMatch } from "@/lib/domain/types";
 import { getMembership } from "@/lib/groups";
+import { toMatch } from "@/lib/mappers";
+import {
+  formatMatchChangeSummary,
+  snapshotFromMatch,
+  type MatchChangeAction,
+  type MatchChangeLogEntry,
+  type MatchSnapshot,
+} from "@/lib/matches/changelog";
 import {
   canChangeAttendance,
   canDeletePlaySession,
@@ -367,7 +377,7 @@ type SinglesSetParsed =
       player1Id: string;
       player2Id: string;
       score: string;
-      winnerSide: "A" | "B";
+      winnerSide: "A" | "B" | null;
     }
   | { ok: false; error: string };
 
@@ -377,7 +387,7 @@ type SinglesLooseGameParsed =
       playSessionId: string;
       player1Id: string;
       player2Id: string;
-      winnerSide: "A" | "B";
+      winnerSide: "A" | "B" | null;
     }
   | { ok: false; error: string };
 
@@ -408,8 +418,23 @@ function parseSinglesSetForm(formData: FormData): SinglesSetParsed {
   const sides = parseSinglesSides(formData, "set");
   if (!sides.ok) return sides;
 
-  const games1 = Number(formData.get("games1"));
-  const games2 = Number(formData.get("games2"));
+  const games1Raw = String(formData.get("games1") ?? "").trim();
+  const games2Raw = String(formData.get("games2") ?? "").trim();
+
+  // No score yet → En curso (players only).
+  if (!games1Raw && !games2Raw) {
+    return {
+      ok: true,
+      playSessionId: sides.playSessionId,
+      player1Id: sides.player1Id,
+      player2Id: sides.player2Id,
+      score: "",
+      winnerSide: null,
+    };
+  }
+
+  const games1 = Number(games1Raw);
+  const games2 = Number(games2Raw);
   if (
     !Number.isInteger(games1) ||
     !Number.isInteger(games2) ||
@@ -448,6 +473,16 @@ function parseSinglesLooseGameForm(formData: FormData): SinglesLooseGameParsed {
   if (!sides.ok) return sides;
 
   const winnerSideRaw = String(formData.get("winnerSide") || "").trim();
+  // Empty → En curso (players only).
+  if (!winnerSideRaw) {
+    return {
+      ok: true,
+      playSessionId: sides.playSessionId,
+      player1Id: sides.player1Id,
+      player2Id: sides.player2Id,
+      winnerSide: null,
+    };
+  }
   if (winnerSideRaw !== "A" && winnerSideRaw !== "B") {
     return { ok: false, error: "Elige quién ganó el game" };
   }
@@ -494,9 +529,19 @@ async function assertGoingCanManageGames(
 
 async function revalidateSessionGames(groupId: string, playSessionId: string) {
   const { slug } = await groupPaths(groupId);
-  revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
-  revalidatePath(`/grupos/${slug}/rankings/singles`);
+  // Don't block the action on cache invalidation — client already updated optimistically.
+  after(() => {
+    revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
+    revalidatePath(`/grupos/${slug}/rankings/singles`);
+  });
 }
+
+type SinglesMutationOk = {
+  ok: true;
+  match: DomainMatch;
+  log: MatchChangeLogEntry;
+};
+type SinglesMutationResult = SinglesMutationOk | { ok: false; error: string };
 
 async function assertGoingPlayers(
   goingIds: Set<string>,
@@ -513,9 +558,78 @@ async function assertGoingPlayers(
   return { ok: true };
 }
 
+async function nameLookupForUsers(userIds: string[]) {
+  const unique = [...new Set(userIds.filter(Boolean))];
+  if (unique.length === 0) {
+    return (_id: string) => "?";
+  }
+  const users = await prisma.user.findMany({
+    where: { id: { in: unique } },
+    select: { id: true, displayName: true, name: true },
+  });
+  const map = new Map(
+    users.map((u) => [u.id, u.displayName || u.name || "Jugador"] as const),
+  );
+  return (id: string) => map.get(id) ?? "?";
+}
+
+async function writeMatchChangeLog(opts: {
+  playSessionId: string;
+  matchId: string;
+  actorId: string;
+  action: MatchChangeAction;
+  after: MatchSnapshot;
+  before?: MatchSnapshot | null;
+}): Promise<MatchChangeLogEntry> {
+  const nameIds = [
+    ...opts.after.sideA,
+    ...opts.after.sideB,
+    ...(opts.before?.sideA ?? []),
+    ...(opts.before?.sideB ?? []),
+  ];
+  const nameOf = await nameLookupForUsers(nameIds);
+  const summary = formatMatchChangeSummary(
+    opts.action,
+    opts.after,
+    nameOf,
+    opts.before,
+  );
+
+  const [row, actor] = await Promise.all([
+    prisma.matchChangeLog.create({
+      data: {
+        playSessionId: opts.playSessionId,
+        matchId: opts.matchId,
+        actorId: opts.actorId,
+        action: opts.action,
+        unit: opts.after.unit,
+        summary,
+        ...(opts.before ? { before: opts.before } : {}),
+        after: opts.after,
+      },
+    }),
+    prisma.user.findUnique({
+      where: { id: opts.actorId },
+      select: { displayName: true, name: true },
+    }),
+  ]);
+
+  return {
+    id: row.id,
+    matchId: row.matchId,
+    actorId: row.actorId,
+    actorDisplayName: actor?.displayName || actor?.name || "Jugador",
+    action: row.action,
+    unit: row.unit,
+    summary: row.summary,
+    createdAt: row.createdAt.toISOString(),
+    restorable: opts.action === "deleted",
+  };
+}
+
 export async function addSinglesSetAction(
   formData: FormData,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<SinglesMutationResult> {
   try {
     const userId = await requireUserId();
     const parsed = parseSinglesSetForm(formData);
@@ -532,7 +646,7 @@ export async function addSinglesSetAction(
     );
     if (!playersOk.ok) return playersOk;
 
-    await prisma.match.create({
+    const created = await prisma.match.create({
       data: {
         playSessionId: parsed.playSessionId,
         format: "singles",
@@ -544,8 +658,16 @@ export async function addSinglesSetAction(
       },
     });
 
+    const log = await writeMatchChangeLog({
+      playSessionId: parsed.playSessionId,
+      matchId: created.id,
+      actorId: userId,
+      action: "created",
+      after: snapshotFromMatch(created),
+    });
+
     await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
-    return { ok: true };
+    return { ok: true, match: toMatch(created), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
   }
@@ -553,7 +675,7 @@ export async function addSinglesSetAction(
 
 export async function updateSinglesSetAction(
   formData: FormData,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<SinglesMutationResult> {
   try {
     const userId = await requireUserId();
     const matchId = String(formData.get("matchId") || "");
@@ -565,6 +687,9 @@ export async function updateSinglesSetAction(
     const match = await prisma.match.findUnique({ where: { id: matchId } });
     if (!match || match.playSessionId !== parsed.playSessionId) {
       return { ok: false, error: "Set no encontrado" };
+    }
+    if (match.deletedAt) {
+      return { ok: false, error: "Este set está borrado — restáuralo primero" };
     }
     if (match.format !== "singles" || match.unit !== "set") {
       return { ok: false, error: "Solo se editan sets singles" };
@@ -581,7 +706,8 @@ export async function updateSinglesSetAction(
     );
     if (!playersOk.ok) return playersOk;
 
-    await prisma.match.update({
+    const before = snapshotFromMatch(match);
+    const updated = await prisma.match.update({
       where: { id: matchId },
       data: {
         score: parsed.score,
@@ -591,8 +717,17 @@ export async function updateSinglesSetAction(
       },
     });
 
+    const log = await writeMatchChangeLog({
+      playSessionId: parsed.playSessionId,
+      matchId: updated.id,
+      actorId: userId,
+      action: "updated",
+      before,
+      after: snapshotFromMatch(updated),
+    });
+
     await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
-    return { ok: true };
+    return { ok: true, match: toMatch(updated), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
   }
@@ -600,7 +735,7 @@ export async function updateSinglesSetAction(
 
 export async function addSinglesLooseGameAction(
   formData: FormData,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<SinglesMutationResult> {
   try {
     const userId = await requireUserId();
     const parsed = parseSinglesLooseGameForm(formData);
@@ -617,20 +752,28 @@ export async function addSinglesLooseGameAction(
     );
     if (!playersOk.ok) return playersOk;
 
-    await prisma.match.create({
+    const created = await prisma.match.create({
       data: {
         playSessionId: parsed.playSessionId,
         format: "singles",
         unit: "game",
-        score: "1-0",
+        score: parsed.winnerSide ? "1-0" : "",
         winnerSide: parsed.winnerSide,
         sideA: [parsed.player1Id],
         sideB: [parsed.player2Id],
       },
     });
 
+    const log = await writeMatchChangeLog({
+      playSessionId: parsed.playSessionId,
+      matchId: created.id,
+      actorId: userId,
+      action: "created",
+      after: snapshotFromMatch(created),
+    });
+
     await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
-    return { ok: true };
+    return { ok: true, match: toMatch(created), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
   }
@@ -638,7 +781,7 @@ export async function addSinglesLooseGameAction(
 
 export async function updateSinglesLooseGameAction(
   formData: FormData,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<SinglesMutationResult> {
   try {
     const userId = await requireUserId();
     const matchId = String(formData.get("matchId") || "");
@@ -650,6 +793,9 @@ export async function updateSinglesLooseGameAction(
     const match = await prisma.match.findUnique({ where: { id: matchId } });
     if (!match || match.playSessionId !== parsed.playSessionId) {
       return { ok: false, error: "Game no encontrado" };
+    }
+    if (match.deletedAt) {
+      return { ok: false, error: "Este game está borrado — restáuralo primero" };
     }
     if (match.format !== "singles" || match.unit !== "game") {
       return { ok: false, error: "Solo se editan games sueltos" };
@@ -666,18 +812,28 @@ export async function updateSinglesLooseGameAction(
     );
     if (!playersOk.ok) return playersOk;
 
-    await prisma.match.update({
+    const before = snapshotFromMatch(match);
+    const updated = await prisma.match.update({
       where: { id: matchId },
       data: {
-        score: "1-0",
+        score: parsed.winnerSide ? "1-0" : "",
         winnerSide: parsed.winnerSide,
         sideA: [parsed.player1Id],
         sideB: [parsed.player2Id],
       },
     });
 
+    const log = await writeMatchChangeLog({
+      playSessionId: parsed.playSessionId,
+      matchId: updated.id,
+      actorId: userId,
+      action: "updated",
+      before,
+      after: snapshotFromMatch(updated),
+    });
+
     await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
-    return { ok: true };
+    return { ok: true, match: toMatch(updated), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
   }
@@ -685,7 +841,7 @@ export async function updateSinglesLooseGameAction(
 
 export async function deleteSinglesResultAction(
   formData: FormData,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<SinglesMutationResult> {
   try {
     const userId = await requireUserId();
     const matchId = String(formData.get("matchId") || "");
@@ -696,15 +852,71 @@ export async function deleteSinglesResultAction(
     if (match.format !== "singles") {
       return { ok: false, error: "Solo se borran resultados singles" };
     }
+    if (match.deletedAt) {
+      return { ok: false, error: "Este resultado ya está borrado" };
+    }
 
     const gate = await assertGoingCanManageGames(match.playSessionId, userId);
     if (!gate.ok) return gate;
 
-    await prisma.match.delete({ where: { id: matchId } });
+    const deletedAt = new Date();
+    const updated = await prisma.match.update({
+      where: { id: matchId },
+      data: { deletedAt, deletedById: userId },
+    });
+
+    const log = await writeMatchChangeLog({
+      playSessionId: match.playSessionId,
+      matchId: updated.id,
+      actorId: userId,
+      action: "deleted",
+      after: snapshotFromMatch(updated),
+    });
+
     await revalidateSessionGames(gate.session.groupId, match.playSessionId);
-    return { ok: true };
+    return { ok: true, match: toMatch(updated), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo borrar") };
+  }
+}
+
+export async function restoreSinglesResultAction(
+  formData: FormData,
+): Promise<SinglesMutationResult> {
+  try {
+    const userId = await requireUserId();
+    const matchId = String(formData.get("matchId") || "");
+    if (!matchId) return { ok: false, error: "Resultado inválido" };
+
+    const match = await prisma.match.findUnique({ where: { id: matchId } });
+    if (!match) return { ok: false, error: "Resultado no encontrado" };
+    if (match.format !== "singles") {
+      return { ok: false, error: "Solo se restauran resultados singles" };
+    }
+    if (!match.deletedAt) {
+      return { ok: false, error: "Este resultado no está borrado" };
+    }
+
+    const gate = await assertGoingCanManageGames(match.playSessionId, userId);
+    if (!gate.ok) return gate;
+
+    const updated = await prisma.match.update({
+      where: { id: matchId },
+      data: { deletedAt: null, deletedById: null },
+    });
+
+    const log = await writeMatchChangeLog({
+      playSessionId: match.playSessionId,
+      matchId: updated.id,
+      actorId: userId,
+      action: "restored",
+      after: snapshotFromMatch(updated),
+    });
+
+    await revalidateSessionGames(gate.session.groupId, match.playSessionId);
+    return { ok: true, match: toMatch(updated), log };
+  } catch (e) {
+    return { ok: false, error: actionErrorMessage(e, "No se pudo restaurar") };
   }
 }
 

@@ -15,6 +15,21 @@ function match(partial: Partial<Match> & Pick<Match, "id" | "winnerSide">): Matc
 }
 
 describe("buildRanking", () => {
+  it("ignores in-progress matches (null winnerSide)", () => {
+    const rows = buildRanking(
+      [
+        match({ id: "open", winnerSide: null, score: "" }),
+        match({ id: "done", winnerSide: "A" }),
+      ],
+      "singles",
+      "set",
+    );
+    expect(rows).toEqual([
+      { playerId: "a", played: 1, wins: 1, losses: 0, points: 3 },
+      { playerId: "b", played: 1, wins: 0, losses: 1, points: 0 },
+    ]);
+  });
+
   it("awards 3 points per set win and ignores other units/formats", () => {
     const matches: Match[] = [
       match({ id: "1", unit: "set", winnerSide: "A" }),
