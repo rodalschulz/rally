@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  isSessionChatOpen,
   isSessionGamesOpen,
   isSessionPast,
   sessionEndsAt,
@@ -12,15 +11,6 @@ describe("session windows", () => {
   it("ends one hour after startsAt", () => {
     expect(sessionEndsAt(startsAt).toISOString()).toBe(
       "2026-07-26T21:00:00.000Z",
-    );
-  });
-
-  it("keeps chat open until startsAt + 30 minutes", () => {
-    expect(isSessionChatOpen(startsAt, new Date("2026-07-26T20:29:59.000Z"))).toBe(
-      true,
-    );
-    expect(isSessionChatOpen(startsAt, new Date("2026-07-26T20:30:00.000Z"))).toBe(
-      false,
     );
   });
 

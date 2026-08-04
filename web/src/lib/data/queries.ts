@@ -7,7 +7,6 @@ import {
   toSession,
 } from "@/lib/mappers";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
-import type { ChatMessageDTO } from "@/lib/sessions/chat";
 
 export async function listGroupPlayers(groupId: string) {
   const members = await listGroupMembers(groupId);
@@ -122,27 +121,6 @@ export async function listSessionMatchChangeLogs(
       row.action === "deleted" &&
       Boolean(row.matchId) &&
       row.match?.deletedAt != null,
-  }));
-}
-
-export async function listSessionChatMessages(
-  playSessionId: string,
-): Promise<ChatMessageDTO[]> {
-  const rows = await prisma.sessionChatMessage.findMany({
-    where: { playSessionId },
-    orderBy: { createdAt: "asc" },
-    include: { user: true },
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    body: r.body,
-    createdAt: r.createdAt.toISOString(),
-    userId: r.userId,
-    displayName: r.user.displayName || r.user.name || "Jugador",
-    shortName:
-      r.user.shortName ||
-      (r.user.displayName || r.user.name || "J").slice(0, 2).toUpperCase(),
-    hue: r.user.hue,
   }));
 }
 

@@ -83,7 +83,6 @@ model User {
   attendances          Attendance[]
   debtsFrom            Debt[]        @relation("DebtFrom")
   debtsTo              Debt[]        @relation("DebtTo")
-  sessionChatMessages  SessionChatMessage[]
   matchChangeLogs      MatchChangeLog[]
   softDeletedMatches   Match[]       @relation("MatchDeletedBy")
 
@@ -186,7 +185,6 @@ model PlaySession {
   debts           Debt[]
   matches         Match[]
   matchChangeLogs MatchChangeLog[]
-  chatMessages    SessionChatMessage[]
 
   @@index([groupId, startsAt])
 }
@@ -234,6 +232,8 @@ model Match {
   score         String      @default("")
   /** null = En curso (players set, no winner yet). Does not count for ranking. */
   winnerSide    WinnerSide?
+  /** Optional server for loose games (side A or B). Ignored for sets. */
+  serverSide    WinnerSide?
   /** Soft-delete: hidden from results/ranking but kept for audit + restore. */
   deletedAt     DateTime?
   deletedById   String?
@@ -264,20 +264,6 @@ model MatchChangeLog {
   playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
   match       Match?      @relation(fields: [matchId], references: [id], onDelete: SetNull)
   actor       User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
-
-  @@index([playSessionId, createdAt])
-}
-
-/** Chat for a fecha: Voy/Quizás can post until startsAt is past. */
-model SessionChatMessage {
-  id            String   @id @default(cuid())
-  playSessionId String
-  userId        String
-  body          String
-  createdAt     DateTime @default(now())
-
-  playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([playSessionId, createdAt])
 }
