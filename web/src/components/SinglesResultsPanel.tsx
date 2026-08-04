@@ -13,9 +13,104 @@ import {
 } from "@/lib/actions/sessions";
 import { formatChatTime } from "@/lib/format";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
-import { buildSessionSinglesResumen } from "@/lib/ranking/sessionResumen";
+import {
+  buildSessionSinglesResumen,
+  type SessionResumenRow,
+} from "@/lib/ranking/sessionResumen";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { Spinner } from "@/components/Spinner";
+
+/** UI labels for the two independent Singles Elo ladders. */
+function eloLabelForUnit(unit: MatchUnit): "Elo.G" | "Elo.S" {
+  return unit === "game" ? "Elo.G" : "Elo.S";
+}
+
+function SessionResumenBlock({
+  title,
+  eloLabel,
+  rows,
+  players,
+  emptyMessage,
+}: {
+  title: string;
+  eloLabel: "Elo.G" | "Elo.S";
+  rows: SessionResumenRow[];
+  players: Player[];
+  emptyMessage?: string;
+}) {
+  return (
+    <div className="mt-8">
+      <h3 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+        {title}
+      </h3>
+      {rows.length === 0 ? (
+        emptyMessage ? (
+          <p className="text-[0.9rem] text-muted">{emptyMessage}</p>
+        ) : null
+      ) : (
+        <ul className="overflow-hidden rounded-2xl bg-sand">
+          {rows.map((row) => {
+            const eloDelta = row.eloEnd - row.eloStart;
+            const player = players.find((p) => p.id === row.playerId);
+            const displayName = player?.displayName ?? "?";
+            return (
+              <li
+                key={row.playerId}
+                aria-label={displayName}
+                title={displayName}
+                className="grid grid-cols-[auto_auto_2.6rem_minmax(0,1fr)_3.25rem] items-center gap-x-2 border-b border-ink/6 px-4 py-3 last:border-b-0"
+              >
+                {player ? (
+                  <PlayerAvatar player={player} size="sm" />
+                ) : (
+                  <span
+                    className="inline-grid size-7 shrink-0 place-items-center rounded-full bg-mist-2 text-[0.65rem] font-medium text-muted"
+                    aria-hidden
+                  >
+                    ?
+                  </span>
+                )}
+                <span className="whitespace-nowrap pl-2 pr-3 text-[0.9rem] tabular-nums text-ink sm:pl-2.5 sm:pr-4">
+                  {row.wins}G - {row.losses}P
+                </span>
+                <span className="text-left text-[0.85rem] text-muted">
+                  {eloLabel}
+                </span>
+                <span className="min-w-0 whitespace-nowrap text-left text-[0.85rem] tabular-nums text-muted">
+                  {row.eloStart}
+                  <span className="mx-1 text-muted/70">→</span>
+                  {row.eloEnd}
+                </span>
+                <span
+                  className={`flex w-full items-center justify-center gap-0.5 text-[0.85rem] font-medium tabular-nums ${
+                    eloDelta > 0
+                      ? "text-ok"
+                      : eloDelta < 0
+                        ? "text-danger"
+                        : "text-muted"
+                  }`}
+                >
+                  {eloDelta === 0 ? (
+                    <span>—</span>
+                  ) : (
+                    <>
+                      <span className="inline-block w-3 text-center text-[0.7rem] leading-none">
+                        {eloDelta > 0 ? "▲" : "▼"}
+                      </span>
+                      <span className="min-w-[1.5rem] text-center">
+                        {Math.abs(eloDelta)}
+                      </span>
+                    </>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 type FormKind = "game" | "set";
 
@@ -578,10 +673,17 @@ export function SinglesResultsPanel({
     gameDraft.player1Id !== gameDraft.player2Id;
 
   const nameById = new Map(labelPlayers.map((p) => [p.id, p.displayName]));
-  const resumen = buildSessionSinglesResumen(
+  const resumenGames = buildSessionSinglesResumen(
     rankingMatches,
     playSessionId,
     "game",
+    local,
+    nameById,
+  );
+  const resumenSets = buildSessionSinglesResumen(
+    rankingMatches,
+    playSessionId,
+    "set",
     local,
     nameById,
   );
@@ -1121,73 +1223,21 @@ export function SinglesResultsPanel({
         <p className="mt-2 text-[0.75rem] text-muted">Sincronizando…</p>
       ) : null}
 
-      <div className="mt-8">
-        <h3 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Resumen
-        </h3>
-        {resumen.length === 0 ? (
-          <p className="text-[0.9rem] text-muted">
-            Sin games terminados todavía.
-          </p>
-        ) : (
-          <ul className="overflow-hidden rounded-2xl bg-sand">
-            {resumen.map((row) => {
-              const eloDelta = row.eloEnd - row.eloStart;
-              const player = labelPlayers.find((p) => p.id === row.playerId);
-              const displayName = player?.displayName ?? "?";
-              return (
-                <li
-                  key={row.playerId}
-                  aria-label={displayName}
-                  title={displayName}
-                  className="grid grid-cols-[auto_5.75rem_minmax(0,1fr)_3.25rem] items-center gap-2 border-b border-ink/6 px-4 py-3 last:border-b-0 sm:gap-3"
-                >
-                  {player ? (
-                    <PlayerAvatar player={player} size="sm" />
-                  ) : (
-                    <span
-                      className="inline-grid size-7 shrink-0 place-items-center rounded-full bg-mist-2 text-[0.65rem] font-medium text-muted"
-                      aria-hidden
-                    >
-                      ?
-                    </span>
-                  )}
-                  <span className="text-right text-[0.9rem] tabular-nums text-ink">
-                    {row.wins}G - {row.losses}P
-                  </span>
-                  <span className="text-center text-[0.85rem] tabular-nums text-muted">
-                    Elo: {row.eloStart}
-                    <span className="mx-1 text-muted/70">→</span>
-                    {row.eloEnd}
-                  </span>
-                  <span
-                    className={`flex w-full items-center justify-center gap-0.5 text-[0.85rem] font-medium tabular-nums ${
-                      eloDelta > 0
-                        ? "text-ok"
-                        : eloDelta < 0
-                          ? "text-danger"
-                          : "text-muted"
-                    }`}
-                  >
-                    {eloDelta === 0 ? (
-                      <span>—</span>
-                    ) : (
-                      <>
-                        <span className="inline-block w-3 text-center text-[0.7rem] leading-none">
-                          {eloDelta > 0 ? "▲" : "▼"}
-                        </span>
-                        <span className="min-w-[1.5rem] text-center">
-                          {Math.abs(eloDelta)}
-                        </span>
-                      </>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <SessionResumenBlock
+        title="Resumen Games"
+        eloLabel={eloLabelForUnit("game")}
+        rows={resumenGames}
+        players={labelPlayers}
+        emptyMessage="Sin games terminados todavía."
+      />
+      {resumenSets.length > 0 ? (
+        <SessionResumenBlock
+          title="Resumen Sets"
+          eloLabel={eloLabelForUnit("set")}
+          rows={resumenSets}
+          players={labelPlayers}
+        />
+      ) : null}
 
       {portalReady && historialOpen
         ? createPortal(

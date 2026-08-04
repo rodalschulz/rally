@@ -45,7 +45,7 @@ Leer antes de implementar features de producto:
 - `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA.
 - Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/login`.
 - Setup: `web/docs/SETUP.md`. Ranking Singles = Elo por unit (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`); Dobles = 3 pts (`simple.ts`). Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
-- Resultados: Games con ganador obligatorio + Servidor opcional; Sets pueden quedar En curso; soft-delete + historial en modal; Resumen Elo por fecha; UX optimista. Sin chat de fecha. Deudas: Historial de saldadas.
+- Resultados: Games con ganador obligatorio + Servidor opcional; Sets pueden quedar En curso; soft-delete + historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S); UX optimista. Sin chat de fecha. Deudas: Historial de saldadas.
 - Modelo tenis `PlaySession` (no confundir con Auth `Session`). Scoped por `groupId`.
 - Documentación: `docs/DOMAIN.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`.
 

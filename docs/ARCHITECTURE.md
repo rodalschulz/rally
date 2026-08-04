@@ -100,7 +100,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 1. Root discovery: marca, mis grupos, públicos, crear  
 2. Crear grupo / join por invite  
 3. Hub del grupo: sesiones; canchas libres e integrantes en modales (botones en el header)  
-4. Detalle de sesión: costo/host en el header; RSVP; resultados (Games/Sets + En curso / soft-delete + Servidor opcional); historial en modal; Resumen Elo de la fecha  
+4. Detalle de sesión: costo/host en el header; RSVP; resultados (Games/Sets + En curso / soft-delete + Servidor opcional); historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S)  
 5. Ranking singles (Games \| Sets) / dobles Sets (por grupo)  
 6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta)  
 7. Deudas del grupo  
@@ -109,7 +109,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 ### Datos y consistencia
 
 - Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
-- Rankings: on-read — Singles `buildEloRanking` por `unit`; Dobles `buildRanking` (puntos). Resumen de fecha: `buildSessionSinglesResumen` (baseline solo fechas anteriores).
+- Rankings: on-read — Singles `buildEloRanking` por `unit`; Dobles `buildRanking` (puntos). Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets).
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad
@@ -147,7 +147,7 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Monorepo tool (pnpm / Turborepo) | No necesario por ahora |
 | Roles granulares / kick / billing | Fuera de alcance MVP multi-grupo |
 | Fecha pasada | Solo lectura para miembros; admin de app puede editar/borrar; owner puede borrar |
-| Admin de app (`User.isAdmin`) | Editar/borrar cualquier fecha; cambiar RSVP de miembros; saldar deudas pasadas (como miembro) |
+| Admin de app (`User.isAdmin`) | Editar/borrar cualquier fecha; cambiar RSVP de miembros; saldar deudas pasadas (como miembro; queda en `Debt.settledById`) |
 
 ## Orden de implementación (histórico / pendientes)
 

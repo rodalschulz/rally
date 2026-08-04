@@ -116,11 +116,12 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 | `playSessionId` | Origen — cada deuda es de **una** fecha (nunca se fusionan entre fechas) |
 | `amount` | |
 | `status` | `open` \| `settled` |
-| `settledAt` | Opcional |
+| `settledAt` | Cuándo se marcó saldada |
+| `settledById` | Quién la saldó (acreedor o admin de app). Null en filas legacy |
 
-Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle. La sección **Historial** lista las deudas `settled` (más reciente primero, con `settledAt`).
+Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle. La sección **Historial** lista las deudas `settled` (más reciente primero): quién saldó (acreedor vs admin) + `settledAt`.
 
-**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Así se evita confirmar un pago mientras el RSVP todavía puede cambiar. Las saldadas quedan en **Historial** en `/deudas` (orden por `settledAt` desc).
+**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Al saldar se guardan `settledAt` y `settledById` (el actor). En Historial: “Saldó el acreedor (Nombre)” o “Saldó un admin (Nombre)” según `settledById === toUserId` o no. Filas sin `settledById` (antes del campo) solo muestran la fecha.
 
 **Sync al cambiar Voy / costo / financiador** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”). Módulo: `web/src/lib/debts/reconcile.ts`.
 
@@ -173,13 +174,13 @@ Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 
 Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt` null), cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras y En curso no suman). Al editar, soft-borrar o restaurar, el ladder se recalcula on-read (no hay ratings persistidos).
 
-**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Si nadie tiene resultados en el ladder, todos los miembros aparecen con **1000** (0–0); en cuanto hay al menos un resultado, solo figuran quienes ya jugaron. W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; lista ordenada por Elo desc, luego nombre (`es`). Games y Sets no se mezclan.
+**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Ladders independientes por unit; en UI de Resumen se etiquetan **Elo.G** (Games, K=24) y **Elo.S** (Sets, K=32). Si nadie tiene resultados en el ladder, todos los miembros aparecen con **1000** (0–0); en cuanto hay al menos un resultado, solo figuran quienes ya jugaron. W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; lista ordenada por Elo desc, luego nombre (`es`). Games y Sets no se mezclan.
 
 **Dobles puntos** (`web/src/lib/ranking/simple.ts`): 3 pts / set; 0 por derrota; desempate por wins, luego id.
 
 **Resultados en una fecha:** cualquier asistente `going` puede agregar, editar, soft-borrar o restaurar Games sueltos y Sets singles (quien no marcó Voy no gestiona resultados). Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Un **Game** exige ganador al crear (Servidor opcional). Un **Set** sí puede quedar **En curso** sin marcador y completarse después. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
 
-**Resumen de fecha:** debajo de Resultados, W–L de **Singles Games** de esa fecha + Elo inicio→fin (ladder Games, on-read). Solo quienes terminaron al menos un Game; En curso / soft-delete / Sets no cuentan. El Elo de inicio se calcula rejugando solo fechas **anteriores** (`session.startsAt` menor que el de esta fecha); nunca fechas posteriores. Así el Elo fin de una fecha encadena con el Elo inicio de la siguiente. Módulo: `web/src/lib/ranking/sessionResumen.ts`.
+**Resumen de fecha:** debajo de Resultados hay **Resumen Games** (siempre) y, solo si hubo Sets terminados, **Resumen Sets**. Cada bloque muestra W–L de esa unit en la fecha + rating inicio→fin del ladder correspondiente. En UI los ladders se etiquetan **Elo.G** (Games) y **Elo.S** (Sets); no se mezclan. Solo cuentan quienes terminaron al menos un match de esa unit; En curso / soft-delete no. El rating de inicio se calcula rejugando solo fechas **anteriores** (`session.startsAt` menor que el de esta fecha); nunca fechas posteriores. Así el fin de una fecha encadena con el inicio de la siguiente (por unit). Módulo: `web/src/lib/ranking/sessionResumen.ts`.
 
 **Historial de cambios (UI):** en el detalle de la fecha, botón **Historial** junto a Resultados abre un modal con el changelog (no se muestra inline).
 

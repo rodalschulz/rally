@@ -24,14 +24,15 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | Módulo | Por qué |
 |--------|---------|
 | `lib/ranking/elo.ts` | Singles Elo por unit (K, orden cronológico, no doble conteo) |
-| `lib/ranking/sessionResumen.ts` | Resumen de fecha: Games W–L + Elo inicio/fin; cutoff cronológico (sin filtrar fechas futuras) |
+| `lib/ranking/sessionResumen.ts` | Resumen de fecha por unit (Games/Sets): W–L + Elo.G / Elo.S inicio/fin; cutoff cronológico (sin filtrar fechas futuras) |
 | `lib/ranking/simple.ts` | Dobles / puntos por unit; no doble conteo |
 | `lib/domain/gameScore.ts` | Marcador de set válido / empate / ≥6 |
 | `lib/domain/split.ts` | Reparto, regalo de cancha, saldos netos |
 | `lib/sessions/windows.ts` | Plazos de resultados y “fecha pasada” en hub |
 | `lib/sessions/permissions.ts` | Borrar/editar/RSVP en fechas pasadas |
 | `lib/sessions/goingPlayers.ts` | Orden de avatares going: creador + A–Z |
-| `lib/debts/permissions.ts` | Saldar solo acreedor + fecha pasada |
+| `lib/debts/permissions.ts` | Saldar solo acreedor o admin + fecha pasada |
+| `lib/debts/settleLabel.ts` | Copy del Historial: acreedor vs admin según `settledById` |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 | `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
 

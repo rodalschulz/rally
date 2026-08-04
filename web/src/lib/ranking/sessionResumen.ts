@@ -52,7 +52,8 @@ function applyElo(
 }
 
 /**
- * Per-fecha Singles resumen: session W–L and Elo start/end for one unit ladder.
+ * Per-fecha Singles resumen: session W–L and Elo start/end for one unit ladder
+ * (`game` → Elo.G, `set` → Elo.S; ladders are independent).
  * Replays only the group history *before this fecha* for start ratings, then this
  * fecha's finished matches for the end ratings. Because the baseline is bounded by
  * this fecha's start, a fecha's end Elo chains into the next fecha's start Elo.
