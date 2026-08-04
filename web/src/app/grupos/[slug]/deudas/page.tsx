@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
 import { canSettleDebt } from "@/lib/debts/permissions";
+import { settleActorLabel } from "@/lib/debts/settleLabel";
 import { userIsAppAdmin } from "@/lib/admin";
 import { netBalances } from "@/lib/domain/split";
 import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
@@ -42,6 +43,9 @@ export default async function DebtsPage({
   const owedToMe = open.filter((d) => d.toPlayerId === me);
   const iOwe = open.filter((d) => d.fromPlayerId === me);
   const playersById = new Map(players.map((p) => [p.id, p]));
+  const displayNameById = new Map(
+    players.map((p) => [p.id, p.displayName] as const),
+  );
 
   return (
     <>
@@ -208,6 +212,7 @@ export default async function DebtsPage({
               const settledWhen = d.settledAt
                 ? formatSessionWhen(d.settledAt)
                 : null;
+              const settledByLabel = settleActorLabel(d, displayNameById);
               return (
                 <li
                   key={d.id}
@@ -230,15 +235,15 @@ export default async function DebtsPage({
                           ? ` · ${d.sessionCourtLabel}`
                           : ""}
                       </Link>
-                      {settledWhen ? (
-                        <p className="mt-0.5 text-[0.75rem] text-muted">
-                          Saldada {settledWhen.dayMonth} · {settledWhen.time}
-                        </p>
-                      ) : (
-                        <p className="mt-0.5 text-[0.75rem] text-muted">
-                          Saldada
-                        </p>
-                      )}
+                      <p className="mt-0.5 text-[0.75rem] text-muted">
+                        {settledByLabel
+                          ? settledWhen
+                            ? `${settledByLabel} · ${settledWhen.dayMonth} · ${settledWhen.time}`
+                            : settledByLabel
+                          : settledWhen
+                            ? `Saldada ${settledWhen.dayMonth} · ${settledWhen.time}`
+                            : "Saldada"}
+                      </p>
                     </div>
                     <span className="shrink-0 font-medium tabular-nums text-muted">
                       {formatSoles(d.amount)}

@@ -83,6 +83,7 @@ model User {
   attendances          Attendance[]
   debtsFrom            Debt[]        @relation("DebtFrom")
   debtsTo              Debt[]        @relation("DebtTo")
+  debtsSettled         Debt[]        @relation("DebtSettledBy")
   matchChangeLogs      MatchChangeLog[]
   softDeletedMatches   Match[]       @relation("MatchDeletedBy")
 
@@ -211,12 +212,15 @@ model Debt {
   amount        Decimal    @db.Decimal(10, 2)
   status        DebtStatus @default(open)
   settledAt     DateTime?
+  /** Who marked it settled (creditor or app admin). Null = legacy / unknown. */
+  settledById   String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
   playSession PlaySession @relation(fields: [playSessionId], references: [id], onDelete: Cascade)
   fromUser    User        @relation("DebtFrom", fields: [fromUserId], references: [id])
   toUser      User        @relation("DebtTo", fields: [toUserId], references: [id])
+  settledBy   User?       @relation("DebtSettledBy", fields: [settledById], references: [id], onDelete: SetNull)
 
   @@index([playSessionId, status])
 }

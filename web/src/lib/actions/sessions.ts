@@ -323,7 +323,11 @@ export async function settleDebtAction(formData: FormData) {
 
   await prisma.debt.update({
     where: { id: debtId },
-    data: { status: "settled", settledAt: new Date() },
+    data: {
+      status: "settled",
+      settledAt: new Date(),
+      settledById: userId,
+    },
   });
   const { slug } = await groupPaths(debt.playSession.groupId);
   revalidatePath(`/grupos/${slug}/deudas`);

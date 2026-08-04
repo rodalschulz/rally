@@ -58,6 +58,7 @@ export function toDebt(row: Debt): DomainDebt {
     amount: Number(row.amount),
     status: row.status,
     settledAt: row.settledAt?.toISOString(),
+    settledById: row.settledById ?? undefined,
   };
 }
 

@@ -51,6 +51,8 @@ export type Debt = {
   status: DebtStatus;
   /** Set when status becomes settled. */
   settledAt?: string;
+  /** Who marked it settled (creditor or app admin). Absent on legacy rows. */
+  settledById?: PlayerId;
 };
 
 /** Debt plus fecha context for list UIs. */
