@@ -6,6 +6,10 @@ import type { AttendanceStatus, Player } from "@/lib/domain/types";
 import { setAttendanceAction } from "@/lib/actions/sessions";
 import { AttendanceBadge } from "@/components/AttendanceUi";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import {
+  RsvpReaction,
+  type RsvpReactionKind,
+} from "@/components/RsvpReaction";
 import { Spinner } from "@/components/Spinner";
 
 type AttMap = Record<string, AttendanceStatus>;
@@ -62,6 +66,10 @@ export function SessionAttendanceBlock({
   const [pending, startTransition] = useTransition();
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reaction, setReaction] = useState<{
+    kind: RsvpReactionKind;
+    token: number;
+  } | null>(null);
   /** Admin: which player's badge is expanded into a select. */
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const editSelectRef = useRef<HTMLSelectElement>(null);
@@ -114,6 +122,12 @@ export function SessionAttendanceBlock({
     const key = `${playerId}:${status}`;
     setError(null);
     setPendingKey(key);
+    if (
+      playerId === meId &&
+      (status === "going" || status === "not_going")
+    ) {
+      setReaction({ kind: status, token: Date.now() });
+    }
     setAttByUser((prev) => ({ ...prev, [playerId]: status }));
     startTransition(async () => {
       const result = await setAttendanceAction(
@@ -135,6 +149,10 @@ export function SessionAttendanceBlock({
 
   return (
     <>
+      <RsvpReaction
+        kind={reaction?.kind ?? null}
+        token={reaction?.token ?? 0}
+      />
       <section className="animate-rise mt-8">
         <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
           Tu asistencia

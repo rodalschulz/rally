@@ -2,6 +2,10 @@
 
 import type { AttendanceStatus } from "@/lib/domain/types";
 import { setAttendanceAction } from "@/lib/actions/sessions";
+import {
+  RsvpReaction,
+  type RsvpReactionKind,
+} from "@/components/RsvpReaction";
 import { Spinner } from "@/components/Spinner";
 import { useState, useTransition } from "react";
 
@@ -44,40 +48,53 @@ export function RsvpStrip({
 }) {
   const [pending, startTransition] = useTransition();
   const [pendingOpt, setPendingOpt] = useState<string | null>(null);
+  const [reaction, setReaction] = useState<{
+    kind: RsvpReactionKind;
+    token: number;
+  } | null>(null);
   const options = ["going", "maybe", "not_going"] as const;
   const active = current === "pending" ? null : current;
 
   return (
-    <div
-      className="relative flex gap-1 rounded-xl bg-mist-2 p-1"
-      role="group"
-      aria-label="Tu asistencia"
-      aria-busy={pending}
-    >
-      {options.map((opt) => {
-        const isActive = active === opt;
-        const isThisPending = pending && pendingOpt === opt;
-        return (
-          <button
-            key={opt}
-            type="button"
-            disabled={pending}
-            onClick={() => {
-              setPendingOpt(opt);
-              startTransition(async () => {
-                await setAttendanceAction(playSessionId, opt);
-                setPendingOpt(null);
-              });
-            }}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition active:scale-[0.98] disabled:opacity-70 ${
-              isActive ? "bg-sand text-ink shadow-sm" : "text-muted"
-            }`}
-          >
-            {isThisPending ? <Spinner className="size-3.5" /> : null}
-            {labels[opt]}
-          </button>
-        );
-      })}
-    </div>
+    <>
+      <RsvpReaction
+        kind={reaction?.kind ?? null}
+        token={reaction?.token ?? 0}
+      />
+      <div
+        className="relative flex gap-1 rounded-xl bg-mist-2 p-1"
+        role="group"
+        aria-label="Tu asistencia"
+        aria-busy={pending}
+      >
+        {options.map((opt) => {
+          const isActive = active === opt;
+          const isThisPending = pending && pendingOpt === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                if (opt === "going" || opt === "not_going") {
+                  setReaction({ kind: opt, token: Date.now() });
+                }
+                setPendingOpt(opt);
+                startTransition(async () => {
+                  await setAttendanceAction(playSessionId, opt);
+                  setPendingOpt(null);
+                });
+              }}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition active:scale-[0.98] disabled:opacity-70 ${
+                isActive ? "bg-sand text-ink shadow-sm" : "text-muted"
+              }`}
+            >
+              {isThisPending ? <Spinner className="size-3.5" /> : null}
+              {labels[opt]}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
