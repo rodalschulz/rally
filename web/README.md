@@ -42,7 +42,6 @@ Tests: solo módulos puros por ahora — ver [`../docs/TESTING.md`](../docs/TEST
 | `/grupos/[slug]` | Hub Fechas + canchas libres (global) |
 | `/grupos/[slug]/sessions/*` | Crear / detalle, RSVP, resultados, chat |
 | `/grupos/[slug]/rankings/singles` | Ranking Games \| Sets |
-| `/grupos/[slug]/rankings/doubles` | Ranking Sets (dobles) |
 | `/grupos/[slug]/deudas` | Saldos del grupo |
 | `/grupos/[slug]/ajustes` | Salir / editar / borrar grupo |
 | `/ajustes` | Cuenta (borrar cuenta) |

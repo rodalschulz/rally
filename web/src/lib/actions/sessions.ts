@@ -444,7 +444,6 @@ export async function deletePlaySessionAction(formData: FormData) {
   revalidatePath(`/grupos/${slug}`);
   revalidatePath(`/grupos/${slug}/deudas`);
   revalidatePath(`/grupos/${slug}/rankings/singles`);
-  revalidatePath(`/grupos/${slug}/rankings/doubles`);
 
   schedulePush(() =>
     notifyFechaDeleted({
@@ -1130,5 +1129,4 @@ export async function addMatchAction(formData: FormData) {
   const { slug } = await groupPaths(session.groupId);
   revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
   revalidatePath(`/grupos/${slug}/rankings/singles`);
-  revalidatePath(`/grupos/${slug}/rankings/doubles`);
 }

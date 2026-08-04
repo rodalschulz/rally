@@ -48,7 +48,7 @@ Login Google → / (discovery)
        ↓
 /grupos/[slug]  (hub: Fechas + canchas libres globales)
   ├── sessions/nueva | sessions/[id]
-  ├── rankings/singles | doubles
+  ├── rankings/singles (Games \| Sets)
   └── deudas
 ```
 
@@ -74,7 +74,7 @@ src/
     grupos/nuevo/
     grupos/[slug]/           # Hub Fechas + canchas libres
       sessions/nueva| [id]/
-      rankings/singles|doubles/
+      rankings/singles/
       deudas/
     join/[code]/
     api/auth/[...nextauth]/
@@ -85,7 +85,7 @@ src/
   lib/
     groups/                  # create, join, requireMember, crypto
     domain/                  # tipos + split de costo
-    ranking/                 # Elo singles (por unit) + resumen de fecha + puntos dobles
+    ranking/                 # Elo singles (por unit) + resumen de fecha
     matches/                 # textos del historial de resultados (anti-cheat)
     sessions/                # ventanas de resultados, permisos
     debts/                   # sync de deudas open
@@ -105,7 +105,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 2. Crear grupo / join por invite  
 3. Hub del grupo: sesiones; canchas libres e integrantes en modales (botones en el header)  
 4. Detalle de sesión: costo/host en el header; RSVP; resultados (Games/Sets + En curso / soft-delete + Servidor opcional); historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S)  
-5. Ranking singles (Games \| Sets) / dobles Sets (por grupo)  
+5. Ranking (Games \| Sets Elo, por grupo)  
 6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta; push + preferencias en `/ajustes`)  
 7. Deudas del grupo  
 8. Login Google  
@@ -113,7 +113,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 ### Datos y consistencia
 
 - Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
-- Rankings: on-read — Singles `buildEloRanking` por `unit`; Dobles `buildRanking` (puntos). Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets).
+- Rankings: on-read — Singles `buildEloRanking` por `unit` (Games \| Sets). Sin pantalla de ranking dobles. Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets).
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad
@@ -142,7 +142,7 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Multi-grupo | Root = discovery; coordinación bajo `/grupos/[slug]` |
 | Grupos privados | Invite + contraseña; no listados en root |
 | Canchas libres | Globales (sin groupId) |
-| Algoritmo de ranking | Singles: Elo por unit (K_game=24, K_set=32); Dobles: 3 pts / set; sin doble conteo |
+| Algoritmo de ranking | Singles Elo por unit (K_game=24, K_set=32); sin ranking dobles en UI |
 | Tests | Vitest en módulos puros (`docs/TESTING.md`) |
 | Nombre de marca UI | **rally** |
 | Setup local | `web/docs/SETUP.md` |
@@ -159,4 +159,4 @@ Hecho: scaffold web, DB + auth, sesiones + RSVP + financiador + deudas, matches,
 
 Hecho (push): Web Push + preferencias en `/ajustes`; eventos Fecha / RSVP / Game|Set agregado / ranking Singles Games #1 / deuda saldada.
 
-Pendiente / nice-to-have: rotar invite/password UI completa, Elo unificado / margen de set, bot sin PC, mute por grupo, Elo.S / dobles push.
+Pendiente / nice-to-have: rotar invite/password UI completa, Elo unificado / margen de set, bot sin PC, mute por grupo, Elo.S push.

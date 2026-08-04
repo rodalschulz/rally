@@ -144,7 +144,7 @@ Resultado jugado en el contexto de una sesión. Hay **dos unidades independiente
 | Unidad (`unit`) | Qué es | Entrada | Ranking |
 |-----------------|--------|---------|---------|
 | `game` | Game suelto (rotación 1v1) | 2 jugadores; ganador obligatorio al crear; `score` = `1-0`; Servidor opcional | Singles **Games**: ladder Elo (K=24) |
-| `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores; marcador opcional al crear (`En curso` → luego `6-4`) | Singles **Sets**: Elo (K=32); Dobles: 3 pts / victoria |
+| `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores; marcador opcional al crear (`En curso` → luego `6-4`) | Singles **Sets**: Elo (K=32) |
 
 Un Set **no** se descompone en N Games para el ranking: el `6-4` es metadata del Set, no genera filas de Game.
 
@@ -170,13 +170,11 @@ Registro append-only por fecha: quién agregó / editó / borró / restauró un 
 Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 
 - **Singles** — pestañas **Games** y **Sets**, ladders Elo **independientes** filtrados por `unit`  
-- **Doubles** — solo Sets, 3 pts por victoria  
+- **Doubles** — sin pantalla de ranking en MVP (el `format` sigue existiendo en el modelo)
 
 Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt` null), cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras y En curso no suman). Al editar, soft-borrar o restaurar, el ladder se recalcula on-read (no hay ratings persistidos).
 
 **Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Ladders independientes por unit; en UI de Resumen se etiquetan **Elo.G** (Games, K=24) y **Elo.S** (Sets, K=32). Si nadie tiene resultados en el ladder, todos los miembros aparecen con **1000** (0–0); en cuanto hay al menos un resultado, solo figuran quienes ya jugaron. W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; lista ordenada por Elo desc, luego nombre (`es`). Games y Sets no se mezclan.
-
-**Dobles puntos** (`web/src/lib/ranking/simple.ts`): 3 pts / set; 0 por derrota; desempate por wins, luego id.
 
 **Resultados en una fecha:** cualquier asistente `going` puede agregar, editar, soft-borrar o restaurar Games sueltos y Sets singles (quien no marcó Voy no gestiona resultados). Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Un **Game** exige ganador al crear (Servidor opcional). Un **Set** sí puede quedar **En curso** sin marcador y completarse después. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
 
@@ -231,7 +229,7 @@ Nunca se notifica al actor de su propia acción. Fallos de push no bloquean la m
 | Asistencia / RSVP | Confirmación de quién va |
 | Deuda | Cuánto debe A a B por una sesión |
 | Match | Resultado (`game` o `set`) con ganador |
-| Ranking Games / Sets | Singles: Elo por unit; dobles: 3 pts / set |
+| Ranking Games / Sets | Elo singles por unit (Games \| Sets) |
 | Regalo de cancha | `financierCoversAll` — sin deudas |
 | Canchas libres | Snapshot Miraflores vía bot (global) |
 | Push | Web Push opt-in + preferencias en `/ajustes` |

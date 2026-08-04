@@ -25,7 +25,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 |--------|---------|
 | `lib/ranking/elo.ts` | Singles Elo por unit (K, orden cronológico, no doble conteo) |
 | `lib/ranking/sessionResumen.ts` | Resumen de fecha por unit (Games/Sets): W–L + Elo.G / Elo.S inicio/fin; cutoff cronológico (sin filtrar fechas futuras) |
-| `lib/ranking/simple.ts` | Dobles / puntos por unit; no doble conteo |
+| `lib/ranking/simple.ts` | Puntos por unit (helper; sin ranking dobles en UI) |
 | `lib/domain/gameScore.ts` | Marcador de set válido / empate / ≥6 |
 | `lib/domain/split.ts` | Reparto, regalo de cancha, saldos netos |
 | `lib/sessions/windows.ts` | Plazos de resultados y “fecha pasada” en hub |

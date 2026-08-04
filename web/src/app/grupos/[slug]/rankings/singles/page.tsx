@@ -1,5 +1,4 @@
 import { RankingList } from "@/components/RankingList";
-import { RankingTabs } from "@/components/RankingTabs";
 import { SinglesUnitTabs } from "@/components/SinglesUnitTabs";
 import { listGroupPlayers, listRankingMatches } from "@/lib/data/queries";
 import type { MatchUnit } from "@/lib/domain/types";
@@ -7,7 +6,7 @@ import { requireGroupMember } from "@/lib/groups";
 import { buildEloRanking } from "@/lib/ranking/elo";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Ranking singles" };
+export const metadata = { title: "Ranking" };
 
 function resolveUnit(raw: string | string[] | undefined): MatchUnit {
   const value = Array.isArray(raw) ? raw[0] : raw;
@@ -45,15 +44,13 @@ export default async function SinglesRankingPage({
     <>
       <section className="animate-rise mb-5">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
-          Singles
+          Ranking
         </h1>
         <p className="mt-1 text-[0.85rem] text-muted">
-          Ranking Elo (parten en 1000). Sin resultados aún, ves a todos los
-          miembros; después solo quienes ya jugaron. Games y Sets son ladders
-          separados. Solo cuentan fechas ya pasadas.
+          Ranking Elo (inicia en 1000). Games y Sets son rankings
+          separados.
         </p>
       </section>
-      <RankingTabs slug={slug} active="singles" />
       <SinglesUnitTabs slug={slug} active={unit} />
       <RankingList
         rows={rows}
