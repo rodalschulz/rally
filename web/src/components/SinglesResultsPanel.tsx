@@ -389,7 +389,7 @@ export function SinglesResultsPanel({
     });
   };
 
-  const submitGame = (asInProgress: boolean) => {
+  const submitGame = () => {
     setError(null);
     if (!gameDraft.player1Id || !gameDraft.player2Id) {
       setError("Hacen falta dos jugadores distintos para registrar el game");
@@ -399,20 +399,20 @@ export function SinglesResultsPanel({
       setError("Los jugadores tienen que ser distintos");
       return;
     }
-    if (!asInProgress && !gameDraft.winnerSide) {
-      setError("Elige quién ganó o guarda como En curso");
+    if (!gameDraft.winnerSide) {
+      setError("Elige quién ganó el game");
       return;
     }
 
-    const winnerSide = asInProgress ? null : gameDraft.winnerSide;
-    const score = winnerSide ? "1-0" : "";
+    const winnerSide = gameDraft.winnerSide;
+    const score = "1-0";
     const serverSide = gameDraft.serverSide;
 
     const fd = new FormData();
     fd.set("playSessionId", playSessionId);
     fd.set("player1Id", gameDraft.player1Id);
     fd.set("player2Id", gameDraft.player2Id);
-    if (winnerSide) fd.set("winnerSide", winnerSide);
+    fd.set("winnerSide", winnerSide);
     fd.set("serverSide", serverSide ?? "");
 
     if (editingId) {
@@ -692,49 +692,6 @@ export function SinglesResultsPanel({
 
                     {canManage && enCurso && m.unit === "game" ? (
                       <div className="mt-2 space-y-2">
-                        <p className="text-[0.75rem] text-muted">Ganó</p>
-                        <div
-                          className="flex gap-1 rounded-xl bg-mist-2 p-1"
-                          role="group"
-                          aria-label="Quién ganó el game"
-                        >
-                          <button
-                            type="button"
-                            disabled={isTempMatchId(m.id) || pending}
-                            onClick={() =>
-                              setWinnerPickById((prev) => ({
-                                ...prev,
-                                [m.id]:
-                                  prev[m.id] === "A" ? undefined : "A",
-                              }))
-                            }
-                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
-                              winnerPickById[m.id] === "A"
-                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
-                                : "text-muted"
-                            }`}
-                          >
-                            {a}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isTempMatchId(m.id) || pending}
-                            onClick={() =>
-                              setWinnerPickById((prev) => ({
-                                ...prev,
-                                [m.id]:
-                                  prev[m.id] === "B" ? undefined : "B",
-                              }))
-                            }
-                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
-                              winnerPickById[m.id] === "B"
-                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
-                                : "text-muted"
-                            }`}
-                          >
-                            {b}
-                          </button>
-                        </div>
                         <p className="text-[0.75rem] text-muted">
                           Servidor (opcional)
                         </p>
@@ -771,6 +728,49 @@ export function SinglesResultsPanel({
                             }
                             className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
                               serverSelected === "B"
+                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                                : "text-muted"
+                            }`}
+                          >
+                            {b}
+                          </button>
+                        </div>
+                        <p className="text-[0.75rem] text-muted">Ganó</p>
+                        <div
+                          className="flex gap-1 rounded-xl bg-mist-2 p-1"
+                          role="group"
+                          aria-label="Quién ganó el game"
+                        >
+                          <button
+                            type="button"
+                            disabled={isTempMatchId(m.id) || pending}
+                            onClick={() =>
+                              setWinnerPickById((prev) => ({
+                                ...prev,
+                                [m.id]:
+                                  prev[m.id] === "A" ? undefined : "A",
+                              }))
+                            }
+                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
+                              winnerPickById[m.id] === "A"
+                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                                : "text-muted"
+                            }`}
+                          >
+                            {a}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isTempMatchId(m.id) || pending}
+                            onClick={() =>
+                              setWinnerPickById((prev) => ({
+                                ...prev,
+                                [m.id]:
+                                  prev[m.id] === "B" ? undefined : "B",
+                              }))
+                            }
+                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
+                              winnerPickById[m.id] === "B"
                                 ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
                                 : "text-muted"
                             }`}
@@ -979,7 +979,7 @@ export function SinglesResultsPanel({
           className="mt-3 space-y-4 rounded-2xl bg-sand px-4 py-4"
           onSubmit={(e) => {
             e.preventDefault();
-            submitGame(!gameDraft.winnerSide);
+            submitGame();
           }}
         >
           <div>
@@ -987,8 +987,7 @@ export function SinglesResultsPanel({
               {editingId ? "Editar game" : "Agregar game"}
             </p>
             <p className="mt-0.5 text-[0.8rem] text-muted">
-              Primero los jugadores (En curso). El ganador lo puedes marcar
-              después.
+              Elige jugadores, servidor (opcional) y quién ganó.
             </p>
           </div>
 
@@ -999,48 +998,6 @@ export function SinglesResultsPanel({
             onPlayer1={(id) => setGameDraft((d) => ({ ...d, player1Id: id }))}
             onPlayer2={(id) => setGameDraft((d) => ({ ...d, player2Id: id }))}
           />
-
-          <div>
-            <p className="mb-2 text-[0.8rem] text-muted">Ganó (opcional)</p>
-            <div
-              className="flex gap-1 rounded-xl bg-mist-2 p-1"
-              role="group"
-              aria-label="Quién ganó el game"
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  setGameDraft((d) => ({
-                    ...d,
-                    winnerSide: d.winnerSide === "A" ? null : "A",
-                  }))
-                }
-                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
-                  gameDraft.winnerSide === "A"
-                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
-                    : "text-muted"
-                }`}
-              >
-                {nameOf(players, gameDraft.player1Id)}
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setGameDraft((d) => ({
-                    ...d,
-                    winnerSide: d.winnerSide === "B" ? null : "B",
-                  }))
-                }
-                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
-                  gameDraft.winnerSide === "B"
-                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
-                    : "text-muted"
-                }`}
-              >
-                {nameOf(players, gameDraft.player2Id)}
-              </button>
-            </div>
-          </div>
 
           <div>
             <p className="mb-2 text-[0.8rem] text-muted">Servidor (opcional)</p>
@@ -1084,6 +1041,48 @@ export function SinglesResultsPanel({
             </div>
           </div>
 
+          <div>
+            <p className="mb-2 text-[0.8rem] text-muted">Ganó</p>
+            <div
+              className="flex gap-1 rounded-xl bg-mist-2 p-1"
+              role="group"
+              aria-label="Quién ganó el game"
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  setGameDraft((d) => ({
+                    ...d,
+                    winnerSide: d.winnerSide === "A" ? null : "A",
+                  }))
+                }
+                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
+                  gameDraft.winnerSide === "A"
+                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                    : "text-muted"
+                }`}
+              >
+                {nameOf(players, gameDraft.player1Id)}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setGameDraft((d) => ({
+                    ...d,
+                    winnerSide: d.winnerSide === "B" ? null : "B",
+                  }))
+                }
+                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
+                  gameDraft.winnerSide === "B"
+                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                    : "text-muted"
+                }`}
+              >
+                {nameOf(players, gameDraft.player2Id)}
+              </button>
+            </div>
+          </div>
+
           {players.length < 2 ? (
             <p className="text-[0.85rem] text-muted">
               Falta otro asistente con Voy para poder guardar.
@@ -1091,30 +1090,13 @@ export function SinglesResultsPanel({
           ) : null}
           {error ? <p className="text-[0.9rem] text-danger">{error}</p> : null}
 
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              disabled={pending || !gamePlayersReady}
-              onClick={() => submitGame(true)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mist-2 py-3 text-[0.95rem] font-semibold text-ink disabled:opacity-60"
-            >
-              {pending ? (
-                <>
-                  <Spinner />
-                  Guardando…
-                </>
-              ) : (
-                "En curso"
-              )}
-            </button>
-            <FormActions
-              pending={pending}
-              canSubmit={gamePlayersReady && Boolean(gameDraft.winnerSide)}
-              editing={Boolean(editingId)}
-              onCancel={resetForm}
-              submitLabel={editingId ? "Guardar game" : "Aceptar game"}
-            />
-          </div>
+          <FormActions
+            pending={pending}
+            canSubmit={gamePlayersReady && Boolean(gameDraft.winnerSide)}
+            editing={Boolean(editingId)}
+            onCancel={resetForm}
+            submitLabel={editingId ? "Guardar game" : "Aceptar game"}
+          />
         </form>
       ) : null}
 

@@ -387,7 +387,7 @@ type SinglesLooseGameParsed =
       playSessionId: string;
       player1Id: string;
       player2Id: string;
-      winnerSide: "A" | "B" | null;
+      winnerSide: "A" | "B";
       serverSide: "A" | "B" | null;
     }
   | { ok: false; error: string };
@@ -488,17 +488,6 @@ function parseSinglesLooseGameForm(formData: FormData): SinglesLooseGameParsed {
   if (!server.ok) return server;
 
   const winnerSideRaw = String(formData.get("winnerSide") || "").trim();
-  // Empty → En curso (players only).
-  if (!winnerSideRaw) {
-    return {
-      ok: true,
-      playSessionId: sides.playSessionId,
-      player1Id: sides.player1Id,
-      player2Id: sides.player2Id,
-      winnerSide: null,
-      serverSide: server.serverSide,
-    };
-  }
   if (winnerSideRaw !== "A" && winnerSideRaw !== "B") {
     return { ok: false, error: "Elige quién ganó el game" };
   }
@@ -774,7 +763,7 @@ export async function addSinglesLooseGameAction(
         playSessionId: parsed.playSessionId,
         format: "singles",
         unit: "game",
-        score: parsed.winnerSide ? "1-0" : "",
+        score: "1-0",
         winnerSide: parsed.winnerSide,
         serverSide: parsed.serverSide,
         sideA: [parsed.player1Id],
@@ -834,7 +823,7 @@ export async function updateSinglesLooseGameAction(
     const updated = await prisma.match.update({
       where: { id: matchId },
       data: {
-        score: parsed.winnerSide ? "1-0" : "",
+        score: "1-0",
         winnerSide: parsed.winnerSide,
         serverSide: parsed.serverSide,
         sideA: [parsed.player1Id],

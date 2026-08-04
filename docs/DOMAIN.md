@@ -142,7 +142,7 @@ Resultado jugado en el contexto de una sesión. Hay **dos unidades independiente
 
 | Unidad (`unit`) | Qué es | Entrada | Ranking |
 |-----------------|--------|---------|---------|
-| `game` | Game suelto (rotación 1v1) | 2 jugadores; ganador opcional al crear (`En curso` → luego ganador); `score` = `1-0` | Singles **Games**: ladder Elo (K=24) |
+| `game` | Game suelto (rotación 1v1) | 2 jugadores; ganador obligatorio al crear; `score` = `1-0`; Servidor opcional | Singles **Games**: ladder Elo (K=24) |
 | `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores; marcador opcional al crear (`En curso` → luego `6-4`) | Singles **Sets**: Elo (K=32); Dobles: 3 pts / victoria |
 
 Un Set **no** se descompone en N Games para el ranking: el `6-4` es metadata del Set, no genera filas de Game.
@@ -177,7 +177,7 @@ Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt
 
 **Dobles puntos** (`web/src/lib/ranking/simple.ts`): 3 pts / set; 0 por derrota; desempate por wins, luego id.
 
-**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar, soft-borrar o restaurar Games sueltos y Sets singles (quien no marcó Voy no gestiona resultados). Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Se puede dejar **En curso** sin ganador y completarlo después. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
+**Resultados en una fecha:** cualquier asistente `going` puede agregar, editar, soft-borrar o restaurar Games sueltos y Sets singles (quien no marcó Voy no gestiona resultados). Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Un **Game** exige ganador al crear (Servidor opcional). Un **Set** sí puede quedar **En curso** sin marcador y completarse después. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
 
 **Resumen de fecha:** debajo de Resultados, W–L de **Singles Games** de esa fecha + Elo inicio→fin (ladder Games, on-read). Solo quienes terminaron al menos un Game; En curso / soft-delete / Sets no cuentan. El Elo de inicio se calcula rejugando solo fechas **anteriores** (`session.startsAt` menor que el de esta fecha); nunca fechas posteriores. Así el Elo fin de una fecha encadena con el Elo inicio de la siguiente. Módulo: `web/src/lib/ranking/sessionResumen.ts`.
 
