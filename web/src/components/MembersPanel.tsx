@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Player } from "@/lib/domain/types";
 import { PlayerAvatar } from "./PlayerAvatar";
 
@@ -10,65 +11,124 @@ export function MembersPanel({
   members: { player: Player; role: "owner" | "member" }[];
 }) {
   const [open, setOpen] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
   const count = members.length;
 
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   return (
-    <section className="mt-8" aria-labelledby="members-heading">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls="members-panel"
-        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-sand px-4 py-3.5 text-left transition active:scale-[0.99]"
+        onClick={() => setOpen(true)}
+        aria-label={`Integrantes (${count})`}
+        title="Integrantes"
+        className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-mist-2 text-muted transition hover:text-ink active:scale-95"
       >
-        <div className="min-w-0">
-          <h2
-            id="members-heading"
-            className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
-          >
-            Integrantes
-          </h2>
-          <p className="mt-0.5 text-[0.7rem] text-muted">
-            {count} {count === 1 ? "miembro" : "miembros"}
-          </p>
-        </div>
-        <span
-          className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
-          aria-hidden
-        >
-          ▾
-        </span>
+        <PeopleIcon />
       </button>
 
-      {open ? (
-        <ul
-          id="members-panel"
-          className="mt-2 overflow-hidden rounded-2xl bg-sand"
-        >
-          {members.length === 0 ? (
-            <li className="px-4 py-5 text-[0.9rem] text-muted">
-              Todavía no hay integrantes.
-            </li>
-          ) : (
-            members.map(({ player, role }) => (
-              <li
-                key={player.id}
-                className="flex items-center gap-3 border-b border-ink/6 px-4 py-3 last:border-b-0"
+      {portalReady && open
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+              role="presentation"
+              onClick={() => setOpen(false)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="members-title"
+                className="flex max-h-[min(70vh,28rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-sand shadow-lg"
+                onClick={(e) => e.stopPropagation()}
               >
-                <PlayerAvatar player={player} size="sm" />
-                <span className="min-w-0 flex-1 truncate font-medium text-ink">
-                  {player.displayName}
-                </span>
-                {role === "owner" ? (
-                  <span className="shrink-0 text-[0.75rem] text-muted">
-                    dueño
-                  </span>
-                ) : null}
-              </li>
-            ))
-          )}
-        </ul>
-      ) : null}
-    </section>
+                <div className="flex items-start justify-between gap-3 border-b border-ink/6 px-4 py-3">
+                  <div className="min-w-0">
+                    <h2
+                      id="members-title"
+                      className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
+                    >
+                      Integrantes
+                    </h2>
+                    <p className="mt-0.5 text-[0.75rem] text-muted">
+                      {count} {count === 1 ? "miembro" : "miembros"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="shrink-0 rounded-lg px-2 py-1 text-[0.9rem] font-medium text-muted"
+                    aria-label="Cerrar"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+                <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                  {members.length === 0 ? (
+                    <li className="px-4 py-6 text-[0.9rem] text-muted">
+                      Todavía no hay integrantes.
+                    </li>
+                  ) : (
+                    members.map(({ player, role }) => (
+                      <li
+                        key={player.id}
+                        className="flex items-center gap-3 border-b border-ink/6 px-4 py-3 last:border-b-0"
+                      >
+                        <PlayerAvatar player={player} size="sm" />
+                        <span className="min-w-0 flex-1 truncate font-medium text-ink">
+                          {player.displayName}
+                        </span>
+                        {role === "owner" ? (
+                          <span className="shrink-0 text-[0.75rem] text-muted">
+                            dueño
+                          </span>
+                        ) : null}
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="9" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M3.5 18.5c.8-2.6 2.9-4 5.5-4s4.7 1.4 5.5 4"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <circle cx="17" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+      <path
+        d="M15.5 18.5c.5-1.7 1.7-2.8 3.5-3.2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

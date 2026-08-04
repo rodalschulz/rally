@@ -74,7 +74,9 @@ a {
 }
 
 button {
-  font: inherit;
+  /* Avoid `font: inherit` — unlayered shorthand overrides Tailwind font-size utilities. */
+  font-family: inherit;
+  letter-spacing: inherit;
 }
 
 /* Native datetime-local often has a huge intrinsic min-width on mobile. */

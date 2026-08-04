@@ -78,8 +78,8 @@ export function SessionPageSkeleton() {
 
 export function AvailabilitySkeleton() {
   return (
-    <div
-      className="mt-8 mb-8 h-14 animate-pulse rounded-2xl bg-sand"
+    <span
+      className="inline-block h-8 w-[4.5rem] animate-pulse rounded-full bg-sand ring-1 ring-ink/10"
       aria-hidden
     />
   );

@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
-import { AvailabilitySkeleton } from "@/components/GroupSkeletons";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { MembersPanel } from "@/components/MembersPanel";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
@@ -46,13 +45,16 @@ export default async function GroupHubPage({
   return (
     <>
       <section className="animate-rise mb-8 pt-1">
-        <div className="flex items-center gap-1">
-          <h1 className="m-0 min-w-0 text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">
+        <div className="flex items-center gap-1.5">
+          <h1 className="m-0 min-w-0 truncate text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">
             {group.name}
           </h1>
-          {isOwner ? (
-            <InviteLinkCard inviteCode={group.inviteCode} isOwner />
-          ) : null}
+          <div className="ml-1.5 flex h-[1.75rem] shrink-0 items-center gap-1">
+            <MembersPanel members={members} />
+            {isOwner ? (
+              <InviteLinkCard inviteCode={group.inviteCode} isOwner />
+            ) : null}
+          </div>
         </div>
         {group.description ? (
           <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">
@@ -84,12 +86,24 @@ export default async function GroupHubPage({
               </p>
             </details>
           </div>
-          <Link
-            href={`/grupos/${slug}/sessions/nueva`}
-            className="rounded-full bg-sand px-3.5 py-1.5 text-[0.8rem] font-medium text-ink ring-1 ring-ink/10"
-          >
-            Nueva
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Suspense
+              fallback={
+                <span
+                  className="inline-block h-8 w-[4.5rem] animate-pulse rounded-full bg-sand ring-1 ring-ink/10"
+                  aria-hidden
+                />
+              }
+            >
+              <AvailabilitySection />
+            </Suspense>
+            <Link
+              href={`/grupos/${slug}/sessions/nueva`}
+              className="inline-flex h-8 items-center justify-center rounded-full bg-sand px-3.5 text-[0.8rem] font-medium leading-none tracking-[-0.01em] text-ink ring-1 ring-ink/10"
+            >
+              Nueva
+            </Link>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-2xl bg-sand">
@@ -121,12 +135,6 @@ export default async function GroupHubPage({
           )}
         </div>
       </section>
-
-      <Suspense fallback={<AvailabilitySkeleton />}>
-        <AvailabilitySection />
-      </Suspense>
-
-      <MembersPanel members={members} />
 
       {past.length > 0 ? (
         <section className="mt-8" aria-labelledby="past-heading">
