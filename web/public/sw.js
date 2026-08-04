@@ -1,8 +1,8 @@
 /**
- * PWA service worker — static assets only.
+ * PWA service worker — static assets + Web Push.
  * Never cache HTML, RSC/Flight, or API: that caused stale Games/attendance on Safari.
  */
-const CACHE = "rally-v3";
+const CACHE = "rally-v4";
 const PRECACHE = ["/manifest.webmanifest", "/icons/icon-192.png"];
 
 const isLocal =
@@ -67,5 +67,57 @@ self.addEventListener("fetch", (event) => {
         return response;
       });
     }),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let data = { title: "rally", body: "", url: "/" };
+  try {
+    if (event.data) {
+      data = { ...data, ...event.data.json() };
+    }
+  } catch {
+    /* ignore malformed payload */
+  }
+
+  const title = data.title || "rally";
+  const options = {
+    body: data.body || "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    data: { url: data.url || "/" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const rawUrl = event.notification.data?.url || "/";
+  const targetUrl = new URL(rawUrl, self.location.origin).href;
+
+  event.waitUntil(
+    (async () => {
+      const allClients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of allClients) {
+        if ("focus" in client) {
+          await client.focus();
+          if ("navigate" in client && client.url !== targetUrl) {
+            try {
+              await client.navigate(targetUrl);
+              return;
+            } catch {
+              /* fall through to openWindow */
+            }
+          } else {
+            return;
+          }
+        }
+      }
+      await self.clients.openWindow(targetUrl);
+    })(),
   );
 });

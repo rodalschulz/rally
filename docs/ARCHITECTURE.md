@@ -34,7 +34,8 @@ Integración bot↔web: el bot corre en **PC**, hace `POST /api/availability/syn
 - **DB:** Prisma 6 + Neon Postgres (`DATABASE_URL` pooler + `DIRECT_URL` para migrate)
 - **Mutaciones:** Server Actions + Route Handler de sync (`/api/availability/sync`)
 - **Hosting:** Vercel (Root Directory = `web`)
-- **PWA:** manifest + service worker básicos
+- **PWA:** manifest + service worker (`sw.js`: assets + Web Push)
+- **Web Push:** `web-push` + VAPID (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`); suscripciones en Neon
 
 ### Modelo multi-grupo
 
@@ -78,6 +79,8 @@ src/
     join/[code]/
     api/auth/[...nextauth]/
     api/availability/sync/   # bot → Neon (Bearer CRON_SECRET)
+    api/push/                # subscribe / prefs / vapid-public-key
+    ajustes/                 # cuenta + suite de notificaciones
   components/
   lib/
     groups/                  # create, join, requireMember, crypto
@@ -86,6 +89,7 @@ src/
     matches/                 # textos del historial de resultados (anti-cheat)
     sessions/                # ventanas de resultados, permisos
     debts/                   # sync de deudas open
+    push/                    # Web Push send, prefs, eventos de dominio
     actions/                 # Server Actions (groups + sessions)
     data/                    # queries scoped por groupId
   scripts/
@@ -102,7 +106,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 3. Hub del grupo: sesiones; canchas libres e integrantes en modales (botones en el header)  
 4. Detalle de sesión: costo/host en el header; RSVP; resultados (Games/Sets + En curso / soft-delete + Servidor opcional); historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S)  
 5. Ranking singles (Games \| Sets) / dobles Sets (por grupo)  
-6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta)  
+6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta; push + preferencias en `/ajustes`)  
 7. Deudas del grupo  
 8. Login Google  
 
@@ -153,4 +157,6 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 
 Hecho: scaffold web, DB + auth, sesiones + RSVP + financiador + deudas, matches, rankings, puente bot, **multi-grupo** (discovery + hub).
 
-Pendiente / nice-to-have: rotar invite/password UI completa, Elo unificado / margen de set, bot sin PC, notificaciones.
+Hecho (push): Web Push + preferencias en `/ajustes`; eventos Fecha / RSVP / Game|Set agregado / ranking Singles Games #1 / deuda saldada.
+
+Pendiente / nice-to-have: rotar invite/password UI completa, Elo unificado / margen de set, bot sin PC, mute por grupo, Elo.S / dobles push.

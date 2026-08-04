@@ -52,8 +52,22 @@ Add these env vars in the Vercel project settings:
 - `DATABASE_URL`, `DIRECT_URL`
 - `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`
 - `CRON_SECRET` — same value as `bot` `RALLY_CRON_SECRET` (availability sync)
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — Web Push (see below)
 
 `AUTH_URL` is usually inferred; if login redirects break, set it to your production URL.
+
+## Web Push (optional)
+
+Push notifications need VAPID keys. Generate once and reuse across environments:
+
+```bash
+cd web
+npx web-push generate-vapid-keys
+```
+
+Put the output into `.env` / Vercel as `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and set `VAPID_SUBJECT` to a `mailto:` you control.
+
+Opt-in UI: **Ajustes → Notificaciones**. Push only works where a service worker is registered (production / `next start`, not `next dev`). On iOS, the user must **Add to Home Screen** first.
 
 Build command should run `prisma generate` (or `prisma migrate deploy` on release). Scripts in `package.json` include `postinstall`: `prisma generate`.
 

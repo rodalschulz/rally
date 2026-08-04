@@ -1,6 +1,7 @@
 import { signOut } from "@/auth";
 import { AppShell } from "@/components/AppShell";
 import { DeleteAccountButton } from "@/components/DeleteAccountButton";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { updateProfileAction } from "@/lib/actions/profile";
 import { userIsAppAdmin } from "@/lib/admin";
@@ -65,6 +66,8 @@ export default async function UserSettingsPage() {
           Guardar
         </PendingSubmitButton>
       </form>
+
+      <NotificationSettings />
 
       <form
         className="mt-8"

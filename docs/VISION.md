@@ -10,7 +10,7 @@ Eso se mantiene en `bot/`, como herramienta auxiliar (y puede publicar “cancha
 
 Una **app de coordinación** (**rally**) para un grupo de amigos que juegan tenis con regularidad: saber quién va, quién pagó la cancha, quién le debe a quién, qué partidos se jugaron y cómo van los rankings.
 
-Stack actual: **Next.js + TypeScript + Tailwind** en **Vercel**, con **Auth.js (Google)** y **Neon/Prisma**. El backend vive en el mismo Next.js (Server Actions / Route Handlers). Un servicio aparte solo si aparece una necesidad clara (jobs a escala, notificaciones push, etc.).
+Stack actual: **Next.js + TypeScript + Tailwind** en **Vercel**, con **Auth.js (Google)** y **Neon/Prisma**. El backend vive en el mismo Next.js (Server Actions / Route Handlers). **Web Push** vive ahí también (VAPID + service worker). Un servicio aparte solo si aparece una necesidad clara (jobs a escala, WhatsApp/email, etc.).
 
 ## Problemas que resuelve
 

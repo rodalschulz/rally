@@ -42,10 +42,11 @@ Leer antes de implementar features de producto:
 ## Estado actual (snapshot)
 
 - `bot/` operativo como script local (`open_chrome.py`); sync opcional a rally con `RALLY_CRON_SECRET`.
-- `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA.
-- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/login`.
-- Setup: `web/docs/SETUP.md`. Ranking Singles = Elo por unit (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`); Dobles = 3 pts (`simple.ts`). Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
+- `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA + **Web Push** (`/ajustes` opt-in + preferencias; `lib/push`).
+- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/ajustes` (perfil + notificaciones), `/login`.
+- Setup: `web/docs/SETUP.md` (incluye VAPID). Ranking Singles = Elo por unit (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`); Dobles = 3 pts (`simple.ts`). Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
 - Resultados: Games con ganador obligatorio + Servidor opcional; Sets pueden quedar En curso; soft-delete + historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S); UX optimista. Sin chat de fecha. Deudas: Historial de saldadas.
+- Push: opt-in en `/ajustes`; prefs Fecha / RSVP / Game|Set agregado / ranking #1 / deudas; `web/src/lib/push/` + `/api/push/*`.
 - Modelo tenis `PlaySession` (no confundir con Auth `Session`). Scoped por `groupId`.
 - Documentación: `docs/DOMAIN.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`.
 
@@ -54,6 +55,6 @@ Leer antes de implementar features de producto:
 - Mobile-first, bottom nav **dentro del grupo**, dark by default, `viewport-fit=cover` + safe areas.
 - Español (es-PE, tú), soles (`PEN`).
 - Tipografía de sistema — UI minimal.
-- Lógica de negocio en `src/lib/domain`, `src/lib/ranking`, `src/lib/matches`, `src/lib/debts`, `src/lib/groups`.
+- Lógica de negocio en `src/lib/domain`, `src/lib/ranking`, `src/lib/matches`, `src/lib/debts`, `src/lib/groups`, `src/lib/push`.
 - Usuario actual = `auth()` de Auth.js. Nunca hardcodear player ids.
 - Acciones de coordinación: validar membresía + `groupId`.

@@ -205,6 +205,22 @@ Snapshot JSON publicado por el bot (`POST /api/availability/sync`). **Global** (
 - Share = 10  
 - Deudas: Ana→Carlos 10, Bruno→Carlos 10, Diana→Carlos 10  
 
+## Notificaciones push
+
+Opt-in por usuario en `/ajustes` (permiso del navegador + suscripción Web Push). Preferencias **globales** (no por grupo); el copy del aviso incluye el nombre del grupo.
+
+| Preferencia | Cuándo | Destinatarios |
+|-------------|--------|----------------|
+| `fechaCreated` | Nueva Fecha | Otros miembros (si hay `allowedUserIds`, solo esa lista) |
+| `fechaUpdated` | Cambio material (hora, cancha, costo, cupo, allow-list, regalo, nota) | Igual que arriba |
+| `fechaDeleted` | Fecha borrada | Igual que arriba |
+| `attendanceChanged` | RSVP Voy / Quizás / No voy / Pendiente | Otros miembros del grupo |
+| `resultAdded` | Se agrega un Game o Set nuevo (no edit/delete) | Otros miembros del grupo |
+| `rankingLeaderChanged` | Cambia el #1 de **Singles Games** (Elo.G) | Solo el #1 anterior y el nuevo |
+| `debtSettled` | Deuda marcada saldada | La otra parte (o ambas si salda un admin) |
+
+Nunca se notifica al actor de su propia acción. Fallos de push no bloquean la mutación. Master enable = tener suscripción en el dispositivo; los toggles filtran tipos. iOS: requiere PWA en pantalla de inicio. Módulo: `web/src/lib/push/`.
+
 ## Glosario rápido
 
 | Término | Significado |
@@ -218,3 +234,4 @@ Snapshot JSON publicado por el bot (`POST /api/availability/sync`). **Global** (
 | Ranking Games / Sets | Singles: Elo por unit; dobles: 3 pts / set |
 | Regalo de cancha | `financierCoversAll` — sin deudas |
 | Canchas libres | Snapshot Miraflores vía bot (global) |
+| Push | Web Push opt-in + preferencias en `/ajustes` |

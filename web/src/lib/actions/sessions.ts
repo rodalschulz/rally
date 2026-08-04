@@ -27,10 +27,43 @@ import {
 } from "@/lib/sessions/permissions";
 import { isSessionGamesOpen, isSessionPast } from "@/lib/sessions/windows";
 import {
+  getSinglesGamesLeaderId,
+  isMaterialFechaUpdate,
+  notifyAttendanceChanged,
+  notifyDebtSettled,
+  notifyFechaCreated,
+  notifyFechaDeleted,
+  notifyFechaUpdated,
+  notifyResultAdded,
+  notifySinglesGamesLeaderChanged,
+} from "@/lib/push";
+import {
   appZonedParts,
   fromAppZonedDateTime,
   parseAppDatetimeLocal,
 } from "@/lib/timezone";
+
+function schedulePush(task: () => Promise<void>) {
+  after(() => {
+    void task().catch((err) => {
+      console.error("[push] notify failed", err);
+    });
+  });
+}
+
+function scheduleSinglesGamesLeaderCheck(
+  groupId: string,
+  actorId: string,
+  previousLeaderId: string | null,
+) {
+  schedulePush(() =>
+    notifySinglesGamesLeaderChanged({
+      groupId,
+      previousLeaderId,
+      actorId,
+    }),
+  );
+}
 
 async function requireUserId() {
   const session = await auth();
@@ -131,6 +164,18 @@ export async function setAttendanceAction(
     revalidatePath(`/grupos/${slug}`);
     revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`, "page");
     revalidatePath(`/grupos/${slug}/deudas`);
+
+    schedulePush(() =>
+      notifyAttendanceChanged({
+        groupId: session.groupId,
+        playSessionId,
+        startsAt: session.startsAt,
+        subjectId,
+        status,
+        actorId,
+      }),
+    );
+
     return { ok: true };
   } catch (e) {
     return {
@@ -240,6 +285,17 @@ export async function createPlaySessionAction(formData: FormData) {
   const { slug } = await groupPaths(groupId);
   revalidatePath(`/grupos/${slug}`);
   revalidatePath(`/grupos/${slug}/deudas`);
+
+  schedulePush(() =>
+    notifyFechaCreated({
+      groupId,
+      playSessionId: created.id,
+      startsAt: created.startsAt,
+      allowedUserIds: created.allowedUserIds ?? [],
+      actorId: userId,
+    }),
+  );
+
   redirect(`/grupos/${slug}/sessions/${created.id}`);
 }
 
@@ -265,6 +321,7 @@ export async function updatePlaySessionAction(formData: FormData) {
 
   // Always anchor invite list to the original creator, not the editor.
   const fields = parseSessionFields(formData, row.createdById);
+  const material = isMaterialFechaUpdate(row, fields);
 
   await prisma.playSession.update({
     where: { id: playSessionId },
@@ -288,6 +345,19 @@ export async function updatePlaySessionAction(formData: FormData) {
   revalidatePath(`/grupos/${slug}`);
   revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
   revalidatePath(`/grupos/${slug}/deudas`);
+
+  if (material) {
+    schedulePush(() =>
+      notifyFechaUpdated({
+        groupId: row.groupId,
+        playSessionId,
+        startsAt: fields.startsAt,
+        allowedUserIds: fields.allowedUserIds,
+        actorId: userId,
+      }),
+    );
+  }
+
   redirect(`/grupos/${slug}/sessions/${playSessionId}`);
 }
 
@@ -332,6 +402,17 @@ export async function settleDebtAction(formData: FormData) {
   const { slug } = await groupPaths(debt.playSession.groupId);
   revalidatePath(`/grupos/${slug}/deudas`);
   revalidatePath(`/grupos/${slug}/sessions/${debt.playSessionId}`);
+
+  schedulePush(() =>
+    notifyDebtSettled({
+      groupId: debt.playSession.groupId,
+      playSessionId: debt.playSessionId,
+      fromUserId: debt.fromUserId,
+      toUserId: debt.toUserId,
+      amount: debt.amount,
+      actorId: userId,
+    }),
+  );
 }
 
 export async function deletePlaySessionAction(formData: FormData) {
@@ -362,6 +443,16 @@ export async function deletePlaySessionAction(formData: FormData) {
   revalidatePath(`/grupos/${slug}/deudas`);
   revalidatePath(`/grupos/${slug}/rankings/singles`);
   revalidatePath(`/grupos/${slug}/rankings/doubles`);
+
+  schedulePush(() =>
+    notifyFechaDeleted({
+      groupId: row.groupId,
+      startsAt: row.startsAt,
+      allowedUserIds: row.allowedUserIds ?? [],
+      actorId: userId,
+    }),
+  );
+
   redirect(`/grupos/${slug}`);
 }
 
@@ -677,6 +768,15 @@ export async function addSinglesSetAction(
     });
 
     await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
+    schedulePush(() =>
+      notifyResultAdded({
+        groupId: gate.session.groupId,
+        playSessionId: parsed.playSessionId,
+        actorId: userId,
+        unit: "set",
+        summary: log.summary,
+      }),
+    );
     return { ok: true, match: toMatch(created), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
@@ -762,6 +862,10 @@ export async function addSinglesLooseGameAction(
     );
     if (!playersOk.ok) return playersOk;
 
+    const previousLeaderId = await getSinglesGamesLeaderId(
+      gate.session.groupId,
+    );
+
     const created = await prisma.match.create({
       data: {
         playSessionId: parsed.playSessionId,
@@ -784,6 +888,20 @@ export async function addSinglesLooseGameAction(
     });
 
     await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
+    schedulePush(() =>
+      notifyResultAdded({
+        groupId: gate.session.groupId,
+        playSessionId: parsed.playSessionId,
+        actorId: userId,
+        unit: "game",
+        summary: log.summary,
+      }),
+    );
+    scheduleSinglesGamesLeaderCheck(
+      gate.session.groupId,
+      userId,
+      previousLeaderId,
+    );
     return { ok: true, match: toMatch(created), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
@@ -823,6 +941,10 @@ export async function updateSinglesLooseGameAction(
     );
     if (!playersOk.ok) return playersOk;
 
+    const previousLeaderId = await getSinglesGamesLeaderId(
+      gate.session.groupId,
+    );
+
     const before = snapshotFromMatch(match);
     const updated = await prisma.match.update({
       where: { id: matchId },
@@ -845,6 +967,11 @@ export async function updateSinglesLooseGameAction(
     });
 
     await revalidateSessionGames(gate.session.groupId, parsed.playSessionId);
+    scheduleSinglesGamesLeaderCheck(
+      gate.session.groupId,
+      userId,
+      previousLeaderId,
+    );
     return { ok: true, match: toMatch(updated), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo guardar") };
@@ -871,6 +998,11 @@ export async function deleteSinglesResultAction(
     const gate = await assertGoingCanManageGames(match.playSessionId, userId);
     if (!gate.ok) return gate;
 
+    const previousLeaderId =
+      match.unit === "game"
+        ? await getSinglesGamesLeaderId(gate.session.groupId)
+        : null;
+
     const deletedAt = new Date();
     const updated = await prisma.match.update({
       where: { id: matchId },
@@ -886,6 +1018,13 @@ export async function deleteSinglesResultAction(
     });
 
     await revalidateSessionGames(gate.session.groupId, match.playSessionId);
+    if (match.unit === "game") {
+      scheduleSinglesGamesLeaderCheck(
+        gate.session.groupId,
+        userId,
+        previousLeaderId,
+      );
+    }
     return { ok: true, match: toMatch(updated), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo borrar") };
@@ -912,6 +1051,11 @@ export async function restoreSinglesResultAction(
     const gate = await assertGoingCanManageGames(match.playSessionId, userId);
     if (!gate.ok) return gate;
 
+    const previousLeaderId =
+      match.unit === "game"
+        ? await getSinglesGamesLeaderId(gate.session.groupId)
+        : null;
+
     const updated = await prisma.match.update({
       where: { id: matchId },
       data: { deletedAt: null, deletedById: null },
@@ -926,6 +1070,13 @@ export async function restoreSinglesResultAction(
     });
 
     await revalidateSessionGames(gate.session.groupId, match.playSessionId);
+    if (match.unit === "game") {
+      scheduleSinglesGamesLeaderCheck(
+        gate.session.groupId,
+        userId,
+        previousLeaderId,
+      );
+    }
     return { ok: true, match: toMatch(updated), log };
   } catch (e) {
     return { ok: false, error: actionErrorMessage(e, "No se pudo restaurar") };

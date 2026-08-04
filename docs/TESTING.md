@@ -35,6 +35,21 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/debts/settleLabel.ts` | Copy del Historial: acreedor vs admin según `settledById` |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 | `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
+| `lib/push/recipients.ts` | Excluir actor, filtro por preferencia, allow-list Fecha, cleanup 404/410 |
+| `lib/push/leader.ts` | Detección de cambio de #1 Singles Games |
+| `lib/push/fechaDiff.ts` | Qué cuenta como update material de Fecha |
+
+## Manual QA (Web Push)
+
+Requiere VAPID en env y build con service worker (`next start` o deploy; **no** `next dev`).
+
+1. `/ajustes` → Activar notificaciones (Android Chrome o PWA iOS en Home Screen).
+2. Desde otra cuenta del mismo grupo: crear Fecha → llega push; click abre la sesión.
+3. Cambiar RSVP → push de asistencia (actor no recibe).
+4. Agregar un Game o Set → push “Games y Sets” (editar/borrar no).
+5. Apagar toggle “Nueva fecha” → crear otra Fecha → no llega.
+6. Desactivar notificaciones → suscripción borrada; no llegan más.
+7. (Opcional) Con ranking activo: game que cambie #1 → solo anterior y nuevo líder.
 
 ## Auditoría Elo vs DB
 

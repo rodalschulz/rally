@@ -12,6 +12,8 @@ export default auth((req) => {
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/availability") ||
+    // Push APIs return 401 themselves; allow the request through auth middleware.
+    pathname.startsWith("/api/push") ||
     pathname === "/manifest.webmanifest" ||
     pathname.startsWith("/icons/") ||
     pathname === "/sw.js";
