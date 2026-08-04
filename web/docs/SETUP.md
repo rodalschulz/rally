@@ -65,7 +65,7 @@ cd web
 npx web-push generate-vapid-keys
 ```
 
-Put the output into `.env` / Vercel as `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and set `VAPID_SUBJECT` to a `mailto:` you control.
+Put the output into `.env` / Vercel as `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and set `VAPID_SUBJECT` to a contact URI — prefer `mailto:you@example.com` (a bare email also works; the app prefixes `mailto:`).
 
 Opt-in UI: **Ajustes → Notificaciones**. Push only works where a service worker is registered (production / `next start`, not `next dev`). On iOS, the user must **Add to Home Screen** first.
 
