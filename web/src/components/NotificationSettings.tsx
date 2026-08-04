@@ -70,13 +70,18 @@ function isStandalonePwa(): boolean {
   );
 }
 
-export function NotificationSettings() {
+export function NotificationSettings({
+  isAppAdmin = false,
+}: {
+  isAppAdmin?: boolean;
+}) {
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [prefs, setPrefs] = useState<NotificationPrefs>(
     DEFAULT_NOTIFICATION_PREFS,
   );
   const [error, setError] = useState<string | null>(null);
+  const [testMsg, setTestMsg] = useState<string | null>(null);
   const [busy, startTransition] = useTransition();
   const [loaded, setLoaded] = useState(false);
 
@@ -196,6 +201,28 @@ export function NotificationSettings() {
     });
   };
 
+  const sendTestPush = () => {
+    setError(null);
+    setTestMsg(null);
+    startTransition(async () => {
+      try {
+        const res = await fetch("/api/push/test", { method: "POST" });
+        const data = (await res.json()) as { error?: string; sent?: number };
+        if (!res.ok) {
+          setError(data.error || "No se pudo enviar la prueba.");
+          return;
+        }
+        setTestMsg(
+          data.sent && data.sent > 1
+            ? `Prueba enviada a ${data.sent} dispositivos.`
+            : "Prueba enviada. Deberías ver la notificación ya.",
+        );
+      } catch {
+        setError("No se pudo enviar la prueba.");
+      }
+    });
+  };
+
   const togglePref = (key: PreferenceKey, value: boolean) => {
     const next = { ...prefs, [key]: value };
     setPrefs(next);
@@ -274,6 +301,20 @@ export function NotificationSettings() {
 
       {error ? (
         <p className="text-[0.85rem] text-red-600 dark:text-red-400">{error}</p>
+      ) : null}
+      {testMsg ? (
+        <p className="text-[0.85rem] text-muted">{testMsg}</p>
+      ) : null}
+
+      {isAppAdmin && subscribed ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={sendTestPush}
+          className="w-full rounded-2xl bg-sand py-3.5 text-[1rem] font-medium text-ink ring-1 ring-ink/10 disabled:opacity-60"
+        >
+          {busy ? "…" : "Enviar notificación de prueba"}
+        </button>
       ) : null}
 
       <ul className="space-y-3">

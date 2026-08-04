@@ -31,4 +31,4 @@ export {
   notifyResultAdded,
   notifySinglesGamesLeaderChanged,
 } from "./events";
-export { sendPushToUser, sendPushToUsers } from "./send";
+export { sendPushToUser, sendPushToUsers, sendRawPushToUser } from "./send";

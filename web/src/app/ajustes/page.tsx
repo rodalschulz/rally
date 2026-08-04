@@ -67,7 +67,7 @@ export default async function UserSettingsPage() {
         </PendingSubmitButton>
       </form>
 
-      <NotificationSettings />
+      <NotificationSettings isAppAdmin={isAppAdmin} />
 
       <form
         className="mt-8"

@@ -44,12 +44,13 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 Requiere VAPID en env y build con service worker (`next start` o deploy; **no** `next dev`).
 
 1. `/ajustes` → Activar notificaciones (Android Chrome o PWA iOS en Home Screen).
-2. Desde otra cuenta del mismo grupo: crear Fecha → llega push; click abre la sesión.
-3. Cambiar RSVP → push de asistencia (actor no recibe).
-4. Agregar un Game o Set → push “Games y Sets” (editar/borrar no).
-5. Apagar toggle “Nueva fecha” → crear otra Fecha → no llega.
-6. Desactivar notificaciones → suscripción borrada; no llegan más.
-7. (Opcional) Con ranking activo: game que cambie #1 → solo anterior y nuevo líder.
+2. (Admin) **Enviar notificación de prueba** → llega push al propio dispositivo.
+3. Desde otra cuenta del mismo grupo: crear Fecha → llega push; click abre la sesión.
+4. Cambiar RSVP → push de asistencia (actor no recibe).
+5. Agregar un Game o Set → push “Games y Sets” (editar/borrar no).
+6. Apagar toggle “Nueva fecha” → crear otra Fecha → no llega.
+7. Desactivar notificaciones → suscripción borrada; no llegan más.
+8. (Opcional) Con ranking activo: game que cambie #1 → solo anterior y nuevo líder.
 
 ## Auditoría Elo vs DB
 

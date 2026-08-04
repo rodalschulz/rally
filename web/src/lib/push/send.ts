@@ -69,3 +69,46 @@ export async function sendPushToUser(
 ): Promise<void> {
   await sendPushToUsers([userId], payload, prefKey, options);
 }
+
+/**
+ * Send to all of a user's device subscriptions, ignoring preference toggles.
+ * Used for admin self-test. Returns how many endpoints were targeted.
+ */
+export async function sendRawPushToUser(
+  userId: string,
+  payload: PushPayload,
+): Promise<{ sent: number }> {
+  if (!ensureVapidConfigured()) {
+    throw new Error("VAPID no configurado");
+  }
+
+  const subscriptions = await listSubscriptionsForUsers([userId]);
+  if (subscriptions.length === 0) {
+    return { sent: 0 };
+  }
+
+  const body = JSON.stringify(payload);
+  let sent = 0;
+  await Promise.all(
+    subscriptions.map(async (sub) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          },
+          body,
+        );
+        sent += 1;
+      } catch (err) {
+        const statusCode = (err as WebPushError)?.statusCode;
+        if (shouldDeleteSubscription(statusCode)) {
+          await deleteSubscriptionById(sub.id).catch(() => {});
+          return;
+        }
+        console.error("[push] test send failed", sub.endpoint.slice(0, 48), err);
+      }
+    }),
+  );
+  return { sent };
+}

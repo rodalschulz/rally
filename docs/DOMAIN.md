@@ -219,7 +219,7 @@ Opt-in por usuario en `/ajustes` (permiso del navegador + suscripción Web Push)
 | `rankingLeaderChanged` | Cambia el #1 de **Singles Games** (Elo.G) | Solo el #1 anterior y el nuevo |
 | `debtSettled` | Deuda marcada saldada | La otra parte (o ambas si salda un admin) |
 
-Nunca se notifica al actor de su propia acción. Fallos de push no bloquean la mutación. Master enable = tener suscripción en el dispositivo; los toggles filtran tipos. iOS: requiere PWA en pantalla de inicio. Módulo: `web/src/lib/push/`.
+Nunca se notifica al actor de su propia acción. Fallos de push no bloquean la mutación. Master enable = tener suscripción en el dispositivo; los toggles filtran tipos. iOS: requiere PWA en pantalla de inicio. **Admin de app:** botón “Enviar notificación de prueba” en `/ajustes` (ping a sus propios dispositivos; ignora toggles). Módulo: `web/src/lib/push/`.
 
 ## Glosario rápido
 
