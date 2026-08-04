@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-/** Owner control: copies `/join/[code]` — icon only, next to the group name. */
+/** Owner control: copies `/join/[code]` — icon only (e.g. ajustes). */
 export function InviteLinkCard({
   inviteCode,
   isOwner,

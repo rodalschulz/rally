@@ -7,12 +7,17 @@ import { PlayerAvatar } from "./PlayerAvatar";
 
 export function MembersPanel({
   members,
+  inviteCode,
 }: {
   members: { player: Player; role: "owner" | "member" }[];
+  /** When set (owner), show invite copy action inside the modal. */
+  inviteCode?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
+  const [copied, setCopied] = useState(false);
   const count = members.length;
+  const canInvite = Boolean(inviteCode);
 
   useEffect(() => {
     setPortalReady(true);
@@ -31,6 +36,21 @@ export function MembersPanel({
       document.body.style.overflow = prevOverflow;
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) setCopied(false);
+  }, [open]);
+
+  async function copyInviteLink() {
+    if (!inviteCode) return;
+    const full =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/join/${inviteCode}`
+        : `/join/${inviteCode}`;
+    await navigator.clipboard.writeText(full);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <>
@@ -103,6 +123,20 @@ export function MembersPanel({
                     ))
                   )}
                 </ul>
+                {canInvite ? (
+                  <div className="border-t border-ink/6 px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={copyInviteLink}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mist-2 px-3 py-2.5 text-[0.9rem] font-medium text-ink transition hover:bg-mist-2/80 active:scale-[0.99]"
+                    >
+                      {copied ? <CheckIcon /> : <CopyIcon />}
+                      {copied
+                        ? "Link copiado"
+                        : "Copiar link de invitación"}
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </div>,
             document.body,
@@ -128,6 +162,42 @@ function PeopleIcon() {
         stroke="currentColor"
         strokeWidth="1.75"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect
+        x="9"
+        y="9"
+        width="11"
+        height="11"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M5 15V5a2 2 0 0 1 2-2h10"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 12.5 10 17.5 19 7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
-import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { MembersPanel } from "@/components/MembersPanel";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
 import {
@@ -49,11 +48,11 @@ export default async function GroupHubPage({
           <h1 className="m-0 min-w-0 truncate text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">
             {group.name}
           </h1>
-          <div className="ml-1.5 flex h-[1.75rem] shrink-0 items-center gap-1">
-            <MembersPanel members={members} />
-            {isOwner ? (
-              <InviteLinkCard inviteCode={group.inviteCode} isOwner />
-            ) : null}
+          <div className="ml-1.5 flex h-[1.75rem] shrink-0 items-center">
+            <MembersPanel
+              members={members}
+              inviteCode={isOwner ? group.inviteCode : null}
+            />
           </div>
         </div>
         {group.description ? (
