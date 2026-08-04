@@ -44,11 +44,13 @@ import {
 } from "@/lib/timezone";
 
 function schedulePush(task: () => Promise<void>) {
-  after(() => {
-    void task().catch((err) => {
+  // Pass the Promise itself so Next/Vercel waitUntil keeps the lambda alive
+  // until web-push finishes (voiding inside after() drops the work early).
+  after(
+    task().catch((err) => {
       console.error("[push] notify failed", err);
-    });
-  });
+    }),
+  );
 }
 
 function scheduleSinglesGamesLeaderCheck(
