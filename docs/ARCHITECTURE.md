@@ -82,23 +82,25 @@ src/
   lib/
     groups/                  # create, join, requireMember, crypto
     domain/                  # tipos + split de costo
-    ranking/                 # Elo singles (por unit) + puntos dobles
+    ranking/                 # Elo singles (por unit) + resumen de fecha + puntos dobles
     matches/                 # textos del historial de resultados (anti-cheat)
-    sessions/                # ventanas chat/resultados, permisos, chat helpers
+    sessions/                # ventanas de resultados, permisos
     debts/                   # sync de deudas open
     actions/                 # Server Actions (groups + sessions)
     data/                    # queries scoped por groupId
+  scripts/
+    audit-elo.ts             # reconciliación Elo vs DB (`npm run audit:elo`)
   auth.ts / auth.config.ts
 ```
 
-Tests de dominio: Vitest (`npm test` en `web/`). Ver [`TESTING.md`](TESTING.md).
+Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm run audit:elo`. Ver [`TESTING.md`](TESTING.md).
 
 ### Páginas (MVP UI)
 
 1. Root discovery: marca, mis grupos, públicos, crear  
 2. Crear grupo / join por invite  
-3. Hub del grupo: sesiones + canchas libres  
-4. Detalle de sesión: RSVP, financiador, deudas, resultados (Games/Sets + En curso / soft-delete + historial de cambios), chat  
+3. Hub del grupo: sesiones; canchas libres e integrantes en modales (botones en el header)  
+4. Detalle de sesión: costo/host en el header; RSVP; resultados (Games/Sets + En curso / soft-delete + Servidor opcional); historial en modal; Resumen Elo de la fecha  
 5. Ranking singles (Games \| Sets) / dobles Sets (por grupo)  
 6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta)  
 7. Deudas del grupo  
@@ -107,7 +109,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Ver [`TESTING.md`](TESTING.md).
 ### Datos y consistencia
 
 - Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
-- Rankings: on-read — Singles `buildEloRanking` por `unit`; Dobles `buildRanking` (puntos).
+- Rankings: on-read — Singles `buildEloRanking` por `unit`; Dobles `buildRanking` (puntos). Resumen de fecha: `buildSessionSinglesResumen` (baseline solo fechas anteriores).
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad

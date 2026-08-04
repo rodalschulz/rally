@@ -78,7 +78,6 @@ Duración de cancha asumida: **1 h** desde `startsAt`. Implementación: `web/src
 
 | Ventana | Abierta mientras | Uso |
 |---------|------------------|-----|
-| Chat | `now < startsAt + 30 min` | Escribir en el hilo (solo `going` / `maybe`) |
 | Resultados (Games/Sets) | `now < startsAt + 1 h + 60 min` | Agregar/editar/borrar resultados (solo `going`) |
 | Hub “Fechas Pasadas” | cuando cierra la ventana de resultados | Deja de listarse en Próximas; fecha solo lectura (salvo editar/borrar por admin de app; borrar también por owner) |
 
@@ -156,6 +155,7 @@ Un Set **no** se descompone en N Games para el ranking: el `6-4` es metadata del
 | `sideA` / `sideB` | Arrays de user ids (1 en singles, 2 en dobles) |
 | `score` | Set: ej. `6-4`. Game: `1-0`. Vacío si En curso |
 | `winnerSide` | `A` \| `B` \| `null`. `null` = **En curso** (jugadores elegidos, sin ganador); no cuenta en ranking |
+| `serverSide` | Solo Games sueltos: `A` \| `B` \| `null`. Quién sacó (**Servidor**); opcional; no afecta ranking |
 | `deletedAt` / `deletedById` | Soft-delete: no cuenta en ranking ni aparece en Resultados; queda para auditoría y **Restaurar** |
 
 ### MatchChangeLog (historial de resultados)
@@ -179,9 +179,11 @@ Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt
 
 **Resultados en una fecha:** cualquier asistente `going` puede agregar, editar, soft-borrar o restaurar Games sueltos y Sets singles (quien no marcó Voy no gestiona resultados). Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Se puede dejar **En curso** sin ganador y completarlo después. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
 
-**Ranking al editar/borrar:** Elo/puntos se recalculan on-read desde los matches activos con ganador; soft-borrar o restaurar regenera el ladder en la siguiente carga.
+**Resumen de fecha:** debajo de Resultados, W–L de **Singles Games** de esa fecha + Elo inicio→fin (ladder Games, on-read). Solo quienes terminaron al menos un Game; En curso / soft-delete / Sets no cuentan. El Elo de inicio se calcula rejugando solo fechas **anteriores** (`session.startsAt` menor que el de esta fecha); nunca fechas posteriores. Así el Elo fin de una fecha encadena con el Elo inicio de la siguiente. Módulo: `web/src/lib/ranking/sessionResumen.ts`.
 
-**Chat de fecha (`SessionChatMessage`):** miembros del grupo leen el hilo. Escriben solo `going` / `maybe` mientras el chat esté abierto (`startsAt + 30 min`); después queda solo como registro. Cascade al borrar la fecha. Cuerpo máx. 500 chars.
+**Historial de cambios (UI):** en el detalle de la fecha, botón **Historial** junto a Resultados abre un modal con el changelog (no se muestra inline).
+
+**Ranking al editar/borrar:** Elo/puntos se recalculan on-read desde los matches activos con ganador; soft-borrar o restaurar regenera el ladder en la siguiente carga.
 
 ### AvailabilitySnapshot (canchas libres)
 

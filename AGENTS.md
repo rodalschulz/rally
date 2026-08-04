@@ -43,9 +43,9 @@ Leer antes de implementar features de producto:
 
 - `bot/` operativo como script local (`open_chrome.py`); sync opcional a rally con `RALLY_CRON_SECRET`.
 - `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA.
-- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas + canchas), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/login`.
-- Setup: `web/docs/SETUP.md`. Ranking Singles = Elo por unit (`web/src/lib/ranking/elo.ts`); Dobles = 3 pts (`simple.ts`). Tests: `cd web && npm test`.
-- Resultados: En curso (sin ganador), soft-delete + historial de cambios por fecha (`lib/matches`), UX optimista. Deudas: Historial de saldadas.
+- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/login`.
+- Setup: `web/docs/SETUP.md`. Ranking Singles = Elo por unit (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`); Dobles = 3 pts (`simple.ts`). Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
+- Resultados: En curso (sin ganador; aceptar explícito), Servidor opcional en Games, soft-delete + historial en modal, Resumen Elo por fecha, UX optimista. Sin chat de fecha. Deudas: Historial de saldadas.
 - Modelo tenis `PlaySession` (no confundir con Auth `Session`). Scoped por `groupId`.
 - Documentación: `docs/DOMAIN.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`.
 
