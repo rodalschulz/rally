@@ -3,16 +3,13 @@ import { redirect } from "next/navigation";
 import { FreshOnMount } from "@/components/FreshOnMount";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
-import { SessionChat } from "@/components/SessionChat";
 import { SinglesResultsPanel } from "@/components/SinglesResultsPanel";
-import { getSession } from "@/lib/auth-session";
 import {
   getPlaySession,
   listGroupPlayers,
-  listSessionChatMessages,
+  listRankingMatches,
   listSessionMatchChangeLogs,
   toAttendance,
-  toDebt,
   toMatch,
   toPlayer,
   toSession,
@@ -20,10 +17,6 @@ import {
 import { roundMoney } from "@/lib/domain/split";
 import { formatSessionWhen, formatSoles } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
-import {
-  canPostSessionChat,
-  isSessionChatOpen,
-} from "@/lib/sessions/chat";
 import {
   canChangeAttendance,
   canDeletePlaySession,
@@ -44,14 +37,13 @@ export default async function SessionDetailPage({
 
   const group = await requireGroupMember(slug);
   const userId = group.membership.userId;
-  const authSession = await getSession();
 
-  const [row, allPlayers, chatMessages, changeLog, isAppAdmin] =
+  const [row, allPlayers, changeLog, rankingMatches, isAppAdmin] =
     await Promise.all([
       getPlaySession(id, group.id),
       listGroupPlayers(group.id),
-      listSessionChatMessages(id),
       listSessionMatchChangeLogs(id),
+      listRankingMatches(group.id),
       userIsAppAdmin(userId),
     ]);
   if (!row) redirect("/");
@@ -66,7 +58,6 @@ export default async function SessionDetailPage({
   );
   const share =
     going.length > 0 ? roundMoney(session.costAmount / going.length) : 0;
-  const sessionDebts = row.debts.map(toDebt);
   const sessionMatches = row.matches.map(toMatch);
   const goingPlayers = allPlayers.filter((p) =>
     going.some((a) => a.playerId === p.id),
@@ -100,46 +91,54 @@ export default async function SessionDetailPage({
       isAppAdmin,
     },
   );
-  const myAtt = sessionAtt.find((a) => a.playerId === userId)?.status;
-  const chatOpen = isSessionChatOpen(startsAtDate);
-  const chatCanPost = chatOpen && canPostSessionChat(myAtt);
-  const mePlayer = allPlayers.find((p) => p.id === userId);
 
   return (
     <>
       <FreshOnMount />
-      {canEdit ? (
-        <div className="mb-5 flex justify-end">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <p className="inline-flex min-w-0 items-center gap-1.5">
+          <span className="truncate text-[0.9rem] font-medium text-ink">
+            {financier.displayName}
+          </span>
+          <span className="shrink-0 rounded-md bg-mist-2 px-1.5 py-0.5 text-[0.65rem] font-medium leading-none text-muted">
+            Host
+          </span>
+        </p>
+        {canEdit ? (
           <Link
             href={`/grupos/${slug}/sessions/${session.id}/editar`}
-            className="text-[0.9rem] font-medium text-ink"
+            className="shrink-0 text-[0.9rem] font-medium text-ink"
           >
             Editar
           </Link>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       <section className="animate-rise">
         <p className="text-[0.8rem] font-medium text-muted">
           {session.courtLabel ?? "Cancha"}
         </p>
-        <h1 className="mt-1 text-[2rem] font-semibold tracking-[-0.03em] text-ink">
-          {when.time}
-        </h1>
-        <p className="mt-1 text-[0.95rem] text-muted">{when.label}</p>
-        {(session.maxAttendees != null ||
-          session.allowedUserIds.length > 0) && (
-          <p className="mt-2 text-[0.85rem] text-muted">
-            {session.maxAttendees != null
-              ? `Cupo ${going.length}/${session.maxAttendees}`
-              : null}
-            {session.maxAttendees != null &&
-            session.allowedUserIds.length > 0
-              ? " · "
-              : null}
-            {session.allowedUserIds.length > 0 ? "Solo invitados" : null}
+        <div className="mt-1 flex items-baseline justify-between gap-3">
+          <h1 className="text-[2rem] font-semibold tracking-[-0.03em] text-ink">
+            {when.time}
+          </h1>
+          <p className="shrink-0 text-[1.35rem] font-semibold tracking-[-0.02em] tabular-nums text-ink">
+            {formatSoles(session.costAmount)}
           </p>
-        )}
+        </div>
+        <div className="mt-1 flex items-baseline justify-between gap-3">
+          <p className="min-w-0 text-[0.95rem] text-muted">{when.label}</p>
+          <p className="shrink-0 text-[0.85rem] tabular-nums text-muted">
+            {session.financierCoversAll
+              ? "Regalada"
+              : going.length > 0
+                ? `${formatSoles(share)} c/u`
+                : "— c/u"}
+          </p>
+        </div>
+        {session.allowedUserIds.length > 0 ? (
+          <p className="mt-2 text-[0.85rem] text-muted">Solo invitados</p>
+        ) : null}
         {session.note ? (
           <p className="mt-3 text-[0.95rem] leading-relaxed text-ink-soft">
             {session.note}
@@ -163,100 +162,15 @@ export default async function SessionDetailPage({
         isAppAdmin={isAppAdmin}
       />
 
-      <section className="animate-rise mt-8">
-        <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Cancha
-        </h2>
-        <div className="rounded-2xl bg-sand px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[0.9rem] text-muted">Total</span>
-            <span className="text-[1.35rem] font-semibold tracking-[-0.02em] tabular-nums">
-              {formatSoles(session.costAmount)}
-            </span>
-          </div>
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-ink/6 pt-3">
-            <span className="text-[0.9rem] text-muted">
-              {session.financierCoversAll
-                ? "Por persona"
-                : `Por persona (${going.length})`}
-            </span>
-            <span className="text-[1.05rem] font-medium tabular-nums">
-              {session.financierCoversAll
-                ? formatSoles(0)
-                : going.length
-                  ? formatSoles(share)
-                  : "—"}
-            </span>
-          </div>
-          <p className="mt-3 text-[0.85rem] text-muted">
-            Pagó {financier.displayName}
-            {session.financierCoversAll ? " · cancha regalada" : ""}
-          </p>
-        </div>
-
-        {session.financierCoversAll ? (
-          <p className="mt-3 text-[0.9rem] text-muted">
-            Cancha regalada — no hay deudas en esta fecha.
-          </p>
-        ) : sessionDebts.length > 0 ? (
-          <ul className="mt-2 overflow-hidden rounded-2xl bg-sand">
-            {sessionDebts.map((d) => {
-              const from = allPlayers.find((p) => p.id === d.fromPlayerId);
-              const to = allPlayers.find((p) => p.id === d.toPlayerId);
-              return (
-                <li
-                  key={d.id}
-                  className="flex items-center justify-between gap-3 border-b border-ink/6 px-4 py-3 text-[0.9rem] last:border-b-0"
-                >
-                  <span className="text-muted">
-                    <span className="font-medium text-ink">
-                      {from?.displayName ?? "?"}
-                    </span>
-                    {" → "}
-                    {to?.displayName ?? "?"}
-                  </span>
-                  <span className="font-medium tabular-nums text-ink">
-                    {formatSoles(d.amount)}
-                    {d.status === "settled" ? (
-                      <span className="ml-2 text-[0.75rem] text-ok">pagado</span>
-                    ) : null}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="mt-3 text-[0.9rem] text-muted">
-            Todavía no hay deudas — faltan confirmaciones.
-          </p>
-        )}
-      </section>
-
       <SinglesResultsPanel
         playSessionId={session.id}
         players={goingPlayers}
         labelPlayers={allPlayers}
         results={singlesResults}
+        rankingMatches={rankingMatches}
         changeLog={changeLog}
         canManage={canManageGames}
         gamesOpen={gamesOpen}
-      />
-
-      <SessionChat
-        playSessionId={session.id}
-        initialMessages={chatMessages}
-        canPost={chatCanPost}
-        chatOpen={chatOpen}
-        meId={userId}
-        meDisplayName={
-          mePlayer?.displayName ??
-          authSession?.user?.displayName ??
-          "Jugador"
-        }
-        meShortName={
-          mePlayer?.shortName ?? authSession?.user?.shortName ?? "J"
-        }
-        meHue={mePlayer?.hue ?? authSession?.user?.hue ?? 160}
       />
 
       {canDelete ? (

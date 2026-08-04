@@ -73,6 +73,7 @@ export function toMatch(
     sideB: row.sideB,
     score: row.score,
     winnerSide: row.winnerSide,
+    serverSide: row.serverSide ?? null,
     deletedAt: row.deletedAt?.toISOString() ?? null,
     deletedById: row.deletedById ?? null,
     createdAt: row.createdAt.toISOString(),

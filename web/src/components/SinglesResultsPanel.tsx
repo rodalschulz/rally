@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Match, MatchUnit, Player } from "@/lib/domain/types";
 import {
   addSinglesLooseGameAction,
@@ -12,6 +13,8 @@ import {
 } from "@/lib/actions/sessions";
 import { formatChatTime } from "@/lib/format";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
+import { buildSessionSinglesResumen } from "@/lib/ranking/sessionResumen";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { Spinner } from "@/components/Spinner";
 
 type FormKind = "game" | "set";
@@ -28,6 +31,8 @@ type GameDraft = {
   player2Id: string;
   /** null = still choosing / En curso */
   winnerSide: "A" | "B" | null;
+  /** Optional server (side A or B) */
+  serverSide: "A" | "B" | null;
 };
 
 function emptySetDraft(players: Player[]): SetDraft {
@@ -44,6 +49,7 @@ function emptyGameDraft(players: Player[]): GameDraft {
     player1Id: players[0]?.id ?? "",
     player2Id: players[1]?.id ?? "",
     winnerSide: null,
+    serverSide: null,
   };
 }
 
@@ -62,6 +68,7 @@ function gameDraftFromMatch(m: Match): GameDraft {
     player1Id: m.sideA[0] ?? "",
     player2Id: m.sideB[0] ?? "",
     winnerSide: m.winnerSide,
+    serverSide: m.serverSide ?? null,
   };
 }
 
@@ -121,6 +128,7 @@ export function SinglesResultsPanel({
   players,
   labelPlayers,
   results,
+  rankingMatches,
   changeLog,
   canManage,
   gamesOpen,
@@ -132,6 +140,8 @@ export function SinglesResultsPanel({
   labelPlayers: Player[];
   /** Active (non-deleted) singles results */
   results: Match[];
+  /** Group ranking history (finished matches) for Elo start/end */
+  rankingMatches: Match[];
   changeLog: MatchChangeLogEntry[];
   canManage: boolean;
   gamesOpen: boolean;
@@ -146,7 +156,21 @@ export function SinglesResultsPanel({
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [historialOpen, setHistorialOpen] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
+  /** Pending winner pick for En curso games — confirm before submit. */
+  const [winnerPickById, setWinnerPickById] = useState<
+    Partial<Record<string, "A" | "B">>
+  >({});
+  /** Pending server pick for En curso games (null = cleared). */
+  const [serverPickById, setServerPickById] = useState<
+    Partial<Record<string, "A" | "B" | null>>
+  >({});
   const inFlight = useRef(0);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   useEffect(() => {
     // Don't clobber optimistic rows while a mutation is still syncing.
@@ -162,6 +186,20 @@ export function SinglesResultsPanel({
       setGameDraft(emptyGameDraft(players));
     }
   }, [players, editingId]);
+
+  useEffect(() => {
+    if (!historialOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setHistorialOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [historialOpen]);
 
   const resetForm = () => {
     setFormKind(null);
@@ -368,12 +406,14 @@ export function SinglesResultsPanel({
 
     const winnerSide = asInProgress ? null : gameDraft.winnerSide;
     const score = winnerSide ? "1-0" : "";
+    const serverSide = gameDraft.serverSide;
 
     const fd = new FormData();
     fd.set("playSessionId", playSessionId);
     fd.set("player1Id", gameDraft.player1Id);
     fd.set("player2Id", gameDraft.player2Id);
     if (winnerSide) fd.set("winnerSide", winnerSide);
+    fd.set("serverSide", serverSide ?? "");
 
     if (editingId) {
       fd.set("matchId", editingId);
@@ -386,6 +426,7 @@ export function SinglesResultsPanel({
         sideB: [gameDraft.player2Id],
         score,
         winnerSide,
+        serverSide,
       };
       runMutation({
         applyOptimistic: () => {
@@ -409,6 +450,7 @@ export function SinglesResultsPanel({
       sideB: [gameDraft.player2Id],
       score,
       winnerSide,
+      serverSide,
       createdAt: new Date().toISOString(),
     };
     runMutation({
@@ -420,20 +462,37 @@ export function SinglesResultsPanel({
     });
   };
 
-  const setGameWinner = (m: Match, winnerSide: "A" | "B") => {
+  const setGameWinner = (
+    m: Match,
+    winnerSide: "A" | "B",
+    serverSide: "A" | "B" | null,
+  ) => {
     const fd = new FormData();
     fd.set("playSessionId", playSessionId);
     fd.set("matchId", m.id);
     fd.set("player1Id", m.sideA[0] ?? "");
     fd.set("player2Id", m.sideB[0] ?? "");
     fd.set("winnerSide", winnerSide);
+    fd.set("serverSide", serverSide ?? "");
 
     const before = m;
     runMutation({
       applyOptimistic: () => {
+        setWinnerPickById((prev) => {
+          const next = { ...prev };
+          delete next[m.id];
+          return next;
+        });
+        setServerPickById((prev) => {
+          const next = { ...prev };
+          delete next[m.id];
+          return next;
+        });
         setLocal((prev) =>
           prev.map((row) =>
-            row.id === m.id ? { ...row, winnerSide, score: "1-0" } : row,
+            row.id === m.id
+              ? { ...row, winnerSide, score: "1-0", serverSide }
+              : row,
           ),
         );
       },
@@ -518,143 +577,272 @@ export function SinglesResultsPanel({
     Boolean(gameDraft.player2Id) &&
     gameDraft.player1Id !== gameDraft.player2Id;
 
+  const nameById = new Map(labelPlayers.map((p) => [p.id, p.displayName]));
+  const resumen = buildSessionSinglesResumen(
+    rankingMatches,
+    playSessionId,
+    "game",
+    local,
+    nameById,
+  );
+
   return (
     <section className="animate-rise mt-8">
-      <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-        Resultados
-      </h2>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+          Resultados
+        </h2>
+        <button
+          type="button"
+          onClick={() => setHistorialOpen(true)}
+          className="shrink-0 origin-right scale-[0.85] rounded bg-mist-2 px-2 py-1 text-[1rem] font-medium leading-none text-muted transition hover:text-ink"
+        >
+          Historial
+        </button>
+      </div>
 
       {local.length === 0 ? (
         <p className="mb-4 text-[0.9rem] text-muted">Sin resultados todavía.</p>
       ) : (
-        <ul className="mb-4 overflow-hidden rounded-2xl bg-sand">
-          {local.map((m) => {
+        <ul className="mb-4 max-h-[min(50vh,22rem)] overflow-y-auto overscroll-contain rounded-2xl bg-sand">
+          {local.map((m, index) => {
             const a = nameOf(labelPlayers, m.sideA[0]);
             const b = nameOf(labelPlayers, m.sideB[0]);
             const enCurso = isInProgress(m);
+            const serverSelected =
+              m.id in serverPickById
+                ? (serverPickById[m.id] ?? null)
+                : (m.serverSide ?? null);
             return (
               <li
                 key={m.id}
                 className="border-b border-ink/6 px-4 py-3 last:border-b-0"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                      {unitBadge(m.unit)}
-                      {enCurso ? (
-                        <span className="rounded-md bg-ball/20 px-1.5 py-0.5 text-[0.7rem] font-medium text-ink">
-                          En curso
+                <div className="flex items-start gap-3">
+                  <span
+                    className="mt-0.5 w-5 shrink-0 text-right text-[0.85rem] font-medium tabular-nums text-muted"
+                    aria-hidden
+                  >
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                          {unitBadge(m.unit)}
+                          {enCurso ? (
+                            <span className="rounded-md bg-ball/20 px-1.5 py-0.5 text-[0.7rem] font-medium text-ink">
+                              En curso
+                            </span>
+                          ) : null}
+                        </div>
+                        {enCurso ? (
+                          <p className="text-[0.95rem] leading-snug text-ink">
+                            {a}
+                            <span className="mx-1.5 text-muted">vs</span>
+                            {b}
+                          </p>
+                        ) : m.unit === "game" ? (
+                          <p className="text-[0.95rem] leading-snug">
+                            <span className="font-semibold text-ink">
+                              {m.winnerSide === "A" ? a : b}
+                            </span>
+                            <span className="text-muted"> ganó a </span>
+                            <span className="text-muted">
+                              {m.winnerSide === "A" ? b : a}
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="text-[0.95rem] leading-snug">
+                            <span
+                              className={
+                                m.winnerSide === "A"
+                                  ? "font-semibold text-ink"
+                                  : "text-muted"
+                              }
+                            >
+                              {a}
+                            </span>
+                            <span className="mx-1.5 text-muted">vs</span>
+                            <span
+                              className={
+                                m.winnerSide === "B"
+                                  ? "font-semibold text-ink"
+                                  : "text-muted"
+                              }
+                            >
+                              {b}
+                            </span>
+                          </p>
+                        )}
+                        {m.unit === "game" &&
+                        (m.serverSide === "A" || m.serverSide === "B") ? (
+                          <p className="mt-1 text-[0.75rem] text-muted">
+                            Servidor ·{" "}
+                            {m.serverSide === "A" ? a : b}
+                          </p>
+                        ) : null}
+                      </div>
+                      {!enCurso && m.unit === "set" ? (
+                        <span className="shrink-0 text-[1.15rem] font-semibold tabular-nums tracking-tight text-ink">
+                          {m.score}
                         </span>
                       ) : null}
                     </div>
-                    {enCurso ? (
-                      <p className="text-[0.95rem] leading-snug text-ink">
-                        {a}
-                        <span className="mx-1.5 text-muted">vs</span>
-                        {b}
-                      </p>
-                    ) : m.unit === "game" ? (
-                      <p className="text-[0.95rem] leading-snug">
-                        <span className="font-semibold text-ink">
-                          {m.winnerSide === "A" ? a : b}
-                        </span>
-                        <span className="text-muted"> ganó a </span>
-                        <span className="text-muted">
-                          {m.winnerSide === "A" ? b : a}
-                        </span>
-                      </p>
-                    ) : (
-                      <p className="text-[0.95rem] leading-snug">
-                        <span
-                          className={
-                            m.winnerSide === "A"
-                              ? "font-semibold text-ink"
-                              : "text-muted"
-                          }
+
+                    {canManage && enCurso && m.unit === "game" ? (
+                      <div className="mt-2 space-y-2">
+                        <p className="text-[0.75rem] text-muted">Ganó</p>
+                        <div
+                          className="flex gap-1 rounded-xl bg-mist-2 p-1"
+                          role="group"
+                          aria-label="Quién ganó el game"
                         >
-                          {a}
-                        </span>
-                        <span className="mx-1.5 text-muted">vs</span>
-                        <span
-                          className={
-                            m.winnerSide === "B"
-                              ? "font-semibold text-ink"
-                              : "text-muted"
-                          }
+                          <button
+                            type="button"
+                            disabled={isTempMatchId(m.id) || pending}
+                            onClick={() =>
+                              setWinnerPickById((prev) => ({
+                                ...prev,
+                                [m.id]:
+                                  prev[m.id] === "A" ? undefined : "A",
+                              }))
+                            }
+                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
+                              winnerPickById[m.id] === "A"
+                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                                : "text-muted"
+                            }`}
+                          >
+                            {a}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isTempMatchId(m.id) || pending}
+                            onClick={() =>
+                              setWinnerPickById((prev) => ({
+                                ...prev,
+                                [m.id]:
+                                  prev[m.id] === "B" ? undefined : "B",
+                              }))
+                            }
+                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
+                              winnerPickById[m.id] === "B"
+                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                                : "text-muted"
+                            }`}
+                          >
+                            {b}
+                          </button>
+                        </div>
+                        <p className="text-[0.75rem] text-muted">
+                          Servidor (opcional)
+                        </p>
+                        <div
+                          className="flex gap-1 rounded-xl bg-mist-2 p-1"
+                          role="group"
+                          aria-label="Quién saca"
                         >
-                          {b}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                  {!enCurso && m.unit === "set" ? (
-                    <span className="shrink-0 text-[1.15rem] font-semibold tabular-nums tracking-tight text-ink">
-                      {m.score}
-                    </span>
-                  ) : null}
-                </div>
+                          <button
+                            type="button"
+                            disabled={isTempMatchId(m.id) || pending}
+                            onClick={() =>
+                              setServerPickById((prev) => ({
+                                ...prev,
+                                [m.id]: serverSelected === "A" ? null : "A",
+                              }))
+                            }
+                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
+                              serverSelected === "A"
+                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                                : "text-muted"
+                            }`}
+                          >
+                            {a}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isTempMatchId(m.id) || pending}
+                            onClick={() =>
+                              setServerPickById((prev) => ({
+                                ...prev,
+                                [m.id]: serverSelected === "B" ? null : "B",
+                              }))
+                            }
+                            className={`flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium transition disabled:opacity-60 ${
+                              serverSelected === "B"
+                                ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                                : "text-muted"
+                            }`}
+                          >
+                            {b}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={
+                            isTempMatchId(m.id) ||
+                            pending ||
+                            !winnerPickById[m.id]
+                          }
+                          onClick={() => {
+                            const pick = winnerPickById[m.id];
+                            if (!pick) return;
+                            const serverSide =
+                              m.id in serverPickById
+                                ? (serverPickById[m.id] ?? null)
+                                : (m.serverSide ?? null);
+                            setGameWinner(m, pick, serverSide);
+                          }}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ball py-2.5 text-[0.9rem] font-semibold text-on-ball disabled:opacity-60"
+                        >
+                          {pending ? (
+                            <>
+                              <Spinner />
+                              Guardando…
+                            </>
+                          ) : (
+                            "Aceptar game"
+                          )}
+                        </button>
+                      </div>
+                    ) : null}
 
-                {canManage && enCurso && m.unit === "game" ? (
-                  <div className="mt-2">
-                    <p className="mb-1.5 text-[0.75rem] text-muted">Ganó</p>
-                    <div
-                      className="flex gap-1 rounded-xl bg-mist-2 p-1"
-                      role="group"
-                      aria-label="Quién ganó el game"
-                    >
-                      <button
-                        type="button"
-                        disabled={isTempMatchId(m.id)}
-                        onClick={() => setGameWinner(m, "A")}
-                        className="flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium text-ink transition hover:bg-sand disabled:opacity-60"
-                      >
-                        {a}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isTempMatchId(m.id)}
-                        onClick={() => setGameWinner(m, "B")}
-                        className="flex-1 rounded-[0.65rem] px-2 py-2 text-[0.85rem] font-medium text-ink transition hover:bg-sand disabled:opacity-60"
-                      >
-                        {b}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {canManage && enCurso && m.unit === "set" ? (
-                  <button
-                    type="button"
-                    disabled={isTempMatchId(m.id)}
-                    onClick={() => startEdit(m)}
-                    className="mt-2 text-[0.8rem] font-medium text-ink disabled:opacity-60"
-                  >
-                    Registrar marcador
-                  </button>
-                ) : null}
-
-                {canManage ? (
-                  <div className="mt-2 flex gap-3">
-                    {!enCurso || m.unit === "game" ? (
+                    {canManage && enCurso && m.unit === "set" ? (
                       <button
                         type="button"
                         disabled={isTempMatchId(m.id)}
                         onClick={() => startEdit(m)}
-                        className="text-[0.8rem] font-medium text-ink disabled:opacity-60"
+                        className="mt-2 text-[0.8rem] font-medium text-ink disabled:opacity-60"
                       >
-                        Editar
+                        Registrar marcador
                       </button>
                     ) : null}
-                    <button
-                      type="button"
-                      disabled={isTempMatchId(m.id)}
-                      onClick={() => remove(m.id)}
-                      className="text-[0.8rem] font-medium text-danger disabled:opacity-60"
-                    >
-                      Borrar
-                    </button>
+
+                    {canManage ? (
+                      <div className="mt-2 flex gap-3">
+                        {!enCurso || m.unit === "game" ? (
+                          <button
+                            type="button"
+                            disabled={isTempMatchId(m.id)}
+                            onClick={() => startEdit(m)}
+                            className="text-[0.8rem] font-medium text-ink disabled:opacity-60"
+                          >
+                            Editar
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          disabled={isTempMatchId(m.id)}
+                          onClick={() => remove(m.id)}
+                          className="text-[0.8rem] font-medium text-danger disabled:opacity-60"
+                        >
+                          Borrar
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                </div>
               </li>
             );
           })}
@@ -854,6 +1042,48 @@ export function SinglesResultsPanel({
             </div>
           </div>
 
+          <div>
+            <p className="mb-2 text-[0.8rem] text-muted">Servidor (opcional)</p>
+            <div
+              className="flex gap-1 rounded-xl bg-mist-2 p-1"
+              role="group"
+              aria-label="Quién saca"
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  setGameDraft((d) => ({
+                    ...d,
+                    serverSide: d.serverSide === "A" ? null : "A",
+                  }))
+                }
+                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
+                  gameDraft.serverSide === "A"
+                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                    : "text-muted"
+                }`}
+              >
+                {nameOf(players, gameDraft.player1Id)}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setGameDraft((d) => ({
+                    ...d,
+                    serverSide: d.serverSide === "B" ? null : "B",
+                  }))
+                }
+                className={`flex-1 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition ${
+                  gameDraft.serverSide === "B"
+                    ? "bg-sand text-ink shadow-sm ring-1 ring-ball/70"
+                    : "text-muted"
+                }`}
+              >
+                {nameOf(players, gameDraft.player2Id)}
+              </button>
+            </div>
+          </div>
+
           {players.length < 2 ? (
             <p className="text-[0.85rem] text-muted">
               Falta otro asistente con Voy para poder guardar.
@@ -910,47 +1140,156 @@ export function SinglesResultsPanel({
       ) : null}
 
       <div className="mt-8">
-        <h3 className="mb-1 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Historial de cambios
+        <h3 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+          Resumen
         </h3>
-        <p className="mb-3 text-[0.8rem] text-muted">
-          Quién agregó, editó, borró o restauró un resultado en esta fecha.
-        </p>
-        {logs.length === 0 ? (
-          <p className="text-[0.9rem] text-muted">Sin cambios todavía.</p>
+        {resumen.length === 0 ? (
+          <p className="text-[0.9rem] text-muted">
+            Sin games terminados todavía.
+          </p>
         ) : (
           <ul className="overflow-hidden rounded-2xl bg-sand">
-            {logs.map((entry) => (
-              <li
-                key={entry.id}
-                className="border-b border-ink/6 px-4 py-3 text-[0.85rem] last:border-b-0"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-ink">
-                      <span className="font-medium">{entry.actorDisplayName}</span>
-                      <span className="text-muted"> · {entry.summary}</span>
-                    </p>
-                    <p className="mt-0.5 text-[0.75rem] text-muted">
-                      {formatChatTime(entry.createdAt)}
-                    </p>
-                  </div>
-                  {canManage && entry.restorable && entry.matchId ? (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => restore(entry.matchId!)}
-                      className="shrink-0 text-[0.8rem] font-medium text-ink disabled:opacity-60"
+            {resumen.map((row) => {
+              const eloDelta = row.eloEnd - row.eloStart;
+              const player = labelPlayers.find((p) => p.id === row.playerId);
+              const displayName = player?.displayName ?? "?";
+              return (
+                <li
+                  key={row.playerId}
+                  aria-label={displayName}
+                  title={displayName}
+                  className="grid grid-cols-[auto_5.75rem_minmax(0,1fr)_3.25rem] items-center gap-2 border-b border-ink/6 px-4 py-3 last:border-b-0 sm:gap-3"
+                >
+                  {player ? (
+                    <PlayerAvatar player={player} size="sm" />
+                  ) : (
+                    <span
+                      className="inline-grid size-7 shrink-0 place-items-center rounded-full bg-mist-2 text-[0.65rem] font-medium text-muted"
+                      aria-hidden
                     >
-                      Restaurar
-                    </button>
-                  ) : null}
-                </div>
-              </li>
-            ))}
+                      ?
+                    </span>
+                  )}
+                  <span className="text-right text-[0.9rem] tabular-nums text-ink">
+                    {row.wins}G - {row.losses}P
+                  </span>
+                  <span className="text-center text-[0.85rem] tabular-nums text-muted">
+                    Elo: {row.eloStart}
+                    <span className="mx-1 text-muted/70">→</span>
+                    {row.eloEnd}
+                  </span>
+                  <span
+                    className={`flex w-full items-center justify-center gap-0.5 text-[0.85rem] font-medium tabular-nums ${
+                      eloDelta > 0
+                        ? "text-ok"
+                        : eloDelta < 0
+                          ? "text-danger"
+                          : "text-muted"
+                    }`}
+                  >
+                    {eloDelta === 0 ? (
+                      <span>—</span>
+                    ) : (
+                      <>
+                        <span className="inline-block w-3 text-center text-[0.7rem] leading-none">
+                          {eloDelta > 0 ? "▲" : "▼"}
+                        </span>
+                        <span className="min-w-[1.5rem] text-center">
+                          {Math.abs(eloDelta)}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
+      {portalReady && historialOpen
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+              role="presentation"
+              onClick={() => setHistorialOpen(false)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="historial-title"
+                className="flex max-h-[min(70vh,28rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-sand shadow-lg"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-3 border-b border-ink/6 px-4 py-3">
+                  <div className="min-w-0">
+                    <h3
+                      id="historial-title"
+                      className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
+                    >
+                      Historial de cambios
+                    </h3>
+                    <p className="mt-0.5 text-[0.8rem] text-muted">
+                      Quién agregó, editó, borró o restauró un resultado.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setHistorialOpen(false)}
+                    className="shrink-0 rounded-lg px-2 py-1 text-[0.9rem] font-medium text-muted"
+                    aria-label="Cerrar"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                  {logs.length === 0 ? (
+                    <p className="px-4 py-6 text-[0.9rem] text-muted">
+                      Sin cambios todavía.
+                    </p>
+                  ) : (
+                    <ul>
+                      {logs.map((entry) => (
+                        <li
+                          key={entry.id}
+                          className="border-b border-ink/6 px-4 py-3 text-[0.85rem] last:border-b-0"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-ink">
+                                <span className="font-medium">
+                                  {entry.actorDisplayName}
+                                </span>
+                                <span className="text-muted">
+                                  {" "}
+                                  · {entry.summary}
+                                </span>
+                              </p>
+                              <p className="mt-0.5 text-[0.75rem] text-muted">
+                                {formatChatTime(entry.createdAt)}
+                              </p>
+                            </div>
+                            {canManage && entry.restorable && entry.matchId ? (
+                              <button
+                                type="button"
+                                disabled={pending}
+                                onClick={() => restore(entry.matchId!)}
+                                className="shrink-0 text-[0.8rem] font-medium text-ink disabled:opacity-60"
+                              >
+                                Restaurar
+                              </button>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </section>
   );
 }

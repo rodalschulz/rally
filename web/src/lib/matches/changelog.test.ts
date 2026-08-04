@@ -15,6 +15,7 @@ function snap(partial: Partial<MatchSnapshot> = {}): MatchSnapshot {
     sideB: ["b"],
     score: "1-0",
     winnerSide: "A",
+    serverSide: null,
     ...partial,
   };
 }
@@ -24,13 +25,19 @@ describe("describeMatchSnapshot", () => {
     expect(describeMatchSnapshot(snap(), names)).toBe("Game: Ana ganó a Bruno");
   });
 
+  it("appends servidor when set on a game", () => {
+    expect(describeMatchSnapshot(snap({ serverSide: "B" }), names)).toBe(
+      "Game: Ana ganó a Bruno · Servidor Bruno",
+    );
+  });
+
   it("describes in-progress and sets", () => {
     expect(
       describeMatchSnapshot(snap({ winnerSide: null, score: "" }), names),
     ).toBe("Game En curso: Ana vs Bruno");
     expect(
       describeMatchSnapshot(
-        snap({ unit: "set", score: "6-4", winnerSide: "B" }),
+        snap({ unit: "set", score: "6-4", winnerSide: "B", serverSide: "A" }),
         names,
       ),
     ).toBe("Set 6-4: Ana vs Bruno");

@@ -388,6 +388,7 @@ type SinglesLooseGameParsed =
       player1Id: string;
       player2Id: string;
       winnerSide: "A" | "B" | null;
+      serverSide: "A" | "B" | null;
     }
   | { ok: false; error: string };
 
@@ -468,9 +469,23 @@ function parseSinglesSetForm(formData: FormData): SinglesSetParsed {
   };
 }
 
+function parseOptionalServerSide(
+  formData: FormData,
+): { ok: true; serverSide: "A" | "B" | null } | { ok: false; error: string } {
+  const raw = String(formData.get("serverSide") || "").trim();
+  if (!raw) return { ok: true, serverSide: null };
+  if (raw !== "A" && raw !== "B") {
+    return { ok: false, error: "Servidor inválido" };
+  }
+  return { ok: true, serverSide: raw };
+}
+
 function parseSinglesLooseGameForm(formData: FormData): SinglesLooseGameParsed {
   const sides = parseSinglesSides(formData, "game");
   if (!sides.ok) return sides;
+
+  const server = parseOptionalServerSide(formData);
+  if (!server.ok) return server;
 
   const winnerSideRaw = String(formData.get("winnerSide") || "").trim();
   // Empty → En curso (players only).
@@ -481,6 +496,7 @@ function parseSinglesLooseGameForm(formData: FormData): SinglesLooseGameParsed {
       player1Id: sides.player1Id,
       player2Id: sides.player2Id,
       winnerSide: null,
+      serverSide: server.serverSide,
     };
   }
   if (winnerSideRaw !== "A" && winnerSideRaw !== "B") {
@@ -493,6 +509,7 @@ function parseSinglesLooseGameForm(formData: FormData): SinglesLooseGameParsed {
     player1Id: sides.player1Id,
     player2Id: sides.player2Id,
     winnerSide: winnerSideRaw,
+    serverSide: server.serverSide,
   };
 }
 
@@ -759,6 +776,7 @@ export async function addSinglesLooseGameAction(
         unit: "game",
         score: parsed.winnerSide ? "1-0" : "",
         winnerSide: parsed.winnerSide,
+        serverSide: parsed.serverSide,
         sideA: [parsed.player1Id],
         sideB: [parsed.player2Id],
       },
@@ -818,6 +836,7 @@ export async function updateSinglesLooseGameAction(
       data: {
         score: parsed.winnerSide ? "1-0" : "",
         winnerSide: parsed.winnerSide,
+        serverSide: parsed.serverSide,
         sideA: [parsed.player1Id],
         sideB: [parsed.player2Id],
       },

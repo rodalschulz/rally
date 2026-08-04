@@ -75,6 +75,8 @@ export type Match = {
   score: string;
   /** null = En curso (no winner yet); excluded from ranking. */
   winnerSide: "A" | "B" | null;
+  /** Optional server for loose games (side A or B). Null / ignored for sets. */
+  serverSide?: "A" | "B" | null;
   /** Soft-delete timestamp; excluded from ranking while set. */
   deletedAt?: string | null;
   deletedById?: string | null;

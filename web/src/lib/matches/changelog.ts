@@ -8,6 +8,7 @@ export type MatchSnapshot = {
   sideB: string[];
   score: string;
   winnerSide: "A" | "B" | null;
+  serverSide: "A" | "B" | null;
 };
 
 export type MatchChangeLogEntry = {
@@ -29,6 +30,7 @@ export function snapshotFromMatch(m: {
   sideB: string[];
   score: string;
   winnerSide: "A" | "B" | null;
+  serverSide?: "A" | "B" | null;
 }): MatchSnapshot {
   return {
     unit: m.unit,
@@ -36,6 +38,7 @@ export function snapshotFromMatch(m: {
     sideB: m.sideB,
     score: m.score,
     winnerSide: m.winnerSide,
+    serverSide: m.serverSide ?? null,
   };
 }
 
@@ -48,17 +51,26 @@ export function describeMatchSnapshot(
   const b = nameOf(snap.sideB[0] ?? "") || "?";
   const unit = snap.unit === "game" ? "Game" : "Set";
 
+  let base: string;
   if (snap.winnerSide !== "A" && snap.winnerSide !== "B") {
-    return `${unit} En curso: ${a} vs ${b}`;
-  }
-
-  if (snap.unit === "game") {
+    base = `${unit} En curso: ${a} vs ${b}`;
+  } else if (snap.unit === "game") {
     const winner = snap.winnerSide === "A" ? a : b;
     const loser = snap.winnerSide === "A" ? b : a;
-    return `${unit}: ${winner} ganó a ${loser}`;
+    base = `${unit}: ${winner} ganó a ${loser}`;
+  } else {
+    base = `${unit} ${snap.score}: ${a} vs ${b}`;
   }
 
-  return `${unit} ${snap.score}: ${a} vs ${b}`;
+  if (
+    snap.unit === "game" &&
+    (snap.serverSide === "A" || snap.serverSide === "B")
+  ) {
+    const server = snap.serverSide === "A" ? a : b;
+    return `${base} · Servidor ${server}`;
+  }
+
+  return base;
 }
 
 const ACTION_VERB: Record<MatchChangeAction, string> = {
@@ -78,9 +90,7 @@ export function formatMatchChangeSummary(
   const afterDesc = describeMatchSnapshot(after, nameOf);
   if (action === "updated" && before) {
     const beforeDesc = describeMatchSnapshot(before, nameOf);
-    if (beforeDesc !== afterDesc) {
-      return `${verb} ${beforeDesc} → ${afterDesc}`;
-    }
+    return `${verb} ${beforeDesc} → ${afterDesc}`;
   }
   return `${verb} ${afterDesc}`;
 }

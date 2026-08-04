@@ -49,7 +49,7 @@ export default async function DebtsPage({
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
           Deudas
         </h1>
-        <p className="mt-1 max-w-[36ch] text-[0.95rem] text-muted">
+        <p className="mt-1 text-[0.95rem] text-muted">
           Cada deuda pertenece a una fecha. Saldar solo el acreedor, y solo
           cuando esa fecha ya pasó. Positivo = te deben. Negativo = debes.
         </p>
