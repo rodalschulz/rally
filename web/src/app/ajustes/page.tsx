@@ -1,11 +1,13 @@
 import { signOut } from "@/auth";
 import { AppShell } from "@/components/AppShell";
+import { AvatarStickerPicker } from "@/components/AvatarStickerPicker";
 import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { updateProfileAction } from "@/lib/actions/profile";
 import { userIsAppAdmin } from "@/lib/admin";
 import { getSession } from "@/lib/auth-session";
+import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +17,18 @@ export default async function UserSettingsPage() {
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
   const isAppAdmin = await userIsAppAdmin(session.user.id);
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { avatarUrl: true, hue: true, shortName: true, displayName: true },
+  });
+
+  const player = {
+    id: session.user.id,
+    displayName: dbUser?.displayName || session.user.displayName || "Jugador",
+    shortName: dbUser?.shortName || session.user.shortName || "J",
+    hue: dbUser?.hue ?? session.user.hue,
+    avatarUrl: dbUser?.avatarUrl ?? null,
+  };
 
   return (
     <AppShell title="Cuenta">
@@ -36,6 +50,10 @@ export default async function UserSettingsPage() {
           </p>
         ) : null}
       </section>
+
+      <div className="mb-6">
+        <AvatarStickerPicker player={player} />
+      </div>
 
       <form action={updateProfileAction} className="animate-rise space-y-4">
         <label className="block text-[0.8rem] text-muted">

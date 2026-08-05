@@ -9,6 +9,8 @@ export type Player = {
   shortName: string;
   /** Initials or hue seed for avatar */
   hue: number;
+  /** Optional sticker avatar URL; initials+hue when absent. */
+  avatarUrl?: string | null;
 };
 
 export type SessionStatus = "scheduled" | "completed" | "cancelled";

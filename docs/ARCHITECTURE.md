@@ -34,6 +34,7 @@ Integración bot↔web: el bot corre en **PC**, hace `POST /api/availability/syn
 - **DB:** Prisma 6 + Neon Postgres (`DATABASE_URL` pooler + `DIRECT_URL` para migrate)
 - **Mutaciones:** Server Actions + Route Handler de sync (`/api/availability/sync`)
 - **Hosting:** Vercel (Root Directory = `web`)
+- **Blob storage:** Vercel Blob (`BLOB_READ_WRITE_TOKEN`) — stickers de avatar (`User.avatarUrl`)
 - **PWA:** manifest + service worker (`sw.js`: assets + Web Push)
 - **Web Push:** `web-push` + VAPID (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`); suscripciones en Neon
 

@@ -21,6 +21,7 @@ export function toPlayer(user: User): Player {
       user.shortName ||
       (user.displayName || user.name || "J").slice(0, 2).toUpperCase(),
     hue: user.hue,
+    avatarUrl: user.avatarUrl,
   };
 }
 

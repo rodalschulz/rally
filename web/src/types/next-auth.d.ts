@@ -7,6 +7,7 @@ declare module "next-auth" {
       displayName: string;
       shortName: string;
       hue: number;
+      avatarUrl?: string | null;
       isAdmin: boolean;
     } & DefaultSession["user"];
   }
@@ -17,6 +18,7 @@ declare module "next-auth/jwt" {
     displayName?: string;
     shortName?: string;
     hue?: number;
+    avatarUrl?: string | null;
     isAdmin?: boolean;
   }
 }

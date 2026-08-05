@@ -70,6 +70,8 @@ model User {
   displayName   String?
   shortName     String?
   hue           Int       @default(160)
+  /** Optional sticker avatar (Vercel Blob public URL). Initials+hue if null. */
+  avatarUrl     String?
   /** App-wide admin (not group owner). */
   isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())

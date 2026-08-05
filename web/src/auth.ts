@@ -23,6 +23,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           dbUser?.shortName || deriveShortName(String(token.displayName));
         token.hue =
           dbUser?.hue ?? hueFromString(user.email ?? user.id ?? "user");
+        token.avatarUrl = dbUser?.avatarUrl ?? null;
         token.isAdmin = Boolean(dbUser?.isAdmin);
       }
       if (trigger === "update" && token.sub) {
@@ -35,6 +36,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           token.shortName =
             dbUser.shortName || deriveShortName(String(token.displayName));
           token.hue = dbUser.hue;
+          token.avatarUrl = dbUser.avatarUrl;
           token.isAdmin = Boolean(dbUser.isAdmin);
         }
       }
@@ -54,6 +56,8 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         session.user.displayName = String(token.displayName ?? "Jugador");
         session.user.shortName = String(token.shortName ?? "J");
         session.user.hue = Number(token.hue ?? 160);
+        session.user.avatarUrl =
+          typeof token.avatarUrl === "string" ? token.avatarUrl : null;
         session.user.isAdmin = Boolean(token.isAdmin);
       }
       return session;

@@ -53,8 +53,17 @@ Add these env vars in the Vercel project settings:
 - `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`
 - `CRON_SECRET` — same value as `bot` `RALLY_CRON_SECRET` (availability sync)
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — Web Push (see below)
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob for sticker avatars (see below)
 
 `AUTH_URL` is usually inferred; if login redirects break, set it to your production URL.
+
+## Vercel Blob (sticker avatars)
+
+1. In the Vercel project: **Storage → Create → Blob**
+2. Copy the **read-write** token → `BLOB_READ_WRITE_TOKEN` in `.env` and Vercel env
+3. Users upload a PNG/WebP sticker in **Ajustes**; URL is stored on `User.avatarUrl`
+
+Without this token, name/settings still work; sticker upload shows a clear error.
 
 ## Web Push (optional)
 
