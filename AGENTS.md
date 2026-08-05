@@ -43,8 +43,8 @@ Leer antes de implementar features de producto:
 
 - `bot/` operativo como script local (`open_chrome.py`); sync opcional a rally con `RALLY_CRON_SECRET`.
 - `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA + **Web Push** (`/ajustes` opt-in + preferencias; `lib/push`).
-- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*`, `.../rankings/*`, `.../deudas`, `/ajustes` (perfil + notificaciones), `/login`.
-- Setup: `web/docs/SETUP.md` (incluye VAPID). Ranking = Elo singles por unit Games/Sets (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`). Sin ranking de dobles en UI. Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
+- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*`, `.../rankings/*` (ficha stats Games al tocar jugador), `.../deudas`, `/ajustes` (perfil + notificaciones), `/login`.
+- Setup: `web/docs/SETUP.md` (incluye VAPID). Ranking = Elo singles por unit Games/Sets (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`); ficha de jugador Games desde Ranking (`playerStats.ts`). Sin ranking de dobles en UI. Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
 - Resultados: Games con ganador obligatorio + Servidor opcional; Sets pueden quedar En curso; soft-delete + historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S); UX optimista. Sin chat de fecha. Deudas: Historial de saldadas.
 - Push: opt-in en `/ajustes`; prefs Fecha / RSVP / Game|Set agregado / ranking #1 / deudas; `web/src/lib/push/` + `/api/push/*`.
 - Modelo tenis `PlaySession` (no confundir con Auth `Session`). Scoped por `groupId`.

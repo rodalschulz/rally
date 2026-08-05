@@ -182,6 +182,8 @@ Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt
 
 **Historial de cambios (UI):** en el detalle de la fecha, botón **Historial** junto a Resultados abre un modal con el changelog (no se muestra inline).
 
+**Ficha de jugador (UI, Ranking):** en Ranking Singles, tocar avatar/nombre abre un sheet con estadísticas **solo de Games** (Elo.G). On-read (`web/src/lib/ranking/playerStats.ts`); sin ratings persistidos. Incluye: historial de Elo (gráfico: este mes / 30 días / desde el inicio; **un punto por día** = Elo al cierre del día en `America/Lima`, con etiquetas de fecha en el eje X), Elo máximo, % Games ganados, racha más larga de Games ganados (continua entre fechas), rival más jugado (W–L), mayor +Elo en una fecha, asistencia (`going` / fechas elegibles pasadas desde `joinedAt`, respetando `allowedUserIds`), tendencia de las últimas 3 fechas con Voy (W–L + Δ Elo), y —si hay ≥10 Games con `serverSide`— % ganados sacando vs recibiendo. Sets no entran en esta ficha (MVP).
+
 **Ranking al editar/borrar:** Elo/puntos se recalculan on-read desde los matches activos con ganador; soft-borrar o restaurar regenera el ladder en la siguiente carga.
 
 ### AvailabilitySnapshot (canchas libres)

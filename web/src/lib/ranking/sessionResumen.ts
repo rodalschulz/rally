@@ -1,5 +1,6 @@
 import type { Match, MatchUnit, PlayerId } from "../domain/types";
 import { ELO_INITIAL, ELO_K_BY_UNIT } from "./elo";
+import { compareMatches } from "./matchOrder";
 
 export type SessionResumenRow = {
   playerId: PlayerId;
@@ -11,20 +12,6 @@ export type SessionResumenRow = {
 
 function expectedScore(ratingA: number, ratingB: number): number {
   return 1 / (1 + 10 ** ((ratingB - ratingA) / 400));
-}
-
-function orderKey(m: Match): [number, number, string] {
-  const sessionMs = m.sessionStartsAt ? Date.parse(m.sessionStartsAt) : 0;
-  const createdMs = m.createdAt ? Date.parse(m.createdAt) : 0;
-  return [sessionMs, createdMs, m.id];
-}
-
-function compareMatches(a: Match, b: Match): number {
-  const [as, ac, aid] = orderKey(a);
-  const [bs, bc, bid] = orderKey(b);
-  if (as !== bs) return as - bs;
-  if (ac !== bc) return ac - bc;
-  return aid.localeCompare(bid);
 }
 
 function isCountableSingles(m: Match, unit: MatchUnit): boolean {

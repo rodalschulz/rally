@@ -24,6 +24,7 @@ export async function listGroupMembers(groupId: string) {
     .map((m) => ({
       player: toPlayer(m.user),
       role: m.role as "owner" | "member",
+      joinedAt: m.joinedAt.toISOString(),
     }))
     .sort((a, b) => {
       if (a.role !== b.role) return a.role === "owner" ? -1 : 1;

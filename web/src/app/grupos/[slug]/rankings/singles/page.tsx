@@ -1,6 +1,12 @@
-import { RankingList } from "@/components/RankingList";
+import { RankingWithPlayerStats } from "@/components/RankingWithPlayerStats";
 import { SinglesUnitTabs } from "@/components/SinglesUnitTabs";
-import { listGroupPlayers, listRankingMatches } from "@/lib/data/queries";
+import {
+  listGroupMembers,
+  listPlaySessions,
+  listRankingMatches,
+  toAttendance,
+  toSession,
+} from "@/lib/data/queries";
 import type { MatchUnit } from "@/lib/domain/types";
 import { requireGroupMember } from "@/lib/groups";
 import { buildEloRanking } from "@/lib/ranking/elo";
@@ -25,19 +31,33 @@ export default async function SinglesRankingPage({
   const unit = resolveUnit(sp.unit);
   const group = await requireGroupMember(slug);
 
-  const [matches, players] = await Promise.all([
+  const [matches, members, sessionRows] = await Promise.all([
     listRankingMatches(group.id),
-    listGroupPlayers(group.id),
+    listGroupMembers(group.id),
+    listPlaySessions(group.id),
   ]);
-  const playersById = new Map(players.map((p) => [p.id, p]));
+  const players = members.map((m) => m.player);
+  const memberIds = players.map((p) => p.id);
+  const playersById = Object.fromEntries(players.map((p) => [p.id, p]));
+  const joinedAtById = Object.fromEntries(
+    members.map((m) => [m.player.id, m.joinedAt]),
+  );
   const displayNameById = new Map(
     players.map((p) => [p.id, p.displayName] as const),
   );
-  const rows = buildEloRanking(
-    matches,
-    unit,
-    players.map((p) => p.id),
-    displayNameById,
+  const rows = buildEloRanking(matches, unit, memberIds, displayNameById);
+
+  const sessions = sessionRows.map((row) => {
+    const s = toSession(row);
+    return {
+      id: s.id,
+      startsAt: s.startsAt,
+      status: s.status,
+      allowedUserIds: s.allowedUserIds,
+    };
+  });
+  const attendances = sessionRows.flatMap((row) =>
+    row.attendances.map(toAttendance),
   );
 
   return (
@@ -48,13 +68,18 @@ export default async function SinglesRankingPage({
         </h1>
         <p className="mt-1 text-[0.85rem] text-muted">
           Ranking Elo (inicia en 1000). Games y Sets son rankings
-          separados.
+          separados. Toca un jugador para ver sus estadísticas de Games.
         </p>
       </section>
       <SinglesUnitTabs slug={slug} active={unit} />
-      <RankingList
+      <RankingWithPlayerStats
         rows={rows}
         playersById={playersById}
+        matches={matches}
+        memberIds={memberIds}
+        joinedAtById={joinedAtById}
+        sessions={sessions}
+        attendances={attendances}
         scoreLabel="Elo"
         playedLabel={unit === "game" ? "Games" : "Sets"}
         emptyHint="Todavía no hay miembros en este grupo."
