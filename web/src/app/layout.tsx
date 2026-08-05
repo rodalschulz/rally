@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { PortraitLock } from "@/components/PortraitLock";
-import { PwaBootSplash } from "@/components/PwaBootSplash";
 import { iosSplashMetadata } from "@/lib/pwa/ios-splash";
 import "./globals.css";
 
@@ -15,7 +14,6 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    // `black` (not translucent) avoids a bright status-bar flash on iOS launch.
     statusBarStyle: "black",
     title: "rally",
     startupImage: iosSplashMetadata(),
@@ -55,14 +53,12 @@ export default function RootLayout({
     <html
       lang="es-PE"
       className="h-full"
-      // Inline so iOS never flashes white before CSS loads.
       style={{ backgroundColor: "#000000" }}
     >
       <body
         className="min-h-full antialiased"
         style={{ backgroundColor: "#000000" }}
       >
-        <PwaBootSplash />
         <PortraitLock />
         {children}
       </body>

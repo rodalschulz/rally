@@ -2,7 +2,7 @@
  * PWA service worker — static assets + Web Push.
  * Never cache HTML, RSC/Flight, or API: that caused stale Games/attendance on Safari.
  */
-const CACHE = "rally-v6";
+const CACHE = "rally-v7";
 const PRECACHE = [
   "/manifest.webmanifest",
   "/icons/icon-192.png",

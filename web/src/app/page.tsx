@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
-import { HomeGroupGate } from "@/components/HomeGroupGate";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { joinPublicGroupAction } from "@/lib/actions/groups";
 import { getSession } from "@/lib/auth-session";
@@ -17,12 +17,12 @@ export default async function HomePage({
   const userId = session?.user?.id;
   const { error, discover } = await searchParams;
 
-  // Soft client nav (keeps boot splash mounted). Middleware rewrite handles
-  // later cold starts once the home-group cookie exists. `?discover=1` skips.
+  // Fallback when no home-group cookie yet (middleware redirects when present).
+  // `?discover=1` (Grupos tab) skips this.
   if (userId && !discover && !error) {
     const mine = await listMyGroups(userId);
     if (mine.length > 0) {
-      return <HomeGroupGate slug={mine[0]!.group.slug} />;
+      redirect(`/grupos/${mine[0]!.group.slug}`);
     }
   }
 

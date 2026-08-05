@@ -30,8 +30,9 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
 
-  // Open PWA/home into last group hub without a client-visible redirect
-  // (avoids the iOS white flash between `/` and Fechas).
+  // Fast home → last group hub. Use a real redirect (not rewrite) so the App
+  // Router URL matches the rendered page — rewrites caused intermittent
+  // "This page couldn't load" on iOS PWA client navigations.
   if (
     isLoggedIn &&
     pathname === "/" &&
@@ -42,7 +43,7 @@ export default auth((req) => {
     if (slug && isSafeGroupSlug(slug)) {
       const url = req.nextUrl.clone();
       url.pathname = `/grupos/${slug}`;
-      const res = NextResponse.rewrite(url);
+      const res = NextResponse.redirect(url);
       res.cookies.set(HOME_GROUP_COOKIE, slug, homeGroupCookieAttrs());
       return res;
     }
