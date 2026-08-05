@@ -1,7 +1,7 @@
 /** Full-route fallback while group layout (membership + shell) resolves. */
 export function GroupRouteSkeleton() {
   return (
-    <div className="app-shell">
+    <div className="app-shell" style={{ backgroundColor: "#000000" }}>
       <header className="app-header sticky top-0 z-30 border-b border-ink/6 bg-mist/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-3">
           <div className="h-4 w-16 animate-pulse rounded bg-mist-2" />

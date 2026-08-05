@@ -226,6 +226,7 @@ input[type="datetime-local"] {
   display: flex;
   flex-direction: column;
   padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 0.5rem);
+  background: var(--mist);
 }
 
 /* PWA / iOS: keep sticky header below status bar (time, battery, Dynamic Island) */

@@ -17,7 +17,8 @@ async function main() {
   const iconBuf = await sharp(ICON).png().toBuffer();
 
   for (const s of IOS_SPLASHES) {
-    const iconSize = Math.round(Math.min(s.width, s.height) * 0.22);
+    // Larger mark — small icons read as an empty black launch screen.
+    const iconSize = Math.round(Math.min(s.width, s.height) * 0.34);
     const logo = await sharp(iconBuf)
       .resize(iconSize, iconSize, { fit: "contain", background: BG })
       .png()

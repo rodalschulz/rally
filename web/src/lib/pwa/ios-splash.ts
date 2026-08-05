@@ -40,8 +40,9 @@ export const IOS_SPLASHES: readonly IosSplash[] = [
 ] as const;
 
 export function iosSplashMedia(s: IosSplash): string {
+  // `screen and` improves match reliability on Safari / iOS PWAs.
   return (
-    `(device-width: ${s.deviceWidth}px) and (device-height: ${s.deviceHeight}px) ` +
+    `screen and (device-width: ${s.deviceWidth}px) and (device-height: ${s.deviceHeight}px) ` +
     `and (-webkit-device-pixel-ratio: ${s.dpr}) and (orientation: portrait)`
   );
 }

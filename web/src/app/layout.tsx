@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { PortraitLock } from "@/components/PortraitLock";
+import { PwaBootSplash } from "@/components/PwaBootSplash";
 import { iosSplashMetadata } from "@/lib/pwa/ios-splash";
 import "./globals.css";
 
@@ -14,9 +15,15 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    // `black` (not translucent) avoids a bright status-bar flash on iOS launch.
+    statusBarStyle: "black",
     title: "rally",
     startupImage: iosSplashMetadata(),
+  },
+  // Next emits `mobile-web-app-capable`; iOS still wants the apple- prefixed tag
+  // for reliable standalone + startup-image behavior.
+  other: {
+    "apple-mobile-web-app-capable": "yes",
   },
   icons: {
     icon: [
@@ -55,6 +62,7 @@ export default function RootLayout({
         className="min-h-full antialiased"
         style={{ backgroundColor: "#000000" }}
       >
+        <PwaBootSplash />
         <PortraitLock />
         {children}
       </body>
