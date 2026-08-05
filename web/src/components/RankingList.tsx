@@ -32,13 +32,19 @@ export function RankingList({
         return (
           <li
             key={row.playerId}
-            className="animate-row flex items-center gap-3 border-b border-ink/6 px-4 py-3.5 last:border-b-0"
+            className="animate-row flex items-center gap-2 border-b border-ink/6 px-3 py-3.5 last:border-b-0"
             style={{ animationDelay: `${i * 40}ms` }}
           >
-            <span className="w-6 shrink-0 text-center text-[0.95rem] font-medium tabular-nums text-muted">
+            <span className="mr-1.5 w-5 shrink-0 text-right text-[0.9rem] font-medium tabular-nums text-muted">
               {i + 1}
             </span>
-            <PlayerAvatar player={player} size="xl" showSticker />
+            <span className="inline-grid size-16 shrink-0 place-items-center">
+              <PlayerAvatar
+                player={player}
+                size={player.avatarUrl ? "xl" : "md"}
+                showSticker
+              />
+            </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[1rem] font-medium tracking-[-0.01em] text-ink">
                 {player.displayName}

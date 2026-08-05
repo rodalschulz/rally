@@ -29,7 +29,6 @@ export function PlayerAvatar({
         width={px}
         height={px}
         className={`shrink-0 rounded-xl object-contain ${dim}`}
-        style={{ background: `oklch(0.32 0.04 ${player.hue})` }}
         aria-hidden
       />
     );
