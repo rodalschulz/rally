@@ -18,7 +18,7 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 
 Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
 
-**Fechas pasadas (hub):** cuando cierra la ventana de resultados (`startsAt + 2 h`), la fecha es de solo lectura: nadie cambia asistencia, edita ni carga resultados. **Borrar** solo el **owner del grupo** o un **admin de app**. Mientras no sea pasada: editar = creador; borrar = creador o financiador. Borrar cascada (asistencias, deudas, matches) → esos resultados dejan de contar en el ranking.
+**Fechas pasadas (hub):** cuando cierra la ventana de resultados (`startsAt + 2 h`), la fecha queda grabada: **nadie** cambia asistencia ni resultados (tampoco admin de app). **Editar** metadata de la fecha = admin de app. **Borrar** = owner del grupo o admin de app. Mientras no sea pasada: editar = creador (o admin); borrar = creador o financiador (o admin). Borrar cascada (asistencias, deudas, matches) → esos resultados dejan de contar en el ranking.
 
 **Discovery:** el root lista solo grupos `public`. Los privados no aparecen; se entra solo por invite/link (+ contraseña).
 
@@ -42,7 +42,7 @@ Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google
 
 - Editar cualquier fecha (también pasadas), sin ser el creador  
 - Borrar cualquier fecha (próxima o pasada)  
-- Cambiar la asistencia (Voy / Quizás / No voy / Pendiente) de cualquier miembro en una fecha (también pasadas; recalcula deudas)  
+- Cambiar la asistencia (Voy / Quizás / No voy / Pendiente) de cualquier miembro en una fecha **aún no pasada** (recalcula deudas). En Fechas Pasadas nadie cambia RSVP  
 - Saldar cualquier deuda abierta de una fecha ya pasada  
 
 No sustituye al `GroupMember.role = owner` para ajustes del grupo (nombre, invite, borrar grupo).
@@ -79,7 +79,7 @@ Duración de cancha asumida: **1 h** desde `startsAt`. Implementación: `web/src
 | Ventana | Abierta mientras | Uso |
 |---------|------------------|-----|
 | Resultados (Games/Sets) | `now < startsAt + 1 h + 60 min` | Agregar/editar/borrar resultados (solo `going`) |
-| Hub “Fechas Pasadas” | cuando cierra la ventana de resultados | Deja de listarse en Próximas; fecha solo lectura (salvo editar/borrar por admin de app; borrar también por owner) |
+| Hub “Fechas Pasadas” | cuando cierra la ventana de resultados | Deja de listarse en Próximas; **asistencia y resultados inmutables**; editar/borrar fecha solo admin de app (borrar también owner) |
 
 **Ranking:** cuentan matches de fechas con `startsAt < now` (no espera a que cierre la ventana de resultados). Ver `listRankingMatches`.
 
@@ -96,7 +96,7 @@ Regla MVP: entran al **reparto de costo** solo los `going`.
 
 **Orden de avatares en el listado de Fechas (hub):** solo `going`. Primero el **creador de la fecha** (`createdById`) si está en Voy; el resto A–Z por `displayName` (`es`). No usa owner del grupo ni financiador.
 
-**Admin en UI:** la lista de jugadores muestra el mismo badge que un miembro normal; al tocar el estado se abre un select (Pendiente / Voy / Quizás / No voy) y un confirm antes de guardar.
+**Admin en UI:** mientras la fecha no sea pasada, la lista de jugadores muestra el mismo badge; al tocar el estado se abre un select (Pendiente / Voy / Quizás / No voy) y un confirm antes de guardar. En Fechas Pasadas el badge es solo lectura para todos.
 
 **Default (simple):**
 
@@ -180,9 +180,11 @@ Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt
 
 **Resumen de fecha:** debajo de Resultados hay **Resumen Games** (siempre) y, solo si hubo Sets terminados, **Resumen Sets**. Cada bloque muestra W–L de esa unit en la fecha + rating inicio→fin del ladder correspondiente. En UI los ladders se etiquetan **Elo.G** (Games) y **Elo.S** (Sets); no se mezclan. Solo cuentan quienes terminaron al menos un match de esa unit; En curso / soft-delete no. El rating de inicio se calcula rejugando solo fechas **anteriores** (`session.startsAt` menor que el de esta fecha); nunca fechas posteriores. Así el fin de una fecha encadena con el inicio de la siguiente (por unit). Módulo: `web/src/lib/ranking/sessionResumen.ts`.
 
+**Ficha de jugador (UI, Resumen Games):** tocar una fila del Resumen Games abre un sheet con estadísticas **solo de esa Fecha** (Games). Gráfico: **Inicio** (Elo al empezar la Fecha) + **un punto por cada Game terminado de la Fecha** (mismo eje X para todos; si no jugó ese Game, el Elo se arrastra). Métricas acotadas a la Fecha: W–L / %, Elo máximo, racha, mayor +Elo en un Game, rival, servidor (≥10 con `serverSide`), y **participación** = Games jugados / Games totales de la Fecha. Sets no abren ficha. Módulo: `buildPlayerFechaGameStats`.
+
 **Historial de cambios (UI):** en el detalle de la fecha, botón **Historial** junto a Resultados abre un modal con el changelog (no se muestra inline).
 
-**Ficha de jugador (UI, Ranking):** en Ranking Singles, tocar avatar/nombre abre un sheet con estadísticas **solo de Games** (Elo.G). On-read (`web/src/lib/ranking/playerStats.ts`); sin ratings persistidos. Incluye: historial de Elo (gráfico: este mes / 30 días / desde el inicio; **un punto por día** = Elo al cierre del día en `America/Lima`, con etiquetas de fecha en el eje X), Elo máximo, % Games ganados, racha más larga de Games ganados (continua entre fechas), rival más jugado (W–L), mayor +Elo en una fecha, asistencia (`going` / fechas elegibles pasadas desde `joinedAt`, respetando `allowedUserIds`), tendencia de las últimas 3 fechas con Voy (W–L + Δ Elo), y —si hay ≥10 Games con `serverSide`— % ganados sacando vs recibiendo. Sets no entran en esta ficha (MVP).
+**Ficha de jugador (UI, Ranking):** en Ranking Singles, tocar avatar/nombre abre un sheet con estadísticas **solo de Games** (Elo.G). On-read (`web/src/lib/ranking/playerStats.ts`); sin ratings persistidos. Incluye: historial de Elo (gráfico: este mes / 30 días / desde el inicio; eje X compartido: **Inicio en 1000** + **un punto por cada Fecha pasada del grupo**; si no jugó esa Fecha, el Elo se arrastra), Elo máximo, % Games ganados, racha más larga de Games ganados (continua entre fechas), rival más jugado (W–L), mayor +Elo en una fecha, asistencia (`going` / fechas elegibles pasadas desde `joinedAt`, respetando `allowedUserIds`), tendencia de las últimas 3 fechas con Voy (W–L + Δ Elo), y —si hay ≥10 Games con `serverSide`— % ganados sacando vs recibiendo. Sets no entran en esta ficha (MVP).
 
 **Ranking al editar/borrar:** Elo/puntos se recalculan on-read desde los matches activos con ganador; soft-borrar o restaurar regenera el ladder en la siguiente carga.
 

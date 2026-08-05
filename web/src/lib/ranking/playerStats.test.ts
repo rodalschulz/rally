@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Match } from "@/lib/domain/types";
 import { ELO_INITIAL, ELO_K_BY_UNIT } from "./elo";
 import {
-  aggregateEloHistoryByDay,
   buildEloHistoryForChart,
+  buildGroupFechaEloHistory,
+  buildPlayerFechaGameStats,
   buildPlayerGameStats,
   filterEloHistory,
   type PlayerStatsAttendanceInput,
@@ -65,13 +66,24 @@ describe("buildPlayerGameStats", () => {
         createdAt: "2026-01-01T18:10:00.000Z",
       }),
     ];
-    const s = stats({ matches });
+    const s = stats({
+      matches,
+      sessions: [
+        {
+          id: "s1",
+          startsAt: "2026-01-01T17:00:00.000Z",
+          status: "completed",
+          allowedUserIds: [],
+        },
+      ],
+    });
     expect(s.played).toBe(3);
     expect(s.wins).toBe(2);
     expect(s.losses).toBe(1);
     expect(s.winRate).toBeCloseTo(2 / 3);
     expect(s.eloMax).toBeGreaterThanOrEqual(ELO_INITIAL);
-    expect(s.eloHistory).toHaveLength(3);
+    expect(s.eloHistory).toHaveLength(2); // Inicio 1000 + 1 Fecha
+    expect(s.eloHistory[0]).toMatchObject({ elo: ELO_INITIAL, isStart: true });
     expect(s.rank).toBe(1);
   });
 
@@ -378,31 +390,221 @@ describe("filterEloHistory", () => {
   });
 });
 
-describe("aggregateEloHistoryByDay", () => {
-  it("keeps the last Elo of each America/Lima calendar day", () => {
-    // 18:00 and 19:00 UTC = 13:00 and 14:00 Lima on 2026-01-10
-    const daily = aggregateEloHistoryByDay([
-      { at: "2026-01-10T18:00:00.000Z", elo: 1010 },
-      { at: "2026-01-10T19:00:00.000Z", elo: 1022 },
-      { at: "2026-01-11T18:00:00.000Z", elo: 1030 },
-    ]);
-    expect(daily).toHaveLength(2);
-    expect(daily[0]!.elo).toBe(1022);
-    expect(daily[1]!.elo).toBe(1030);
+describe("buildGroupFechaEloHistory", () => {
+  it("plots every past group Fecha and carries Elo when the player sat out", () => {
+    const sessions: PlayerStatsSessionInput[] = [
+      {
+        id: "s1",
+        startsAt: "2026-01-01T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+      {
+        id: "s2",
+        startsAt: "2026-01-08T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+      {
+        id: "s3",
+        startsAt: "2026-01-15T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+    ];
+    // a plays s1; b vs c on s2 (a sits out); a plays s3
+    const matches: Match[] = [
+      game({
+        id: "1",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["b"],
+        winnerSide: "A",
+        sessionStartsAt: "2026-01-01T17:00:00.000Z",
+        createdAt: "2026-01-01T18:00:00.000Z",
+      }),
+      game({
+        id: "2",
+        sessionId: "s2",
+        sideA: ["b"],
+        sideB: ["c"],
+        winnerSide: "A",
+        sessionStartsAt: "2026-01-08T17:00:00.000Z",
+        createdAt: "2026-01-08T18:00:00.000Z",
+      }),
+      game({
+        id: "3",
+        sessionId: "s3",
+        sideA: ["a"],
+        sideB: ["b"],
+        winnerSide: "A",
+        sessionStartsAt: "2026-01-15T17:00:00.000Z",
+        createdAt: "2026-01-15T18:00:00.000Z",
+      }),
+    ];
+    const now = new Date("2026-08-01T12:00:00.000Z");
+    const forA = buildGroupFechaEloHistory("a", matches, sessions, now);
+    const forC = buildGroupFechaEloHistory("c", matches, sessions, now);
+    expect(forA.map((p) => p.at)).toEqual(forC.map((p) => p.at));
+    expect(forA).toHaveLength(4); // Inicio + 3 Fechas
+    expect(forA[0]).toMatchObject({ elo: ELO_INITIAL, isStart: true });
+    // s2: a did not play → Elo unchanged from end of s1
+    expect(forA[2]!.elo).toBe(forA[1]!.elo);
+    expect(forA[3]!.elo).toBeGreaterThan(forA[2]!.elo);
+  });
+
+  it("skips cancelled and future Fechas on the axis", () => {
+    const sessions: PlayerStatsSessionInput[] = [
+      {
+        id: "s1",
+        startsAt: "2026-01-01T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+      {
+        id: "cancelled",
+        startsAt: "2026-01-08T17:00:00.000Z",
+        status: "cancelled",
+        allowedUserIds: [],
+      },
+      {
+        id: "future",
+        startsAt: "2026-12-01T17:00:00.000Z",
+        status: "scheduled",
+        allowedUserIds: [],
+      },
+    ];
+    const series = buildGroupFechaEloHistory(
+      "a",
+      [
+        game({
+          id: "1",
+          sessionId: "s1",
+          winnerSide: "A",
+          sessionStartsAt: "2026-01-01T17:00:00.000Z",
+        }),
+      ],
+      sessions,
+      new Date("2026-08-01T12:00:00.000Z"),
+    );
+    expect(series).toHaveLength(2);
+    expect(series[0]).toMatchObject({ elo: ELO_INITIAL, isStart: true });
+    expect(series[1]!.at).toBe("2026-01-01T17:00:00.000Z");
   });
 });
 
 describe("buildEloHistoryForChart", () => {
-  it("aggregates to daily points for the chart", () => {
+  it("keeps start + group-fecha points for the all range", () => {
     const series = buildEloHistoryForChart(
       [
-        { at: "2026-01-10T18:00:00.000Z", elo: 1010 },
-        { at: "2026-01-10T19:00:00.000Z", elo: 1022 },
-        { at: "2026-01-12T18:00:00.000Z", elo: 1035 },
+        { at: "2025-12-31T17:00:00.000Z", elo: ELO_INITIAL, isStart: true },
+        { at: "2026-01-01T17:00:00.000Z", elo: 1012 },
+        { at: "2026-01-08T17:00:00.000Z", elo: 1012 },
+        { at: "2026-01-15T17:00:00.000Z", elo: 1035 },
       ],
       "all",
     );
-    expect(series).toHaveLength(2);
-    expect(series.map((p) => p.elo)).toEqual([1022, 1035]);
+    expect(series).toHaveLength(4);
+    expect(series.map((p) => p.elo)).toEqual([
+      ELO_INITIAL,
+      1012,
+      1012,
+      1035,
+    ]);
+  });
+});
+
+describe("buildPlayerFechaGameStats", () => {
+  const names = new Map([
+    ["a", "Ana"],
+    ["b", "Bruno"],
+    ["c", "Carla"],
+  ]);
+
+  it("plots Inicio + every Game of the Fecha for all players", () => {
+    const history: Match[] = [
+      game({
+        id: "1",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["b"],
+        winnerSide: "A",
+        createdAt: "2026-01-01T18:00:00.000Z",
+      }),
+      game({
+        id: "2",
+        sessionId: "s1",
+        sideA: ["b"],
+        sideB: ["c"],
+        winnerSide: "A",
+        createdAt: "2026-01-01T18:05:00.000Z",
+      }),
+      game({
+        id: "3",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["c"],
+        winnerSide: "B",
+        createdAt: "2026-01-01T18:10:00.000Z",
+      }),
+    ];
+    const forA = buildPlayerFechaGameStats({
+      playerId: "a",
+      sessionId: "s1",
+      historyMatches: history,
+      displayNameById: names,
+    });
+    const forC = buildPlayerFechaGameStats({
+      playerId: "c",
+      sessionId: "s1",
+      historyMatches: history,
+      displayNameById: names,
+    });
+    expect(forA.eloHistory).toHaveLength(4); // Inicio + 3 Games
+    expect(forA.eloHistory.map((p) => p.label)).toEqual(
+      forC.eloHistory.map((p) => p.label),
+    );
+    expect(forA.eloHistory[0]).toMatchObject({
+      isStart: true,
+      elo: ELO_INITIAL,
+    });
+    // a sits out game 2 → Elo unchanged between G1 and G2
+    expect(forA.eloHistory[2]!.elo).toBe(forA.eloHistory[1]!.elo);
+    expect(forA.participation).toEqual({
+      played: 2,
+      totalGames: 3,
+      rate: 2 / 3,
+    });
+    expect(forA.wins).toBe(1);
+    expect(forA.losses).toBe(1);
+  });
+
+  it("uses prior Fechas for Elo start", () => {
+    const history: Match[] = [
+      game({
+        id: "prev",
+        sessionId: "s0",
+        winnerSide: "A",
+        sessionStartsAt: "2025-12-01T17:00:00.000Z",
+        createdAt: "2025-12-01T18:00:00.000Z",
+      }),
+      game({
+        id: "now",
+        sessionId: "s1",
+        winnerSide: "B",
+        sessionStartsAt: "2026-01-01T17:00:00.000Z",
+        createdAt: "2026-01-01T18:00:00.000Z",
+      }),
+    ];
+    const s = buildPlayerFechaGameStats({
+      playerId: "a",
+      sessionId: "s1",
+      historyMatches: history,
+      displayNameById: names,
+    });
+    const expectedStart = Math.round(ELO_INITIAL + k * 0.5);
+    expect(s.eloStart).toBe(expectedStart);
+    expect(s.eloHistory[0]!.elo).toBe(expectedStart);
+    expect(s.eloEnd).toBeLessThan(s.eloStart);
   });
 });

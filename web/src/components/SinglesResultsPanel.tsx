@@ -18,6 +18,7 @@ import {
   type SessionResumenRow,
 } from "@/lib/ranking/sessionResumen";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerStatsSheet } from "@/components/PlayerStatsSheet";
 import { Spinner } from "@/components/Spinner";
 
 /** UI labels for the two independent Singles Elo ladders. */
@@ -31,12 +32,15 @@ function SessionResumenBlock({
   rows,
   players,
   emptyMessage,
+  onPlayerClick,
 }: {
   title: string;
   eloLabel: "Elo.G" | "Elo.S";
   rows: SessionResumenRow[];
   players: Player[];
   emptyMessage?: string;
+  /** When set (Resumen Games), avatar+name open Fecha-scoped stats. */
+  onPlayerClick?: (playerId: string) => void;
 }) {
   return (
     <div className="mt-8">
@@ -53,13 +57,11 @@ function SessionResumenBlock({
             const eloDelta = row.eloEnd - row.eloStart;
             const player = players.find((p) => p.id === row.playerId);
             const displayName = player?.displayName ?? "?";
-            return (
-              <li
-                key={row.playerId}
-                aria-label={displayName}
-                title={displayName}
-                className="grid grid-cols-[auto_auto_2.6rem_minmax(0,1fr)_3.25rem] items-center gap-x-2 border-b border-ink/6 px-4 py-3 last:border-b-0"
-              >
+            const clickable = Boolean(onPlayerClick && player);
+            const rowClass =
+              "grid w-full grid-cols-[auto_auto_2.6rem_minmax(0,1fr)_3.25rem] items-center gap-x-2 border-b border-ink/6 px-4 py-3 text-left last:border-b-0";
+            const body = (
+              <>
                 {player ? (
                   <PlayerAvatar player={player} size="sm" />
                 ) : (
@@ -103,6 +105,27 @@ function SessionResumenBlock({
                     </>
                   )}
                 </span>
+              </>
+            );
+            return (
+              <li key={row.playerId} title={displayName}>
+                {clickable && player ? (
+                  <button
+                    type="button"
+                    onClick={() => onPlayerClick?.(player.id)}
+                    aria-label={`Ver estadísticas de ${displayName} en esta Fecha`}
+                    className={`${rowClass} transition hover:bg-mist-2/40 active:opacity-90`}
+                  >
+                    {body}
+                  </button>
+                ) : (
+                  <div
+                    aria-label={displayName}
+                    className={rowClass}
+                  >
+                    {body}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -252,6 +275,7 @@ export function SinglesResultsPanel({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [historialOpen, setHistorialOpen] = useState(false);
+  const [statsPlayerId, setStatsPlayerId] = useState<string | null>(null);
   const [portalReady, setPortalReady] = useState(false);
   /** Pending winner pick for En curso games — confirm before submit. */
   const [winnerPickById, setWinnerPickById] = useState<
@@ -673,6 +697,7 @@ export function SinglesResultsPanel({
     gameDraft.player1Id !== gameDraft.player2Id;
 
   const nameById = new Map(labelPlayers.map((p) => [p.id, p.displayName]));
+  const displayNameById = Object.fromEntries(nameById);
   const resumenGames = buildSessionSinglesResumen(
     rankingMatches,
     playSessionId,
@@ -687,6 +712,10 @@ export function SinglesResultsPanel({
     local,
     nameById,
   );
+  const statsPlayer =
+    statsPlayerId != null
+      ? (labelPlayers.find((p) => p.id === statsPlayerId) ?? null)
+      : null;
 
   return (
     <section className="animate-rise mt-8">
@@ -1229,6 +1258,7 @@ export function SinglesResultsPanel({
         rows={resumenGames}
         players={labelPlayers}
         emptyMessage="Sin games terminados todavía."
+        onPlayerClick={setStatsPlayerId}
       />
       {resumenSets.length > 0 ? (
         <SessionResumenBlock
@@ -1238,6 +1268,17 @@ export function SinglesResultsPanel({
           players={labelPlayers}
         />
       ) : null}
+
+      <PlayerStatsSheet
+        variant="fecha"
+        player={statsPlayer}
+        open={statsPlayerId != null}
+        onClose={() => setStatsPlayerId(null)}
+        sessionId={playSessionId}
+        historyMatches={rankingMatches}
+        sessionMatches={local}
+        displayNameById={displayNameById}
+      />
 
       {portalReady && historialOpen
         ? createPortal(

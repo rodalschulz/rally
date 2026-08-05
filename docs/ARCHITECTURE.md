@@ -114,7 +114,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 ### Datos y consistencia
 
 - Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
-- Rankings: on-read — Singles `buildEloRanking` por `unit` (Games \| Sets). Sin pantalla de ranking dobles. Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets). Ficha de jugador: `buildPlayerGameStats` (Games; historial Elo diario en gráfico).
+- Rankings: on-read — Singles `buildEloRanking` por `unit` (Games \| Sets). Sin pantalla de ranking dobles. Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets). Ficha de jugador: `buildPlayerGameStats` (Ranking; historial por Fecha del grupo) y `buildPlayerFechaGameStats` (Resumen Games; historial por Game de la Fecha).
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad
@@ -152,7 +152,7 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Monorepo tool (pnpm / Turborepo) | No necesario por ahora |
 | Roles granulares / kick / billing | Fuera de alcance MVP multi-grupo |
 | Fecha pasada | Solo lectura para miembros; admin de app puede editar/borrar; owner puede borrar |
-| Admin de app (`User.isAdmin`) | Editar/borrar cualquier fecha; cambiar RSVP de miembros; saldar deudas pasadas (como miembro; queda en `Debt.settledById`) |
+| Admin de app (`User.isAdmin`) | Editar/borrar cualquier fecha; cambiar RSVP de miembros en fechas abiertas (nunca en Fechas Pasadas); saldar deudas pasadas (como miembro; queda en `Debt.settledById`) |
 
 ## Orden de implementación (histórico / pendientes)
 

@@ -25,7 +25,7 @@ Leer antes de implementar features de producto:
 6. Preferir lógica de negocio en módulos puros (`lib/domain`, `lib/ranking`, `lib/sessions`, `lib/debts`, `lib/groups`, `lib/admin`) testeables, no solo en componentes React. Ver [`docs/TESTING.md`](docs/TESTING.md).
 7. Si una decisión de producto no está en `docs/`, preguntar o documentarla en `docs/` antes de inventar comportamiento silencioso.
 8. Coordinación es **por grupo** (membresía). Root = discovery de grupos públicos + mis grupos. Canchas libres son **globales**.
-9. **Admin de app** (`User.isAdmin`) ≠ owner de grupo. Privilegios: editar/borrar fechas, cambiar RSVP de miembros y saldar deudas pasadas; no implica gestionar ajustes del grupo.
+9. **Admin de app** (`User.isAdmin`) ≠ owner de grupo. Privilegios: editar/borrar fechas, cambiar RSVP de miembros en fechas **aún abiertas**, y saldar deudas pasadas. Fechas Pasadas: asistencia inmutable (también para admin). No implica gestionar ajustes del grupo.
 
 ## Dónde tocar código
 
@@ -43,7 +43,7 @@ Leer antes de implementar features de producto:
 
 - `bot/` operativo como script local (`open_chrome.py`); sync opcional a rally con `RALLY_CRON_SECRET`.
 - `web/`: Next.js + **Auth.js (Google)** + **Neon/Prisma**, marca **rally**, dark mode, PWA + **Web Push** (`/ajustes` opt-in + preferencias; `lib/push`).
-- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*`, `.../rankings/*` (ficha stats Games al tocar jugador), `.../deudas`, `/ajustes` (perfil + notificaciones), `/login`.
+- Pantallas: `/` (discovery), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*` (ficha stats Games de la Fecha desde Resumen), `.../rankings/*` (ficha stats Games career al tocar jugador), `.../deudas`, `/ajustes` (perfil + notificaciones), `/login`.
 - Setup: `web/docs/SETUP.md` (incluye VAPID). Ranking = Elo singles por unit Games/Sets (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`); ficha de jugador Games desde Ranking (`playerStats.ts`). Sin ranking de dobles en UI. Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
 - Resultados: Games con ganador obligatorio + Servidor opcional; Sets pueden quedar En curso; soft-delete + historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S); UX optimista. Sin chat de fecha. Deudas: Historial de saldadas.
 - Push: opt-in en `/ajustes`; prefs Fecha / RSVP / Game|Set agregado / ranking #1 / deudas; `web/src/lib/push/` + `/api/push/*`.
