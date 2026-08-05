@@ -13,6 +13,7 @@ import {
 } from "@/lib/actions/sessions";
 import { formatChatTime } from "@/lib/format";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
+import { pickFairGamePair } from "@/lib/matches/weightedPair";
 import {
   buildSessionSinglesResumen,
   type SessionResumenRow,
@@ -1121,6 +1122,31 @@ export function SinglesResultsPanel({
               Elige jugadores, servidor (opcional) y quién ganó.
             </p>
           </div>
+
+          {!editingId && players.length >= 2 ? (
+            <button
+              type="button"
+              onClick={() => {
+                const pair = pickFairGamePair(
+                  players.map((p) => p.id),
+                  local.filter((m) => m.unit === "game"),
+                );
+                if (!pair) return;
+                setGameDraft({
+                  player1Id: pair.player1Id,
+                  player2Id: pair.player2Id,
+                  winnerSide: null,
+                  serverSide: Math.random() < 0.5 ? "A" : "B",
+                });
+              }}
+              className="w-full rounded-xl bg-mist-2 py-2.5 text-[0.9rem] font-medium text-ink transition active:opacity-80"
+            >
+              Aleatorio
+              <span className="mt-0.5 block text-[0.75rem] font-normal text-muted">
+                Prioriza a quien jugó menos Games en esta Fecha
+              </span>
+            </button>
+          ) : null}
 
           <PlayerSelects
             players={players}

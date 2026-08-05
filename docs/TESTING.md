@@ -36,6 +36,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/debts/settleLabel.ts` | Copy del Historial: acreedor vs admin según `settledById` |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 | `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
+| `lib/matches/weightedPair.ts` | Pairing Aleatorio de Games: peso por menos partidos en la Fecha |
 | `lib/push/recipients.ts` | Excluir actor, filtro por preferencia, allow-list Fecha, cleanup 404/410 |
 | `lib/push/leader.ts` | Detección de cambio de #1 Singles Games |
 | `lib/push/fechaDiff.ts` | Qué cuenta como update material de Fecha |
