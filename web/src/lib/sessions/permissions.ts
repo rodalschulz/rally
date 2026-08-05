@@ -31,7 +31,10 @@ export function canEditPlaySession(
   return row.createdById === userId;
 }
 
-/** RSVP locked once the fecha is past (including for the creator / admin). */
+/**
+ * RSVP locked once the fecha is past — including for the creator and app
+ * admin. Fechas Pasadas keep attendance engraved.
+ */
 export function canChangeAttendance(
   startsAt: Date | string,
   now = new Date(),

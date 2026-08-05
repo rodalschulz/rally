@@ -101,7 +101,7 @@ describe("canEditPlaySession", () => {
 });
 
 describe("canChangeAttendance", () => {
-  it("locks RSVP when the fecha is past", () => {
+  it("locks RSVP when the fecha is past (everyone, including admins)", () => {
     expect(canChangeAttendance(startsAt, duringResults)).toBe(true);
     expect(canChangeAttendance(startsAt, afterPast)).toBe(false);
   });

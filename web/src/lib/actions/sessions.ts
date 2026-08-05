@@ -111,7 +111,8 @@ export async function setAttendanceAction(
       };
     }
 
-    if (!canChangeAttendance(session.startsAt) && !isAppAdmin) {
+    // Fechas Pasadas are immutable — including for app admins.
+    if (!canChangeAttendance(session.startsAt)) {
       return {
         ok: false,
         error: "Esta fecha ya pasó — la asistencia no se puede cambiar",

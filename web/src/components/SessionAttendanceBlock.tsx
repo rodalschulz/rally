@@ -56,9 +56,9 @@ export function SessionAttendanceBlock({
   syncKey: string;
   maxAttendees?: number | null;
   allowedUserIds: string[];
-  /** False for fechas pasadas — RSVP is read-only for non-admins. */
+  /** False for Fechas Pasadas — RSVP is read-only for everyone. */
   canChange: boolean;
-  /** App admin can change any member's RSVP (including past fechas). */
+  /** App admin can change any member's RSVP while the fecha is still open. */
   isAppAdmin?: boolean;
 }) {
   const router = useRouter();
@@ -86,7 +86,9 @@ export function SessionAttendanceBlock({
   const restricted = allowedUserIds.length > 0;
   const allowedSet = new Set(allowedUserIds);
   const isAllowed = !restricted || allowedSet.has(meId);
-  const canEditSelf = canChange || isAppAdmin;
+  /** Past fechas: nobody edits RSVP (not even app admin). */
+  const canEditSelf = canChange;
+  const canAdminEditOthers = canChange && isAppAdmin;
 
   const listedPlayers = restricted
     ? players.filter((p) => allowedSet.has(p.id))
@@ -186,7 +188,9 @@ export function SessionAttendanceBlock({
                     type="button"
                     disabled={pending || blockedGoing}
                     onClick={() =>
-                      applyStatus(meId, opt, { confirm: isAppAdmin })
+                      applyStatus(meId, opt, {
+                        confirm: canAdminEditOthers,
+                      })
                     }
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-[0.65rem] px-2 py-2.5 text-[0.9rem] font-medium transition active:scale-[0.98] disabled:opacity-70 ${
                       isActive ? "bg-sand text-ink shadow-sm" : "text-muted"
@@ -224,7 +228,7 @@ export function SessionAttendanceBlock({
             Solo invitados ({listedPlayers.length})
           </p>
         ) : null}
-        {isAppAdmin ? (
+        {canAdminEditOthers ? (
           <p className="mb-2 text-[0.8rem] text-muted">
             Toca el estado de un jugador para editarlo.
           </p>
@@ -238,7 +242,7 @@ export function SessionAttendanceBlock({
               goingCount >= maxAttendees &&
               status !== "going";
             const isEditing =
-              isAppAdmin && editingPlayerId === player.id;
+              canAdminEditOthers && editingPlayerId === player.id;
             return (
               <li
                 key={player.id}
@@ -299,7 +303,7 @@ export function SessionAttendanceBlock({
                       </option>
                     ))}
                   </select>
-                ) : isAppAdmin ? (
+                ) : canAdminEditOthers ? (
                   <button
                     type="button"
                     disabled={pending}
@@ -316,7 +320,7 @@ export function SessionAttendanceBlock({
             );
           })}
         </ul>
-        {isAppAdmin && error ? (
+        {canAdminEditOthers && error ? (
           <p className="mt-2 text-[0.85rem] text-danger">{error}</p>
         ) : null}
       </section>
