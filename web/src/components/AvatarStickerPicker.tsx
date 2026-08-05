@@ -65,7 +65,7 @@ export function AvatarStickerPicker({ player }: Props) {
   return (
     <section className="animate-rise space-y-3 rounded-2xl bg-sand px-3 py-3 ring-1 ring-ink/8">
       <div className="flex items-center gap-3">
-        <PlayerAvatar player={previewPlayer} size="lg" />
+        <PlayerAvatar player={previewPlayer} size="lg" showSticker />
         <div className="min-w-0 flex-1">
           <p className="text-[0.95rem] font-medium text-ink">Sticker avatar</p>
           <p className="text-[0.8rem] text-muted">

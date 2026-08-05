@@ -163,6 +163,8 @@ function CareerStatsBody({
       <SheetHeader
         player={player}
         onClose={onClose}
+        showSticker
+        avatarSize="xl"
         subtitle={
           <>
             {stats.rank != null ? `#${stats.rank} · ` : null}
@@ -436,15 +438,23 @@ function SheetHeader({
   player,
   onClose,
   subtitle,
+  showSticker = false,
+  avatarSize = "lg",
 }: {
   player: Player;
   onClose: () => void;
   subtitle: ReactNode;
+  showSticker?: boolean;
+  avatarSize?: "lg" | "xl";
 }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-ink/6 px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <PlayerAvatar player={player} size="lg" />
+        <PlayerAvatar
+          player={player}
+          size={avatarSize}
+          showSticker={showSticker}
+        />
         <div className="min-w-0">
           <h2
             id="player-stats-title"

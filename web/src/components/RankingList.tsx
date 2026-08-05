@@ -38,7 +38,7 @@ export function RankingList({
             <span className="w-6 shrink-0 text-center text-[0.95rem] font-medium tabular-nums text-muted">
               {i + 1}
             </span>
-            <PlayerAvatar player={player} />
+            <PlayerAvatar player={player} showSticker />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[1rem] font-medium tracking-[-0.01em] text-ink">
                 {player.displayName}
