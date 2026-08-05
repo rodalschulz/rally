@@ -447,33 +447,86 @@ function SheetHeader({
   showSticker?: boolean;
   avatarSize?: "lg" | "xl";
 }) {
+  const [stickerOpen, setStickerOpen] = useState(false);
+  const canExpandSticker = Boolean(showSticker && player.avatarUrl);
+
+  useEffect(() => {
+    if (!stickerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setStickerOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [stickerOpen]);
+
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-ink/6 px-4 py-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <PlayerAvatar
-          player={player}
-          size={avatarSize}
-          showSticker={showSticker}
-        />
-        <div className="min-w-0">
-          <h2
-            id="player-stats-title"
-            className="truncate text-[1.15rem] font-semibold tracking-[-0.02em] text-ink"
-          >
-            {player.displayName}
-          </h2>
-          <p className="mt-0.5 text-[0.8rem] text-muted">{subtitle}</p>
+    <>
+      <div className="flex items-start justify-between gap-3 border-b border-ink/6 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          {canExpandSticker ? (
+            <button
+              type="button"
+              onClick={() => setStickerOpen(true)}
+              className="shrink-0 rounded-xl transition active:opacity-80"
+              aria-label={`Ver sticker de ${player.displayName}`}
+            >
+              <PlayerAvatar
+                player={player}
+                size={avatarSize}
+                showSticker
+              />
+            </button>
+          ) : (
+            <PlayerAvatar
+              player={player}
+              size={avatarSize}
+              showSticker={showSticker}
+            />
+          )}
+          <div className="min-w-0">
+            <h2
+              id="player-stats-title"
+              className="truncate text-[1.15rem] font-semibold tracking-[-0.02em] text-ink"
+            >
+              {player.displayName}
+            </h2>
+            <p className="mt-0.5 text-[0.8rem] text-muted">{subtitle}</p>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 rounded-lg px-2 py-1 text-[0.9rem] font-medium text-muted"
+          aria-label="Cerrar"
+        >
+          Cerrar
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="shrink-0 rounded-lg px-2 py-1 text-[0.9rem] font-medium text-muted"
-        aria-label="Cerrar"
-      >
-        Cerrar
-      </button>
-    </div>
+
+      {stickerOpen && player.avatarUrl
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-6"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Sticker de ${player.displayName}`}
+              onClick={() => setStickerOpen(false)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- Blob sticker URL */}
+              <img
+                src={player.avatarUrl}
+                alt={`Sticker de ${player.displayName}`}
+                className="max-h-[min(80vh,28rem)] max-w-[min(90vw,28rem)] object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 
