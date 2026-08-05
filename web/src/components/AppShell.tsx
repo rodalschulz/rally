@@ -2,8 +2,9 @@ import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { BrandMark } from "./BrandMark";
 import { BottomNav } from "./BottomNav";
-import { PendingSubmitButton } from "./PendingSubmitButton";
+import { HelpButton } from "./HelpButton";
 import { ServiceWorkerRegister } from "./ServiceWorkerRegister";
+import { UserMenu } from "./UserMenu";
 
 export async function AppShell({
   children,
@@ -42,22 +43,14 @@ export async function AppShell({
                 {session.user.displayName}
               </p>
             ) : null}
+            {session?.user ? <HelpButton /> : null}
             {session?.user ? (
-              <form
-                action={async () => {
+              <UserMenu
+                logoutAction={async () => {
                   "use server";
                   await signOut({ redirectTo: "/login" });
                 }}
-              >
-                <PendingSubmitButton
-                  aria-label="Salir"
-                  title="Salir"
-                  pendingLabel=""
-                  className="size-8 shrink-0 text-muted"
-                >
-                  <LogoutIcon />
-                </PendingSubmitButton>
-              </form>
+              />
             ) : null}
           </div>
         </div>
@@ -65,25 +58,5 @@ export async function AppShell({
       <main className="app-main">{children}</main>
       {showNav ? <BottomNav slug={groupSlug} /> : null}
     </div>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M14 12h6.5M17.5 8.5 21 12l-3.5 3.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

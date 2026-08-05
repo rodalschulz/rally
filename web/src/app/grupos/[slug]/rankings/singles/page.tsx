@@ -67,8 +67,8 @@ export default async function SinglesRankingPage({
           Ranking
         </h1>
         <p className="mt-1 text-[0.85rem] text-muted">
-          Ranking Elo (inicia en 1000). Games y Sets son rankings
-          separados. Toca un jugador para ver sus estadísticas de Games.
+          El ranking Elo inicia en 1000. Games y Sets son rankings
+          separados. Toca un jugador para ver sus estadísticas.
         </p>
       </section>
       <SinglesUnitTabs slug={slug} active={unit} />
