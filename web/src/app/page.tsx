@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { joinPublicGroupAction } from "@/lib/actions/groups";
@@ -10,11 +11,21 @@ export const dynamic = "force-dynamic";
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; discover?: string }>;
 }) {
   const session = await getSession();
   const userId = session?.user?.id;
-  const { error } = await searchParams;
+  const { error, discover } = await searchParams;
+
+  // Open the app straight into the first group's Fechas. `?discover=1`
+  // (the "Grupos" tab) skips this so members can still switch / join groups.
+  if (userId && !discover && !error) {
+    const mine = await listMyGroups(userId);
+    if (mine.length > 0) {
+      redirect(`/grupos/${mine[0]!.group.slug}`);
+    }
+  }
+
   const [publicGroups, mine] = await Promise.all([
     listPublicGroups(),
     userId ? listMyGroups(userId) : Promise.resolve([]),

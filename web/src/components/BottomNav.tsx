@@ -69,7 +69,9 @@ function navItems(slug?: string): NavItem[] {
       key: "grupos",
       label: "Grupos",
       icon: HomeIcon,
-      href: "/",
+      // `?discover=1` keeps the discovery view (root otherwise redirects to
+      // the member's first group).
+      href: "/?discover=1",
       isActive: (p) =>
         p === "/" || p.startsWith("/grupos/nuevo") || p.startsWith("/join/"),
     },
