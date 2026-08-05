@@ -17,8 +17,8 @@ export default async function HomePage({
   const userId = session?.user?.id;
   const { error, discover } = await searchParams;
 
-  // Open the app straight into the first group's Fechas. `?discover=1`
-  // (the "Grupos" tab) skips this so members can still switch / join groups.
+  // Fallback when no home-group cookie yet (middleware rewrite handles the
+  // common PWA cold start). `?discover=1` (Grupos tab) skips this.
   if (userId && !discover && !error) {
     const mine = await listMyGroups(userId);
     if (mine.length > 0) {

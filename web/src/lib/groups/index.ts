@@ -7,6 +7,7 @@ import {
   verifyGroupPassword,
 } from "@/lib/groups/crypto";
 import { normalizeGroupDescription } from "@/lib/groups/description";
+import { clearHomeGroupCookieIfSlug } from "@/lib/pwa/clear-home-group";
 import type { Group, GroupMember, GroupVisibility } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -62,10 +63,14 @@ export const requireGroupMember = cache(
       requireUserId(),
       getGroupBySlug(slug),
     ]);
-    if (!group) redirect("/");
+    if (!group) {
+      await clearHomeGroupCookieIfSlug(slug);
+      redirect("/");
+    }
 
     const membership = await getMembership(group.id, userId);
     if (!membership) {
+      await clearHomeGroupCookieIfSlug(slug);
       redirect(`/join/${group.inviteCode}`);
     }
 

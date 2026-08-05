@@ -9,6 +9,7 @@ import {
   updateGroupSettings,
 } from "@/lib/groups";
 import { deleteGroup, leaveGroup } from "@/lib/groups/membership";
+import { clearHomeGroupCookie } from "@/lib/pwa/clear-home-group";
 import type { GroupVisibility } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -98,6 +99,7 @@ export async function leaveGroupAction(formData: FormData) {
   if (!groupId) throw new Error("Grupo inválido");
 
   await leaveGroup(groupId, userId);
+  await clearHomeGroupCookie();
 
   revalidatePath("/");
   redirect("/");
@@ -109,6 +111,7 @@ export async function deleteGroupAction(formData: FormData) {
   if (!groupId) throw new Error("Grupo inválido");
 
   await deleteGroup(groupId, userId);
+  await clearHomeGroupCookie();
 
   revalidatePath("/");
   redirect("/");

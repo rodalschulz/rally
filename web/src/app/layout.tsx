@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { PortraitLock } from "@/components/PortraitLock";
+import { iosSplashMetadata } from "@/lib/pwa/ios-splash";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "rally",
+    startupImage: iosSplashMetadata(),
   },
   icons: {
     icon: [
@@ -43,8 +45,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es-PE" className="h-full">
-      <body className="min-h-full antialiased">
+    <html
+      lang="es-PE"
+      className="h-full"
+      // Inline so iOS never flashes white before CSS loads.
+      style={{ backgroundColor: "#000000" }}
+    >
+      <body
+        className="min-h-full antialiased"
+        style={{ backgroundColor: "#000000" }}
+      >
         <PortraitLock />
         {children}
       </body>

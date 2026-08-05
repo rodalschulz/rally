@@ -72,8 +72,13 @@ function navItems(slug?: string): NavItem[] {
       // `?discover=1` keeps the discovery view (root otherwise redirects to
       // the member's first group).
       href: "/?discover=1",
-      isActive: (p) =>
-        p === "/" || p.startsWith("/grupos/nuevo") || p.startsWith("/join/"),
+      isActive: (p) => {
+        // Middleware may rewrite `/` → group hub; pathname stays `/` with slug set.
+        if (slug && p === "/") return false;
+        return (
+          p === "/" || p.startsWith("/grupos/nuevo") || p.startsWith("/join/")
+        );
+      },
     },
     {
       key: "fechas",
@@ -82,7 +87,8 @@ function navItems(slug?: string): NavItem[] {
       href: base ?? undefined,
       disabled: !base,
       isActive: (p) =>
-        !!base && (p === base || p.startsWith(`${base}/sessions`)),
+        !!base &&
+        (p === base || p === "/" || p.startsWith(`${base}/sessions`)),
     },
     {
       key: "ranking",
