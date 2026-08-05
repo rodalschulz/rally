@@ -62,7 +62,7 @@ export function UserMenu({
             className="flex items-center gap-2.5 px-4 py-3 text-[0.9rem] font-medium text-ink transition hover:bg-mist-2"
           >
             <GearIcon />
-            Ajustes de usuario
+            Ajustes de Usuario
           </Link>
           <form action={logoutAction} className="border-t border-ink/6">
             <PendingSubmitButton

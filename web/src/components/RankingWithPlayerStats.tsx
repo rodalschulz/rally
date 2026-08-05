@@ -79,7 +79,7 @@ export function RankingWithPlayerStats({
                 className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:opacity-80"
                 aria-label={`Ver estadísticas de ${player.displayName}`}
               >
-                <PlayerAvatar player={player} showSticker />
+                <PlayerAvatar player={player} size="xl" showSticker />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[1rem] font-medium tracking-[-0.01em] text-ink">
                     {player.displayName}

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Ajustes del grupo" };
+export const metadata = { title: "Ajustes de Grupo" };
 
 export default async function GroupSettingsPage({
   params,
@@ -26,7 +26,7 @@ export default async function GroupSettingsPage({
       <section className="animate-rise mb-6">
         <div className="flex items-center gap-1">
           <h1 className="m-0 min-w-0 text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">
-            Ajustes
+            Ajustes de Grupo
           </h1>
           {isOwner ? (
             <InviteLinkCard inviteCode={group.inviteCode} isOwner />

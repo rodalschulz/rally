@@ -11,7 +11,7 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Ajustes" };
+export const metadata = { title: "Ajustes de Usuario" };
 
 export default async function UserSettingsPage() {
   const session = await getSession();
@@ -31,10 +31,10 @@ export default async function UserSettingsPage() {
   };
 
   return (
-    <AppShell title="Cuenta">
+    <AppShell title="Ajustes de Usuario">
       <section className="animate-rise mb-6">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
-          Ajustes
+          Ajustes de Usuario
         </h1>
         <p className="mt-1 text-[0.95rem] text-muted">
           Tu perfil en rally.
