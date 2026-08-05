@@ -1,6 +1,7 @@
 import type {
   AttendanceStatus,
   Match,
+  MatchUnit,
   PlayerId,
   SessionStatus,
 } from "../domain/types";
@@ -9,7 +10,6 @@ import { ELO_INITIAL, ELO_K_BY_UNIT, buildEloRanking } from "./elo";
 import { compareMatches } from "./matchOrder";
 
 const SERVER_STATS_MIN_SAMPLE = 10;
-const GAME_K = ELO_K_BY_UNIT.game;
 
 export type EloHistoryPoint = {
   at: string;
@@ -124,13 +124,17 @@ function expectedScore(ratingA: number, ratingB: number): number {
   return 1 / (1 + 10 ** ((ratingB - ratingA) / 400));
 }
 
-function isCountableGame(m: Match): boolean {
-  if (m.format !== "singles" || m.unit !== "game") return false;
+function isCountableUnitMatch(m: Match, unit: MatchUnit): boolean {
+  if (m.format !== "singles" || m.unit !== unit) return false;
   if (m.deletedAt) return false;
   if (m.winnerSide !== "A" && m.winnerSide !== "B") return false;
   const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0];
   const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0];
   return Boolean(winnerId && loserId && winnerId !== loserId);
+}
+
+function isCountableGame(m: Match): boolean {
+  return isCountableUnitMatch(m, "game");
 }
 
 function playerInMatch(m: Match, playerId: PlayerId): boolean {
@@ -156,28 +160,38 @@ function rangeStartMs(range: EloHistoryRange, now: Date): number | null {
   return fromAppZonedDateTime(p.year, p.month, 1, 0, 0, 0).getTime();
 }
 
-function applyGameElo(ratings: Map<PlayerId, number>, m: Match): void {
+function applyUnitElo(
+  ratings: Map<PlayerId, number>,
+  m: Match,
+  unit: MatchUnit,
+): void {
+  const k = ELO_K_BY_UNIT[unit];
   const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0]!;
   const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0]!;
   const ra = ratings.get(winnerId) ?? ELO_INITIAL;
   const rb = ratings.get(loserId) ?? ELO_INITIAL;
   const ea = expectedScore(ra, rb);
   const eb = expectedScore(rb, ra);
-  ratings.set(winnerId, ra + GAME_K * (1 - ea));
-  ratings.set(loserId, rb + GAME_K * (0 - eb));
+  ratings.set(winnerId, ra + k * (1 - ea));
+  ratings.set(loserId, rb + k * (0 - eb));
+}
+
+function applyGameElo(ratings: Map<PlayerId, number>, m: Match): void {
+  applyUnitElo(ratings, m, "game");
 }
 
 /**
  * Elo series shared across players: index 0 = start at 1000, then one sample
  * per past non-cancelled Fecha (end-of-fecha Elo). Elo carries forward when
- * the player did not play that fecha. Games from skipped (e.g. cancelled)
- * fechas are still applied for correctness.
+ * the player did not play that fecha. Matches from skipped (e.g. cancelled)
+ * fechas are still applied for correctness. Ladder is per `unit` (Games | Sets).
  */
 export function buildGroupFechaEloHistory(
   playerId: PlayerId,
   matches: Match[],
   sessions: PlayerStatsSessionInput[],
   now: Date = new Date(),
+  unit: MatchUnit = "game",
 ): EloHistoryPoint[] {
   const nowMs = now.getTime();
   const plotSessions = sessions
@@ -190,19 +204,22 @@ export function buildGroupFechaEloHistory(
 
   if (plotSessions.length === 0) return [];
 
-  const games = matches.filter(isCountableGame).slice().sort(compareMatches);
+  const unitMatches = matches
+    .filter((m) => isCountableUnitMatch(m, unit))
+    .slice()
+    .sort(compareMatches);
   const ratings = new Map<PlayerId, number>();
-  let gi = 0;
+  let mi = 0;
   const fechaPoints: EloHistoryPoint[] = [];
 
   for (const s of plotSessions) {
     const sStart = Date.parse(s.startsAt);
-    while (gi < games.length) {
-      const g = games[gi]!;
-      const gStart = g.sessionStartsAt ? Date.parse(g.sessionStartsAt) : 0;
-      if (g.sessionId === s.id || gStart < sStart) {
-        applyGameElo(ratings, g);
-        gi += 1;
+    while (mi < unitMatches.length) {
+      const m = unitMatches[mi]!;
+      const mStart = m.sessionStartsAt ? Date.parse(m.sessionStartsAt) : 0;
+      if (m.sessionId === s.id || mStart < sStart) {
+        applyUnitElo(ratings, m, unit);
+        mi += 1;
       } else {
         break;
       }
@@ -291,6 +308,10 @@ type SessionPlay = {
   losses: number;
 };
 
+/**
+ * Career ficha for Ranking Singles. Pass `unit: "game"` (Elo.G) or `"set"`
+ * (Elo.S). Ladders never mix. Server % only applies to Games.
+ */
 export function buildPlayerGameStats(input: {
   playerId: PlayerId;
   matches: Match[];
@@ -299,6 +320,7 @@ export function buildPlayerGameStats(input: {
   joinedAt: string;
   sessions: PlayerStatsSessionInput[];
   attendances: PlayerStatsAttendanceInput[];
+  unit?: MatchUnit;
   now?: Date;
 }): PlayerGameStats {
   const {
@@ -310,15 +332,19 @@ export function buildPlayerGameStats(input: {
     sessions,
     attendances,
   } = input;
+  const unit = input.unit ?? "game";
   const now = input.now ?? new Date();
   const nowMs = now.getTime();
   const joinedMs = Date.parse(joinedAt);
 
-  const ranking = buildEloRanking(matches, "game", memberIds, displayNameById);
+  const ranking = buildEloRanking(matches, unit, memberIds, displayNameById);
   const rankIndex = ranking.findIndex((r) => r.playerId === playerId);
   const rankRow = rankIndex >= 0 ? ranking[rankIndex]! : null;
 
-  const games = matches.filter(isCountableGame).slice().sort(compareMatches);
+  const unitMatches = matches
+    .filter((m) => isCountableUnitMatch(m, unit))
+    .slice()
+    .sort(compareMatches);
 
   const ratings = new Map<PlayerId, number>();
   const ratingOf = (id: PlayerId) => ratings.get(id) ?? ELO_INITIAL;
@@ -338,7 +364,7 @@ export function buildPlayerGameStats(input: {
   let asReturnerPlayed = 0;
   const sessionPlay = new Map<string, SessionPlay>();
 
-  for (const m of games) {
+  for (const m of unitMatches) {
     const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0]!;
     const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0]!;
     const involves = playerInMatch(m, playerId);
@@ -358,7 +384,7 @@ export function buildPlayerGameStats(input: {
       }
     }
 
-    applyGameElo(ratings, m);
+    applyUnitElo(ratings, m, unit);
 
     if (!involves) continue;
 
@@ -387,7 +413,11 @@ export function buildPlayerGameStats(input: {
       else r.losses += 1;
     }
 
-    if (m.serverSide === "A" || m.serverSide === "B") {
+    // Servidor is Games-only metadata.
+    if (
+      unit === "game" &&
+      (m.serverSide === "A" || m.serverSide === "B")
+    ) {
       const serverId = (m.serverSide === "A" ? m.sideA : m.sideB)[0];
       if (serverId === playerId) {
         asServerPlayed += 1;
@@ -409,6 +439,7 @@ export function buildPlayerGameStats(input: {
     matches,
     sessions,
     now,
+    unit,
   );
   for (const p of eloHistory) {
     if (p.elo > eloMax) eloMax = p.elo;

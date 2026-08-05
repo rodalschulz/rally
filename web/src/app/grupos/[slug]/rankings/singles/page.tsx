@@ -80,6 +80,7 @@ export default async function SinglesRankingPage({
         joinedAtById={joinedAtById}
         sessions={sessions}
         attendances={attendances}
+        unit={unit}
         scoreLabel="Elo"
         playedLabel={unit === "game" ? "Games" : "Sets"}
         emptyHint="Todavía no hay miembros en este grupo."

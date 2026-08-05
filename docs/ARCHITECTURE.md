@@ -85,7 +85,7 @@ src/
   lib/
     groups/                  # create, join, requireMember, crypto
     domain/                  # tipos + split de costo
-    ranking/                 # Elo singles (por unit) + resumen de fecha + ficha jugador (Games)
+    ranking/                 # Elo singles (por unit) + resumen de fecha + ficha jugador (Games|Sets)
     matches/                 # textos del historial de resultados (anti-cheat)
     sessions/                # ventanas de resultados, permisos
     debts/                   # sync de deudas open
@@ -105,7 +105,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 2. Crear grupo / join por invite  
 3. Hub del grupo: sesiones; canchas libres e integrantes en modales (botones en el header)  
 4. Detalle de sesión: costo/host en el header; RSVP; resultados (Games/Sets + En curso / soft-delete + Servidor opcional); historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S)  
-5. Ranking (Games \| Sets Elo, por grupo); tocar jugador → ficha stats Games (sheet)  
+5. Ranking (Games \| Sets Elo, por grupo); tocar jugador → ficha stats del ladder activo (Games o Sets)  
 
 6. Ajustes de grupo / cuenta (salir, borrar grupo, borrar cuenta; push + preferencias en `/ajustes`)  
 7. Deudas del grupo  
@@ -114,7 +114,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 ### Datos y consistencia
 
 - Al cambiar `costAmount`, `financierId` o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
-- Rankings: on-read — Singles `buildEloRanking` por `unit` (Games \| Sets). Sin pantalla de ranking dobles. Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets). Ficha de jugador: `buildPlayerGameStats` (Ranking; historial por Fecha del grupo) y `buildPlayerFechaGameStats` (Resumen Games; historial por Game de la Fecha).
+- Rankings: on-read — Singles `buildEloRanking` por `unit` (Games \| Sets). Sin pantalla de ranking dobles. Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets). Ficha de jugador: `buildPlayerGameStats` (Ranking; `unit` game|set; historial por Fecha del grupo) y `buildPlayerFechaGameStats` (Resumen Games; historial por Game de la Fecha).
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 
 ### Seguridad

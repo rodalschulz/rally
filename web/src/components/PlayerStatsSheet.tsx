@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import type { Match, Player } from "@/lib/domain/types";
+import type { Match, MatchUnit, Player } from "@/lib/domain/types";
 import { formatSessionChip } from "@/lib/format";
 import {
   buildPlayerFechaGameStats,
@@ -25,6 +25,8 @@ type CareerProps = {
   player: Player | null;
   open: boolean;
   onClose: () => void;
+  /** Ranking tab: Games (Elo.G) or Sets (Elo.S). */
+  unit?: MatchUnit;
   matches: Match[];
   memberIds: string[];
   displayNameById: Record<string, string>;
@@ -93,11 +95,14 @@ export function PlayerStatsSheet(props: PlayerStatsSheetProps) {
         joinedAt: props.joinedAt,
         sessions: props.sessions,
         attendances: props.attendances,
+        unit: props.unit ?? "game",
       });
     }
   }
 
   const isFecha = props.variant === "fecha";
+  const careerUnit: MatchUnit =
+    !isFecha && "unit" in props ? (props.unit ?? "game") : "game";
 
   if (!portalReady || !open || !player) return null;
   if (!isFecha && !careerStats) return null;
@@ -126,6 +131,7 @@ export function PlayerStatsSheet(props: PlayerStatsSheetProps) {
           <CareerStatsBody
             player={player}
             stats={careerStats}
+            unit={careerUnit}
             onClose={onClose}
           />
         ) : null}
@@ -138,12 +144,20 @@ export function PlayerStatsSheet(props: PlayerStatsSheetProps) {
 function CareerStatsBody({
   player,
   stats,
+  unit,
   onClose,
 }: {
   player: Player;
   stats: PlayerGameStats;
+  unit: MatchUnit;
   onClose: () => void;
 }) {
+  const isSets = unit === "set";
+  const unitLabel = isSets ? "Sets" : "Games";
+  const eloLabel = isSets ? "Elo.S" : "Elo.G";
+  const streakHint = isSets ? "Sets seguidos" : "Games seguidos";
+  const emptyUnitHint = isSets ? "Sin Sets" : "Sin Games";
+
   return (
     <>
       <SheetHeader
@@ -152,7 +166,7 @@ function CareerStatsBody({
         subtitle={
           <>
             {stats.rank != null ? `#${stats.rank} · ` : null}
-            {stats.currentElo} Elo.G
+            {stats.currentElo} {eloLabel}
             {stats.winRate != null
               ? ` · ${Math.round(stats.winRate * 100)}% ganados`
               : null}
@@ -169,7 +183,7 @@ function CareerStatsBody({
 
         <div className="mb-5 grid grid-cols-2 gap-3">
           <StatTile
-            label="Games ganados"
+            label={`${unitLabel} ganados`}
             value={
               stats.played > 0 ? `${stats.wins}G · ${stats.losses}P` : "—"
             }
@@ -188,7 +202,7 @@ function CareerStatsBody({
                 : "—"
             }
             hint={
-              stats.longestWinStreak > 0 ? "Games seguidos" : undefined
+              stats.longestWinStreak > 0 ? streakHint : undefined
             }
           />
           <StatTile
@@ -230,7 +244,7 @@ function CareerStatsBody({
           />
         </div>
 
-        {stats.serverStats ? (
+        {!isSets && stats.serverStats ? (
           <ServerSection stats={stats.serverStats} />
         ) : null}
 
@@ -256,7 +270,7 @@ function CareerStatsBody({
                     <p className="text-[0.75rem] text-muted">
                       {t.wins + t.losses > 0
                         ? `${t.wins}G · ${t.losses}P`
-                        : "Sin Games"}
+                        : emptyUnitHint}
                     </p>
                   </div>
                   <span

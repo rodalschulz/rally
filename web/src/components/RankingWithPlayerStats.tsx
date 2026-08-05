@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { Match, Player, RankingRow } from "@/lib/domain/types";
+import type { Match, MatchUnit, Player, RankingRow } from "@/lib/domain/types";
 import type {
   PlayerStatsAttendanceInput,
   PlayerStatsSessionInput,
@@ -17,6 +17,7 @@ export function RankingWithPlayerStats({
   joinedAtById,
   sessions,
   attendances,
+  unit = "game",
   emptyHint,
   scoreLabel = "Elo",
   playedLabel = "Games",
@@ -28,6 +29,7 @@ export function RankingWithPlayerStats({
   joinedAtById: Record<string, string>;
   sessions: PlayerStatsSessionInput[];
   attendances: PlayerStatsAttendanceInput[];
+  unit?: MatchUnit;
   emptyHint: string;
   scoreLabel?: string;
   playedLabel?: string;
@@ -102,6 +104,7 @@ export function RankingWithPlayerStats({
         player={selectedPlayer}
         open={selectedId != null}
         onClose={close}
+        unit={unit}
         matches={matches}
         memberIds={memberIds}
         displayNameById={displayNameById}

@@ -356,6 +356,87 @@ describe("buildPlayerGameStats", () => {
     expect(s.maxEloGainInSession).toBeNull();
     expect(s.topRival).toBeNull();
   });
+
+  it("Sets unit ignores Games and uses Elo.S (K=32)", () => {
+    const setK = ELO_K_BY_UNIT.set;
+    const matches: Match[] = [
+      game({ id: "g1", sessionId: "s1", winnerSide: "A" }),
+      {
+        format: "singles",
+        unit: "set",
+        id: "set1",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["b"],
+        score: "6-4",
+        winnerSide: "A",
+        sessionStartsAt: "2026-01-01T17:00:00.000Z",
+        createdAt: "2026-01-01T18:20:00.000Z",
+      },
+      {
+        format: "singles",
+        unit: "set",
+        id: "set2",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["b"],
+        score: "3-6",
+        winnerSide: "B",
+        sessionStartsAt: "2026-01-01T17:00:00.000Z",
+        createdAt: "2026-01-01T18:40:00.000Z",
+      },
+    ];
+    const sessions: PlayerStatsSessionInput[] = [
+      {
+        id: "s1",
+        startsAt: "2026-01-01T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+    ];
+    const s = stats({ matches, sessions, unit: "set" });
+    expect(s.played).toBe(2);
+    expect(s.wins).toBe(1);
+    expect(s.losses).toBe(1);
+    // One win then one loss at equal ratings → back near 1000; max > initial.
+    const winOnly = Math.round(ELO_INITIAL + setK * 0.5);
+    expect(s.eloMax).toBe(winOnly);
+    expect(s.serverStats).toBeNull();
+
+    const gamesOnly = stats({ matches, sessions, unit: "game" });
+    expect(gamesOnly.played).toBe(1);
+    expect(gamesOnly.wins).toBe(1);
+  });
+
+  it("Sets unit with no sets played leaves match KPIs empty", () => {
+    const matches: Match[] = [
+      game({ id: "g1", sessionId: "s1", winnerSide: "A" }),
+    ];
+    const sessions: PlayerStatsSessionInput[] = [
+      {
+        id: "s1",
+        startsAt: "2026-01-01T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+    ];
+    const s = stats({
+      matches,
+      sessions,
+      unit: "set",
+      attendances: [
+        { sessionId: "s1", playerId: "a", status: "going" },
+      ],
+    });
+    expect(s.played).toBe(0);
+    expect(s.winRate).toBeNull();
+    expect(s.longestWinStreak).toBe(0);
+    expect(s.topRival).toBeNull();
+    expect(s.maxEloGainInSession).toBeNull();
+    expect(s.serverStats).toBeNull();
+    expect(s.attendance.going).toBe(1);
+    expect(s.currentElo).toBe(ELO_INITIAL);
+  });
 });
 
 describe("filterEloHistory", () => {
