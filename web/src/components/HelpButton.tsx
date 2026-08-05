@@ -109,7 +109,7 @@ const TABS: HelpTab[] = [
       },
       {
         title: "Notificaciones",
-        desc: "Activa las notificaciones en Ajustes para enterarte de nuevas Fechas, cambios y deudas al instante.",
+        desc: "Activa las notificaciones en Ajustes para enterarte de nuevas Fechas, cambios y deudas. En iPhone/iPad hay que agregar rally a la pantalla de inicio (como app) para poder recibirlas.",
       },
     ],
   },
@@ -187,7 +187,7 @@ export function HelpButton() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="help-title"
-                className="flex max-h-[min(80vh,36rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-sand shadow-lg"
+                className="flex h-[min(80vh,36rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-sand shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-start justify-between gap-3 border-b border-ink/6 px-4 py-3">
