@@ -43,24 +43,39 @@ Si ves `Synced to Rally: { ok: true, ... }`, recargá Fechas.
 
 ## Programar en Windows (Task Scheduler)
 
-Tarea creada: **`RallyMirafloresSync`**
+Dos tareas diarias (hora local de la PC):
 
-- Cada **60 minutos**
-- De **07:00 a 00:00** (hora Perú / SA Pacific)
-- Ejecuta: `bot/run_sync.bat`
+| Tarea | Hora |
+|-------|------|
+| `RallyMirafloresSync11` | **11:00** |
+| `RallyMirafloresSync23` | **23:00** |
+
+- Ejecutan: `bot/run_sync.bat`
 - Log: `bot/sync.log`
+- No hay corridas intermedias
 
 ```bash
 # Ver estado
-schtasks /Query /TN "RallyMirafloresSync" /V /FO LIST
+schtasks /Query /TN "RallyMirafloresSync11" /V /FO LIST
+schtasks /Query /TN "RallyMirafloresSync23" /V /FO LIST
 
-# Cambiar intervalo a 60 min (si la tarea ya existe)
-schtasks /Change /TN "RallyMirafloresSync" /RI 60
+# Recrear (borra y vuelve a crear)
+schtasks /Delete /TN "RallyMirafloresSync11" /F
+schtasks /Delete /TN "RallyMirafloresSync23" /F
+schtasks /Create /TN "RallyMirafloresSync11" /TR "D:\coding\tenis\bot\run_sync.bat" /SC DAILY /ST 11:00 /IT /F
+schtasks /Create /TN "RallyMirafloresSync23" /TR "D:\coding\tenis\bot\run_sync.bat" /SC DAILY /ST 23:00 /IT /F
 
 # Correr ahora a mano
-schtasks /Run /TN "RallyMirafloresSync"
+schtasks /Run /TN "RallyMirafloresSync11"
 
-# Borrar la tarea
+# Borrar
+schtasks /Delete /TN "RallyMirafloresSync11" /F
+schtasks /Delete /TN "RallyMirafloresSync23" /F
+```
+
+Si aún existe la tarea antigua horaria `RallyMirafloresSync`, bórrala:
+
+```bash
 schtasks /Delete /TN "RallyMirafloresSync" /F
 ```
 
