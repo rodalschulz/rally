@@ -39,7 +39,7 @@ export async function prepareStickerFile(file: File): Promise<File> {
 
     if (blob.size > AVATAR_MAX_BYTES) {
       throw new Error(
-        "El sticker sigue pesando demasiado (máx. 300 KB). Prueba una imagen más simple.",
+        "El sticker sigue pesando demasiado (máx. 500 KB). Prueba una imagen más simple.",
       );
     }
 

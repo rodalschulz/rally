@@ -23,7 +23,7 @@ export async function uploadAvatarBlob(
     throw new Error("Usa un PNG o WebP (sticker con fondo transparente).");
   }
   if (file.size > AVATAR_MAX_BYTES) {
-    throw new Error("La imagen debe pesar menos de 300 KB.");
+    throw new Error("La imagen debe pesar menos de 500 KB.");
   }
 
   const ext = avatarExtension(file.type);

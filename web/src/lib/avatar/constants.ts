@@ -1,5 +1,5 @@
 /** Max upload size before client resize / server reject. */
-export const AVATAR_MAX_BYTES = 300 * 1024;
+export const AVATAR_MAX_BYTES = 500 * 1024;
 
 /** Longest edge after client prepare (keeps stickers light). */
 export const AVATAR_MAX_EDGE = 512;
