@@ -70,7 +70,7 @@ export function SessionRow({
         </p>
         <div className="mt-2 flex items-center gap-2">
           <div className="flex -space-x-1.5">
-            {goingPlayers.slice(0, 4).map((p) => (
+            {goingPlayers.slice(0, 8).map((p) => (
               <span key={p.id} className="rounded-full ring-2 ring-sand">
                 <PlayerAvatar player={p} size="sm" />
               </span>
