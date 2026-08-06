@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { Match, MatchUnit, Player } from "@/lib/domain/types";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@/lib/ranking/sessionResumen";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerStatsSheet } from "@/components/PlayerStatsSheet";
+import { SessionEloPathsSheet } from "@/components/SessionEloPathsSheet";
 import { Spinner } from "@/components/Spinner";
 
 /** UI labels for the two independent Singles Elo ladders. */
@@ -34,6 +35,7 @@ function SessionResumenBlock({
   players,
   emptyMessage,
   onPlayerClick,
+  headerAction,
 }: {
   title: string;
   eloLabel: "Elo.G" | "Elo.S";
@@ -42,12 +44,16 @@ function SessionResumenBlock({
   emptyMessage?: string;
   /** When set (Resumen Games), avatar+name open Fecha-scoped stats. */
   onPlayerClick?: (playerId: string) => void;
+  headerAction?: ReactNode;
 }) {
   return (
     <div className="mt-8">
-      <h3 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-        {title}
-      </h3>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h3 className="min-w-0 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+          {title}
+        </h3>
+        {headerAction}
+      </div>
       {rows.length === 0 ? (
         emptyMessage ? (
           <p className="text-[0.9rem] text-muted">{emptyMessage}</p>
@@ -276,6 +282,7 @@ export function SinglesResultsPanel({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [historialOpen, setHistorialOpen] = useState(false);
+  const [eloPathsOpen, setEloPathsOpen] = useState(false);
   const [statsPlayerId, setStatsPlayerId] = useState<string | null>(null);
   const [portalReady, setPortalReady] = useState(false);
   /** Pending winner pick for En curso games — confirm before submit. */
@@ -1285,6 +1292,17 @@ export function SinglesResultsPanel({
         players={labelPlayers}
         emptyMessage="Sin games terminados todavía."
         onPlayerClick={setStatsPlayerId}
+        headerAction={
+          resumenGames.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setEloPathsOpen(true)}
+              className="shrink-0 origin-right scale-[0.85] rounded bg-mist-2 px-2 py-1 text-[1rem] font-medium leading-none text-muted transition hover:text-ink"
+            >
+              Elo
+            </button>
+          ) : null
+        }
       />
       {resumenSets.length > 0 ? (
         <SessionResumenBlock
@@ -1300,6 +1318,15 @@ export function SinglesResultsPanel({
         player={statsPlayer}
         open={statsPlayerId != null}
         onClose={() => setStatsPlayerId(null)}
+        sessionId={playSessionId}
+        historyMatches={rankingMatches}
+        sessionMatches={local}
+        displayNameById={displayNameById}
+      />
+
+      <SessionEloPathsSheet
+        open={eloPathsOpen}
+        onClose={() => setEloPathsOpen(false)}
         sessionId={playSessionId}
         historyMatches={rankingMatches}
         sessionMatches={local}

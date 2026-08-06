@@ -3,9 +3,11 @@ import type { Match } from "@/lib/domain/types";
 import { ELO_INITIAL, ELO_K_BY_UNIT } from "./elo";
 import {
   buildEloHistoryForChart,
+  buildGroupEloPaths,
   buildGroupFechaEloHistory,
   buildPlayerFechaGameStats,
   buildPlayerGameStats,
+  buildSessionEloPaths,
   filterEloHistory,
   type PlayerStatsAttendanceInput,
   type PlayerStatsSessionInput,
@@ -687,5 +689,143 @@ describe("buildPlayerFechaGameStats", () => {
     expect(s.eloStart).toBe(expectedStart);
     expect(s.eloHistory[0]!.elo).toBe(expectedStart);
     expect(s.eloEnd).toBeLessThan(s.eloStart);
+  });
+});
+
+describe("buildSessionEloPaths", () => {
+  const names = new Map([
+    ["a", "Ana"],
+    ["b", "Bruno"],
+    ["c", "Carla"],
+  ]);
+
+  it("matches individual Fecha charts on a shared X-axis", () => {
+    const history: Match[] = [
+      game({
+        id: "1",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["b"],
+        winnerSide: "A",
+        createdAt: "2026-01-01T18:00:00.000Z",
+      }),
+      game({
+        id: "2",
+        sessionId: "s1",
+        sideA: ["b"],
+        sideB: ["c"],
+        winnerSide: "A",
+        createdAt: "2026-01-01T18:05:00.000Z",
+      }),
+      game({
+        id: "3",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["c"],
+        winnerSide: "B",
+        createdAt: "2026-01-01T18:10:00.000Z",
+      }),
+    ];
+
+    const paths = buildSessionEloPaths({
+      sessionId: "s1",
+      historyMatches: history,
+      displayNameById: names,
+    });
+    expect(paths).toHaveLength(3);
+    expect(paths.every((p) => p.points.length === 4)).toBe(true);
+
+    for (const path of paths) {
+      const solo = buildPlayerFechaGameStats({
+        playerId: path.playerId,
+        sessionId: "s1",
+        historyMatches: history,
+        displayNameById: names,
+      });
+      expect(path.points.map((p) => p.elo)).toEqual(
+        solo.eloHistory.map((p) => p.elo),
+      );
+      expect(path.eloStart).toBe(solo.eloStart);
+      expect(path.eloEnd).toBe(solo.eloEnd);
+    }
+  });
+
+  it("returns empty when the Fecha has no finished Games", () => {
+    expect(
+      buildSessionEloPaths({
+        sessionId: "s1",
+        historyMatches: [],
+        displayNameById: names,
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("buildGroupEloPaths", () => {
+  const names = new Map([
+    ["a", "Ana"],
+    ["b", "Bruno"],
+    ["c", "Carla"],
+  ]);
+
+  it("matches individual career charts on a shared Fecha axis", () => {
+    const now = new Date("2026-08-01T12:00:00.000Z");
+    const sessions: PlayerStatsSessionInput[] = [
+      {
+        id: "s1",
+        startsAt: "2026-01-01T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+      {
+        id: "s2",
+        startsAt: "2026-02-01T17:00:00.000Z",
+        status: "completed",
+        allowedUserIds: [],
+      },
+    ];
+    const matches: Match[] = [
+      game({
+        id: "1",
+        sessionId: "s1",
+        sideA: ["a"],
+        sideB: ["b"],
+        winnerSide: "A",
+        sessionStartsAt: "2026-01-01T17:00:00.000Z",
+        createdAt: "2026-01-01T18:00:00.000Z",
+      }),
+      game({
+        id: "2",
+        sessionId: "s2",
+        sideA: ["b"],
+        sideB: ["c"],
+        winnerSide: "A",
+        sessionStartsAt: "2026-02-01T17:00:00.000Z",
+        createdAt: "2026-02-01T18:00:00.000Z",
+      }),
+    ];
+
+    const paths = buildGroupEloPaths({
+      matches,
+      sessions,
+      playerIds: ["a", "b", "c"],
+      displayNameById: names,
+      now,
+    });
+    expect(paths).toHaveLength(3);
+    expect(paths.every((p) => p.points.length === 3)).toBe(true); // Inicio + 2 Fechas
+
+    for (const path of paths) {
+      const solo = buildGroupFechaEloHistory(
+        path.playerId,
+        matches,
+        sessions,
+        now,
+      );
+      expect(path.points.map((p) => p.elo)).toEqual(solo.map((p) => p.elo));
+    }
+    // a sat out s2 → Elo unchanged between Fecha 1 and 2
+    const a = paths.find((p) => p.playerId === "a")!;
+    expect(a.points[2]!.elo).toBe(a.points[1]!.elo);
   });
 });

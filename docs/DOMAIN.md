@@ -38,7 +38,7 @@ Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grup
 
 Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google OAuth + `displayName` / `shortName` (derivados del perfil). Scoped al grupo vía `GroupMember`.
 
-**Avatar:** opcional `avatarUrl` (sticker PNG/WebP en Vercel Blob, máx. ~500 KB). El sticker solo se muestra en **Ranking** (lista + ficha de jugador); en el resto de la app se usan iniciales + `hue`. No reutiliza `User.image` de Auth (foto de Google). Subida/quita en `/ajustes`.
+**Avatar:** opcional `avatarUrl` (sticker PNG/WebP en Vercel Blob, máx. **500 KB** final). El usuario puede elegir un PNG/WebP más grande (hasta ~12 MB); el cliente lo redimensiona/re-encodea y el servidor lo normaliza con `sharp` (palette PNG / WebP) hasta quedar ≤ 500 KB. El sticker solo se muestra en **Ranking** (lista + ficha de jugador); en el resto de la app se usan iniciales + `hue`. No reutiliza `User.image` de Auth (foto de Google). Subida/quita en `/ajustes`.
 
 **Admin de app (`User.isAdmin`):** flag global, independiente del owner de un grupo. Privilegios (siempre como miembro del grupo):
 
@@ -183,6 +183,10 @@ Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt
 **Resumen de fecha:** debajo de Resultados hay **Resumen Games** (siempre) y, solo si hubo Sets terminados, **Resumen Sets**. Cada bloque muestra W–L de esa unit en la fecha + rating inicio→fin del ladder correspondiente. En UI los ladders se etiquetan **Elo.G** (Games) y **Elo.S** (Sets); no se mezclan. Solo cuentan quienes terminaron al menos un match de esa unit; En curso / soft-delete no. El rating de inicio se calcula rejugando solo fechas **anteriores** (`session.startsAt` menor que el de esta fecha); nunca fechas posteriores. Así el fin de una fecha encadena con el inicio de la siguiente (por unit). Módulo: `web/src/lib/ranking/sessionResumen.ts`.
 
 **Ficha de jugador (UI, Resumen Games):** tocar una fila del Resumen Games abre un sheet con estadísticas **solo de esa Fecha** (Games). Gráfico: **Inicio** (Elo al empezar la Fecha) + **un punto por cada Game terminado de la Fecha** (mismo eje X para todos; si no jugó ese Game, el Elo se arrastra). Métricas acotadas a la Fecha: W–L / %, Elo máximo, racha, mayor +Elo en un Game, rival, servidor (≥10 con `serverSide`), y **participación** = Games jugados / Games totales de la Fecha. Sets no abren ficha. Módulo: `buildPlayerFechaGameStats`.
+
+**Elo (UI, Resumen Games):** botón **Elo** junto al título abre un modal con el mismo eje X (Inicio + un punto por Game) y **todas** las trayectorias Elo.G de la Fecha en un solo gráfico (paleta de colores de alto contraste, estable por jugador). Módulo: `buildSessionEloPaths`.
+
+**Elo (UI, Ranking):** debajo de la lista del ranking Singles, gráfico multi-jugador del ladder activo (Games o Sets): **Inicio en 1000** + **un punto por cada Fecha pasada del grupo** (mismo eje que la ficha individual; Elo se arrastra si no jugó). Rangos Este mes / 30 días / Inicio. Módulo: `buildGroupEloPaths`.
 
 **Historial de cambios (UI):** en el detalle de la fecha, botón **Historial** junto a Resultados abre un modal con el changelog (no se muestra inline).
 

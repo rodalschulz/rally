@@ -575,6 +575,235 @@ export function buildPlayerGameStats(input: {
   };
 }
 
+/** One player's Elo series across every Game of a Fecha (shared X-axis). */
+export type SessionEloPathSeries = {
+  playerId: PlayerId;
+  displayName: string;
+  /** Inicio + one point after every finished Game of the Fecha. */
+  points: EloHistoryPoint[];
+  eloStart: number;
+  eloEnd: number;
+};
+
+/**
+ * Multi-player Elo paths for one Fecha (Games ladder). Same X-axis as the
+ * individual Fecha chart: Inicio + G1…Gn. Elo carries when a player sits out.
+ * Only players who finished ≥1 Game appear. Sorted by eloEnd desc, then name.
+ */
+export function buildSessionEloPaths(input: {
+  sessionId: string;
+  historyMatches: Match[];
+  displayNameById: ReadonlyMap<PlayerId, string>;
+  sessionMatchesOverride?: Match[];
+}): SessionEloPathSeries[] {
+  const {
+    sessionId,
+    historyMatches,
+    displayNameById,
+    sessionMatchesOverride,
+  } = input;
+
+  const sessionSource =
+    sessionMatchesOverride !== undefined
+      ? sessionMatchesOverride
+      : historyMatches.filter((m) => m.sessionId === sessionId);
+
+  const sessionGames = sessionSource
+    .filter(isCountableGame)
+    .slice()
+    .sort(compareMatches);
+
+  if (sessionGames.length === 0) return [];
+
+  const sessionStartMs = historyMatches
+    .filter((m) => m.sessionId === sessionId && m.sessionStartsAt)
+    .reduce<number | null>((min, m) => {
+      const t = Date.parse(m.sessionStartsAt!);
+      return min === null || t < min ? t : min;
+    }, null);
+
+  const isBeforeThisFecha = (m: Match): boolean => {
+    if (sessionStartMs === null) return true;
+    const t = m.sessionStartsAt ? Date.parse(m.sessionStartsAt) : 0;
+    return t < sessionStartMs;
+  };
+
+  const prior = historyMatches
+    .filter(
+      (m) =>
+        m.sessionId !== sessionId &&
+        isCountableGame(m) &&
+        isBeforeThisFecha(m),
+    )
+    .slice()
+    .sort(compareMatches);
+
+  const ratings = new Map<PlayerId, number>();
+  for (const m of prior) applyGameElo(ratings, m);
+
+  const playerIds = new Set<PlayerId>();
+  for (const m of sessionGames) {
+    const a = m.sideA[0];
+    const b = m.sideB[0];
+    if (a) playerIds.add(a);
+    if (b) playerIds.add(b);
+  }
+
+  const startAt =
+    sessionStartMs != null
+      ? new Date(sessionStartMs - 1000).toISOString()
+      : matchAt(sessionGames[0]!);
+
+  const series = new Map<
+    PlayerId,
+    { points: EloHistoryPoint[]; eloStart: number }
+  >();
+  for (const id of playerIds) {
+    const eloStart = Math.round(ratings.get(id) ?? ELO_INITIAL);
+    series.set(id, {
+      eloStart,
+      points: [
+        {
+          at: startAt,
+          elo: eloStart,
+          isStart: true,
+          label: "Inicio",
+        },
+      ],
+    });
+  }
+
+  for (let i = 0; i < sessionGames.length; i++) {
+    const m = sessionGames[i]!;
+    applyGameElo(ratings, m);
+    const at = matchAt(m) || startAt;
+    for (const id of playerIds) {
+      const row = series.get(id)!;
+      row.points.push({
+        at,
+        elo: Math.round(ratings.get(id) ?? ELO_INITIAL),
+        gameIndex: i + 1,
+        label: `G${i + 1}`,
+      });
+    }
+  }
+
+  const nameOf = (id: PlayerId) => displayNameById.get(id) ?? id;
+
+  return [...series.entries()]
+    .map(([playerId, row]) => ({
+      playerId,
+      displayName: nameOf(playerId),
+      points: row.points,
+      eloStart: row.eloStart,
+      eloEnd: row.points[row.points.length - 1]!.elo,
+    }))
+    .sort((a, b) => {
+      if (b.eloEnd !== a.eloEnd) return b.eloEnd - a.eloEnd;
+      const byName = a.displayName.localeCompare(b.displayName, "es", {
+        sensitivity: "base",
+      });
+      if (byName !== 0) return byName;
+      return a.playerId.localeCompare(b.playerId);
+    });
+}
+
+/**
+ * Multi-player Elo paths for the group ranking ladder (one sample per past
+ * Fecha). Same X-axis as the individual career chart: Inicio (1000) + end-of-
+ * Fecha Elo. Elo carries when a player sat out. Only `playerIds` appear.
+ * Sorted by current Elo desc, then name.
+ */
+export function buildGroupEloPaths(input: {
+  matches: Match[];
+  sessions: PlayerStatsSessionInput[];
+  playerIds: PlayerId[];
+  displayNameById: ReadonlyMap<PlayerId, string>;
+  unit?: MatchUnit;
+  now?: Date;
+}): SessionEloPathSeries[] {
+  const {
+    matches,
+    sessions,
+    playerIds,
+    displayNameById,
+    unit = "game",
+    now = new Date(),
+  } = input;
+
+  if (playerIds.length === 0) return [];
+
+  const nowMs = now.getTime();
+  const plotSessions = sessions
+    .filter((s) => {
+      const t = Date.parse(s.startsAt);
+      return !Number.isNaN(t) && t < nowMs && s.status !== "cancelled";
+    })
+    .slice()
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+
+  if (plotSessions.length === 0) return [];
+
+  const unitMatches = matches
+    .filter((m) => isCountableUnitMatch(m, unit))
+    .slice()
+    .sort(compareMatches);
+  const ratings = new Map<PlayerId, number>();
+  let mi = 0;
+
+  const firstStart = Date.parse(plotSessions[0]!.startsAt);
+  const startAt = new Date(firstStart - 1000).toISOString();
+
+  const series = new Map<PlayerId, EloHistoryPoint[]>();
+  for (const id of playerIds) {
+    series.set(id, [
+      { at: startAt, elo: ELO_INITIAL, isStart: true, label: "Inicio" },
+    ]);
+  }
+
+  for (const s of plotSessions) {
+    const sStart = Date.parse(s.startsAt);
+    while (mi < unitMatches.length) {
+      const m = unitMatches[mi]!;
+      const mStart = m.sessionStartsAt ? Date.parse(m.sessionStartsAt) : 0;
+      if (m.sessionId === s.id || mStart < sStart) {
+        applyUnitElo(ratings, m, unit);
+        mi += 1;
+      } else {
+        break;
+      }
+    }
+    for (const id of playerIds) {
+      series.get(id)!.push({
+        at: s.startsAt,
+        elo: Math.round(ratings.get(id) ?? ELO_INITIAL),
+      });
+    }
+  }
+
+  const nameOf = (id: PlayerId) => displayNameById.get(id) ?? id;
+
+  return playerIds
+    .map((playerId) => {
+      const points = series.get(playerId)!;
+      return {
+        playerId,
+        displayName: nameOf(playerId),
+        points,
+        eloStart: points[0]!.elo,
+        eloEnd: points[points.length - 1]!.elo,
+      };
+    })
+    .sort((a, b) => {
+      if (b.eloEnd !== a.eloEnd) return b.eloEnd - a.eloEnd;
+      const byName = a.displayName.localeCompare(b.displayName, "es", {
+        sensitivity: "base",
+      });
+      if (byName !== 0) return byName;
+      return a.playerId.localeCompare(b.playerId);
+    });
+}
+
 /**
  * Games-only stats for one player in one Fecha. Chart X-axis = every finished
  * Game of the Fecha (same for all players); Elo carries when they sit a Game out.

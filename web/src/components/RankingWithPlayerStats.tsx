@@ -2,12 +2,14 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { Match, MatchUnit, Player, RankingRow } from "@/lib/domain/types";
-import type {
-  PlayerStatsAttendanceInput,
-  PlayerStatsSessionInput,
+import {
+  buildGroupEloPaths,
+  type PlayerStatsAttendanceInput,
+  type PlayerStatsSessionInput,
 } from "@/lib/ranking/playerStats";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { PlayerStatsSheet } from "./PlayerStatsSheet";
+import { SessionEloPathsChart } from "./SessionEloPathsChart";
 
 export function RankingWithPlayerStats({
   rows,
@@ -44,6 +46,28 @@ export function RankingWithPlayerStats({
     }
     return out;
   }, [playersById]);
+
+  const nameMap = useMemo(
+    () => new Map(Object.entries(displayNameById)),
+    [displayNameById],
+  );
+
+  const rankedPlayerIds = useMemo(
+    () => rows.filter((r) => r.played > 0).map((r) => r.playerId),
+    [rows],
+  );
+
+  const eloPaths = useMemo(
+    () =>
+      buildGroupEloPaths({
+        matches,
+        sessions,
+        playerIds: rankedPlayerIds,
+        displayNameById: nameMap,
+        unit,
+      }),
+    [matches, sessions, rankedPlayerIds, nameMap, unit],
+  );
 
   const selectedPlayer = selectedId ? playersById[selectedId] ?? null : null;
   const joinedAt =
@@ -105,6 +129,15 @@ export function RankingWithPlayerStats({
           );
         })}
       </ol>
+
+      {eloPaths.length > 0 ? (
+        <section className="mt-8 animate-rise">
+          <h2 className="mb-3 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
+            Elo
+          </h2>
+          <SessionEloPathsChart series={eloPaths} variant="career" />
+        </section>
+      ) : null}
 
       <PlayerStatsSheet
         player={selectedPlayer}

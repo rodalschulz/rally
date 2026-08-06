@@ -25,7 +25,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 |--------|---------|
 | `lib/ranking/elo.ts` | Singles Elo por unit (K, orden cronológico, no doble conteo) |
 | `lib/ranking/sessionResumen.ts` | Resumen de fecha por unit (Games/Sets): W–L + Elo.G / Elo.S inicio/fin; cutoff cronológico (sin filtrar fechas futuras) |
-| `lib/ranking/playerStats.ts` | Ficha de jugador: career por unit Games|Sets (racha, asistencia, historial por Fecha) + Fecha-scoped Games (historial por Game, participación) |
+| `lib/ranking/playerStats.ts` | Ficha de jugador: career por unit Games|Sets (racha, asistencia, historial por Fecha) + Fecha-scoped Games (historial por Game, participación) + gráficos Elo multi-jugador (`buildSessionEloPaths`, `buildGroupEloPaths`) |
 | `lib/ranking/simple.ts` | Puntos por unit (helper; sin ranking dobles en UI) |
 | `lib/domain/gameScore.ts` | Marcador de set válido / empate / ≥6 |
 | `lib/domain/split.ts` | Reparto, regalo de cancha, saldos netos |
@@ -37,6 +37,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 | `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
 | `lib/matches/weightedPair.ts` | Pairing Aleatorio de Games: peso por menos partidos en la Fecha |
+| `lib/avatar/optimize.ts` | Sticker ≤ 500 KB (resize + palette/WebP) |
 | `lib/push/recipients.ts` | Excluir actor, filtro por preferencia, allow-list Fecha, cleanup 404/410 |
 | `lib/push/leader.ts` | Detección de cambio de #1 Singles Games |
 | `lib/push/fechaDiff.ts` | Qué cuenta como update material de Fecha |
