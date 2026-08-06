@@ -69,7 +69,8 @@ export function AvatarStickerPicker({ player }: Props) {
         <div className="min-w-0 flex-1">
           <p className="text-[0.95rem] font-medium text-ink">Sticker avatar</p>
           <p className="text-[0.8rem] text-muted">
-            PNG o WebP, ideal con fondo transparente. Máx. 500 KB.
+            PNG o WebP, ideal con fondo transparente. Si pesa mucho, lo
+            optimizamos automáticamente (máx. 500 KB final).
           </p>
         </div>
       </div>

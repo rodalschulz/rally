@@ -1,9 +1,10 @@
 import { del, put } from "@vercel/blob";
 import {
   AVATAR_ALLOWED_TYPES,
-  AVATAR_MAX_BYTES,
+  AVATAR_MAX_SOURCE_BYTES,
   avatarExtension,
 } from "@/lib/avatar/constants";
+import { optimizeAvatarBuffer } from "@/lib/avatar/optimize";
 
 function assertBlobConfigured() {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
@@ -22,19 +23,21 @@ export async function uploadAvatarBlob(
   if (!AVATAR_ALLOWED_TYPES.has(file.type)) {
     throw new Error("Usa un PNG o WebP (sticker con fondo transparente).");
   }
-  if (file.size > AVATAR_MAX_BYTES) {
-    throw new Error("La imagen debe pesar menos de 500 KB.");
+  if (file.size > AVATAR_MAX_SOURCE_BYTES) {
+    throw new Error("La imagen es demasiado grande (máx. 12 MB).");
   }
-
-  const ext = avatarExtension(file.type);
-  if (!ext) {
+  if (!avatarExtension(file.type)) {
     throw new Error("Formato no soportado.");
   }
 
-  const blob = await put(`avatars/${userId}.${ext}`, file, {
+  const input = Buffer.from(await file.arrayBuffer());
+  const optimized = await optimizeAvatarBuffer(input);
+  const ext = optimized.contentType === "image/webp" ? "webp" : "png";
+
+  const blob = await put(`avatars/${userId}.${ext}`, optimized.buffer, {
     access: "public",
     addRandomSuffix: true,
-    contentType: file.type,
+    contentType: optimized.contentType,
   });
   return blob.url;
 }
