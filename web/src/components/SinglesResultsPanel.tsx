@@ -13,7 +13,7 @@ import {
 } from "@/lib/actions/sessions";
 import { formatChatTime } from "@/lib/format";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
-import { pickFairGamePair } from "@/lib/matches/weightedPair";
+import { pickNextGamePair } from "@/lib/matches/nextGamePair";
 import {
   buildSessionSinglesResumen,
   type SessionResumenRow,
@@ -160,19 +160,19 @@ type GameDraft = {
   serverSide: "A" | "B" | null;
 };
 
-function emptySetDraft(players: Player[]): SetDraft {
+function emptySetDraft(): SetDraft {
   return {
-    player1Id: players[0]?.id ?? "",
-    player2Id: players[1]?.id ?? "",
+    player1Id: "",
+    player2Id: "",
     games1: "",
     games2: "",
   };
 }
 
-function emptyGameDraft(players: Player[]): GameDraft {
+function emptyGameDraft(): GameDraft {
   return {
-    player1Id: players[0]?.id ?? "",
-    player2Id: players[1]?.id ?? "",
+    player1Id: "",
+    player2Id: "",
     winnerSide: null,
     serverSide: null,
   };
@@ -275,9 +275,9 @@ export function SinglesResultsPanel({
   const [logs, setLogs] = useState(changeLog);
   const [formKind, setFormKind] = useState<FormKind | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [setDraft, setSetDraft] = useState<SetDraft>(() => emptySetDraft(players));
+  const [setDraft, setSetDraft] = useState<SetDraft>(() => emptySetDraft());
   const [gameDraft, setGameDraft] = useState<GameDraft>(() =>
-    emptyGameDraft(players),
+    emptyGameDraft(),
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -309,8 +309,8 @@ export function SinglesResultsPanel({
 
   useEffect(() => {
     if (!editingId) {
-      setSetDraft(emptySetDraft(players));
-      setGameDraft(emptyGameDraft(players));
+      setSetDraft(emptySetDraft());
+      setGameDraft(emptyGameDraft());
     }
   }, [players, editingId]);
 
@@ -331,8 +331,8 @@ export function SinglesResultsPanel({
   const resetForm = () => {
     setFormKind(null);
     setEditingId(null);
-    setSetDraft(emptySetDraft(players));
-    setGameDraft(emptyGameDraft(players));
+    setSetDraft(emptySetDraft());
+    setGameDraft(emptyGameDraft());
   };
 
   const runMutation = ({
@@ -415,8 +415,8 @@ export function SinglesResultsPanel({
   const openAdd = (kind: FormKind) => {
     setFormKind(kind);
     setEditingId(null);
-    setSetDraft(emptySetDraft(players));
-    setGameDraft(emptyGameDraft(players));
+    setSetDraft(emptySetDraft());
+    setGameDraft(emptyGameDraft());
     setError(null);
   };
 
@@ -1134,23 +1134,23 @@ export function SinglesResultsPanel({
             <button
               type="button"
               onClick={() => {
-                const pair = pickFairGamePair(
+                const pair = pickNextGamePair(
                   players.map((p) => p.id),
-                  local.filter((m) => m.unit === "game"),
+                  local.filter((m) => m.unit === "game" && !m.deletedAt),
                 );
                 if (!pair) return;
                 setGameDraft({
                   player1Id: pair.player1Id,
                   player2Id: pair.player2Id,
                   winnerSide: null,
-                  serverSide: Math.random() < 0.5 ? "A" : "B",
+                  serverSide: pair.serverSide,
                 });
               }}
               className="w-full rounded-xl bg-mist-2 py-2.5 text-[0.9rem] font-medium text-ink transition active:opacity-80"
             >
-              Aleatorio
+              Siguiente Pareja
               <span className="mt-0.5 block text-[0.75rem] font-normal text-muted">
-                Prioriza a quien jugó menos Games en esta Fecha
+                Empareja sin repetir y rota quien descansa
               </span>
             </button>
           ) : null}
@@ -1445,15 +1445,20 @@ function PlayerSelects({
           {players.length === 0 ? (
             <option value="">Sin asistentes</option>
           ) : (
-            players.map((p) => (
-              <option
-                key={p.id}
-                value={p.id}
-                disabled={Boolean(player2Id) && p.id === player2Id}
-              >
-                {p.displayName}
+            <>
+              <option value="" disabled>
+                Elegir jugador
               </option>
-            ))
+              {players.map((p) => (
+                <option
+                  key={p.id}
+                  value={p.id}
+                  disabled={Boolean(player2Id) && p.id === player2Id}
+                >
+                  {p.displayName}
+                </option>
+              ))}
+            </>
           )}
         </select>
       </label>
@@ -1468,15 +1473,20 @@ function PlayerSelects({
           {players.length < 2 ? (
             <option value="">Falta otro asistente</option>
           ) : (
-            players.map((p) => (
-              <option
-                key={p.id}
-                value={p.id}
-                disabled={Boolean(player1Id) && p.id === player1Id}
-              >
-                {p.displayName}
+            <>
+              <option value="" disabled>
+                Elegir jugador
               </option>
-            ))
+              {players.map((p) => (
+                <option
+                  key={p.id}
+                  value={p.id}
+                  disabled={Boolean(player1Id) && p.id === player1Id}
+                >
+                  {p.displayName}
+                </option>
+              ))}
+            </>
           )}
         </select>
       </label>

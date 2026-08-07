@@ -6,8 +6,7 @@ import { settleActorLabel } from "@/lib/debts/settleLabel";
 import { userIsAppAdmin } from "@/lib/admin";
 import { netBalances } from "@/lib/domain/split";
 import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
-import { settleDebtAction } from "@/lib/actions/sessions";
-import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { SettleDebtButton } from "@/components/SettleDebtButton";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -175,15 +174,12 @@ export default async function DebtsPage({
                         sessionStartsAt: d.sessionStartsAt,
                         isAppAdmin,
                       }) ? (
-                        <form action={settleDebtAction}>
-                          <input type="hidden" name="debtId" value={d.id} />
-                          <PendingSubmitButton
-                            pendingLabel="…"
-                            className="text-[0.75rem] font-medium text-muted"
-                          >
-                            Saldar
-                          </PendingSubmitButton>
-                        </form>
+                        <SettleDebtButton
+                          debtId={d.id}
+                          fromName={from?.displayName ?? "Alguien"}
+                          toName={to?.displayName ?? "Alguien"}
+                          amountLabel={formatSoles(d.amount)}
+                        />
                       ) : null}
                     </div>
                   </div>
