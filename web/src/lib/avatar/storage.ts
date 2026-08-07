@@ -34,7 +34,12 @@ export async function uploadAvatarBlob(
   const optimized = await optimizeAvatarBuffer(input);
   const ext = optimized.contentType === "image/webp" ? "webp" : "png";
 
-  const blob = await put(`avatars/${userId}.${ext}`, optimized.buffer, {
+  // Blob + copied bytes: @vercel/blob put() uses fetch/undici, which throws
+  // "ArrayBuffer: SharedArrayBuffer is not allowed" on sharp's raw buffers.
+  const body = new Blob([new Uint8Array(optimized.buffer)], {
+    type: optimized.contentType,
+  });
+  const blob = await put(`avatars/${userId}.${ext}`, body, {
     access: "public",
     addRandomSuffix: true,
     contentType: optimized.contentType,

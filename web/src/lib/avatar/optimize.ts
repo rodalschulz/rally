@@ -31,7 +31,9 @@ export async function optimizeAvatarBuffer(
       .png({ compressionLevel: 9, palette: true, quality: 80, effort: 7 })
       .toBuffer();
     if (png.length <= AVATAR_MAX_BYTES) {
-      return { buffer: png, contentType: "image/png" };
+      // Copy out of sharp's possibly SharedArrayBuffer-backed memory —
+      // undici/fetch (used by @vercel/blob) rejects SAB BodyInit.
+      return { buffer: Buffer.from(png), contentType: "image/png" };
     }
 
     for (const quality of WEBP_QUALITIES) {
@@ -44,7 +46,7 @@ export async function optimizeAvatarBuffer(
         })
         .toBuffer();
       if (webp.length <= AVATAR_MAX_BYTES) {
-        return { buffer: webp, contentType: "image/webp" };
+        return { buffer: Buffer.from(webp), contentType: "image/webp" };
       }
     }
   }
