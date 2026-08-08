@@ -542,18 +542,15 @@ function ServerSection({
   return (
     <section className="mb-5">
       <h3 className="mb-2 text-[0.8rem] font-medium uppercase tracking-[0.04em] text-muted">
-        Como servidor
+        Games Sacando o Recibiendo
       </h3>
-      <p className="text-[0.85rem] text-muted">
-        En {stats.sampleSize} Games con servidor registrado
-      </p>
       <div className="mt-2 grid grid-cols-2 gap-3">
         <StatTile
-          label="Sacando"
+          label="Ganados Sacando"
           value={`${Math.round(stats.asServerWinRate * 100)}%`}
         />
         <StatTile
-          label="Recibiendo"
+          label="Ganados Recibiendo"
           value={`${Math.round(stats.asReturnerWinRate * 100)}%`}
         />
       </div>
