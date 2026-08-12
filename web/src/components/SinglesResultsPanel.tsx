@@ -293,10 +293,19 @@ export function SinglesResultsPanel({
   const [serverPickById, setServerPickById] = useState<
     Partial<Record<string, "A" | "B" | null>>
   >({});
+  /** Brief press flash for "Siguiente Pareja". */
+  const [nextPairFlash, setNextPairFlash] = useState(false);
   const inFlight = useRef(0);
+  const nextPairFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setPortalReady(true);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (nextPairFlashTimer.current) clearTimeout(nextPairFlashTimer.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -1145,8 +1154,18 @@ export function SinglesResultsPanel({
                   winnerSide: null,
                   serverSide: pair.serverSide,
                 });
+                setNextPairFlash(true);
+                if (nextPairFlashTimer.current) {
+                  clearTimeout(nextPairFlashTimer.current);
+                }
+                nextPairFlashTimer.current = setTimeout(
+                  () => setNextPairFlash(false),
+                  280,
+                );
               }}
-              className="w-full rounded-xl bg-mist-2 py-2.5 text-[0.9rem] font-medium text-ink transition active:opacity-80"
+              className={`w-full rounded-xl py-2.5 text-[0.9rem] font-medium text-ink transition-[background-color,transform] duration-150 active:scale-[0.98] ${
+                nextPairFlash ? "bg-ball/35" : "bg-mist-2"
+              }`}
             >
               Siguiente Pareja
               <span className="mt-0.5 block text-[0.75rem] font-normal text-muted">
