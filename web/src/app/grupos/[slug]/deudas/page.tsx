@@ -115,8 +115,7 @@ export default async function DebtsPage({
       <section className="mb-2">
         <div className="mb-4 flex items-start justify-between gap-2">
           <p className="text-[0.85rem] leading-snug text-muted">
-            En <span className="font-medium text-ink">Debes</span>, toca Pagar
-            para el celular del acreedor. Solo quien recibe (o un admin) puede
+            Solo quien recibe (o un admin) puede
             Saldar cuando la fecha ya pasó.
           </p>
         </div>

@@ -1,0 +1,703 @@
+===== Sat 07/25/2026 14:35:57.95 =====
+There was an error managing chromedriver (error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json)); using driver found in the cache
+Error sending stats to Plausible: error sending request for url (https://plausible.io/api/event)
+^C===== Sat 07/25/2026 15:00:01.84 =====
+^C===== Sat 07/25/2026 15:30:01.79 =====
+Traceback (most recent call last):
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+===== Sat 07/25/2026 16:00:01.80 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-30 (Thu)      2026-07-31 (Fri)   
+------------------------------------------------------
+[32m06:00:00            31                  30,31         [0m
+[32m07:00:00            -                     30          [0m
+[32m08:00:00            -                   31,33         [0m
+09:00:00            -                   31,33         
+10:00:00            -                   30,31         
+11:00:00            -                30,39,40,41      
+12:00:00            -               30,31,39,40,41    
+13:00:00            -                30,31,33,39      
+14:00:00            -                   31,33         
+15:00:00            -               30,31,36,38,39    
+16:00:00            -           31,33,34,35,37,38,39,40,41
+[32m17:00:00            -                  31,33,41       [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-25T21:00:42.106Z', 'dates': 2}
+
+===== Sat 07/25/2026 16:30:01.79 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-30 (Thu)      2026-07-31 (Fri)   
+------------------------------------------------------
+[32m06:00:00            31                  30,31         [0m
+[32m07:00:00            -                   30,31         [0m
+[32m08:00:00            -                   31,33         [0m
+09:00:00            -                   31,33         
+10:00:00            -                   30,31         
+11:00:00            -                  39,40,41       
+12:00:00            -               30,31,39,40,41    
+13:00:00            -                30,31,33,39      
+14:00:00            -                   31,33         
+15:00:00            -                30,31,38,39      
+16:00:00            -           31,33,34,35,37,38,39,40,41
+[32m17:00:00            -                  31,33,41       [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-25T21:30:13.202Z', 'dates': 2}
+
+===== Sun 07/26/2026 19:02:20.02 =====
+There was an error managing chromedriver (error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json)); using driver found in the cache
+Error sending stats to Plausible: error sending request for url (https://plausible.io/api/event)
+Traceback (most recent call last):
+  File "D:\coding\tenis\bot\open_chrome.py", line 341, in <module>
+    main()
+  File "D:\coding\tenis\bot\open_chrome.py", line 280, in main
+    driver.get(LOGIN_URL)
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 452, in get
+    self.execute(Command.GET, {"url": url})
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 432, in execute
+    self.error_handler.check_response(response)
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_INTERNET_DISCONNECTED
+  (Session info: chrome=150.0.7871.186)
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff7b8250d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff7b8250d80+15600]
+	chromedriver!(No symbol) [0x7ff7b7da594d]
+	chromedriver!(No symbol) [0x7ff7b7da2709]
+	chromedriver!(No symbol) [0x7ff7b7d92a91]
+	chromedriver!(No symbol) [0x7ff7b7d948ff]
+	chromedriver!(No symbol) [0x7ff7b7d93033]
+	chromedriver!(No symbol) [0x7ff7b7d927fb]
+	chromedriver!(No symbol) [0x7ff7b7d924b1]
+	chromedriver!(No symbol) [0x7ff7b7d90167]
+	chromedriver!(No symbol) [0x7ff7b7d908e2]
+	chromedriver!(No symbol) [0x7ff7b7da9bf6]
+	chromedriver!(No symbol) [0x7ff7b7e4ee24]
+	chromedriver!(No symbol) [0x7ff7b7e291ca]
+	chromedriver!(No symbol) [0x7ff7b7e4e01b]
+	chromedriver!(No symbol) [0x7ff7b7df2e6c]
+	chromedriver!(No symbol) [0x7ff7b7df3d93]
+	chromedriver!GetHandleVerifier [0x7ff7b8836431+5facb1]
+	chromedriver!GetHandleVerifier [0x7ff7b8830a9b+5f531b]
+	chromedriver!GetHandleVerifier [0x7ff7b8855865+61a0e5]
+	chromedriver!GetHandleVerifier [0x7ff7b826dace+3234e]
+	chromedriver!GetHandleVerifier [0x7ff7b827661c+3ae9c]
+	chromedriver!GetHandleVerifier [0x7ff7b825ab74+1f3f4]
+	chromedriver!GetHandleVerifier [0x7ff7b825ad04+1f584]
+	chromedriver!GetHandleVerifier [0x7ff7b823d9d7+2257]
+	KERNEL32!BaseThreadInitThunk [0x7ffa3f56e957+17]
+	ntdll!RtlUserThreadStart [0x7ffa3faaad6c+2c]
+
+Exit code: 
+
+===== Sun 07/26/2026 19:30:01.82 =====
+Traceback (most recent call last):
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 1395, in getresponse
+    response.begin()
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 286, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\socket.py", line 706, in readinto
+^C===== Sun 07/26/2026 21:11:46.51 =====
+Traceback (most recent call last):
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 1395, in getresponse
+    response.begin()
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 286, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\socket.py", line 706, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\coding\tenis\bot\open_chrome.py", line 341, in <module>
+    main()
+  File "D:\coding\tenis\bot\open_chrome.py", line 295, in main
+    driver.get(TARGET_URL)
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 452, in get
+    self.execute(Command.GET, {"url": url})
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 429, in execute
+    response = cast(RemoteConnection, self.command_executor).execute(driver_command, params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\remote_connection.py", line 406, in execute
+^C===== Sun 07/26/2026 21:30:01.88 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-02 (Sun)   
+------------------------------------------------------
+[32m06:00:00          30,31                   -           [0m
+[32m07:00:00          30,31                   -           [0m
+[32m08:00:00            31                    -           [0m
+09:00:00          31,33                   -           
+10:00:00            31                    -           
+11:00:00            39                    -           
+12:00:00         30,31,41                 -           
+13:00:00         30,31,33                 31          
+14:00:00          31,33                30,31,33       
+15:00:00       30,31,38,39             30,31,37       
+16:00:00  31,33,35,37,38,39,40,41          30          
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T02:30:13.294Z', 'dates': 2}
+
+===== Sun 07/26/2026 22:00:01.81 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-02 (Sun)   
+------------------------------------------------------
+[32m06:00:00          30,31                   -           [0m
+[32m07:00:00          30,31                   -           [0m
+[32m08:00:00            31                    -           [0m
+09:00:00          31,33                   -           
+10:00:00            31                    -           
+11:00:00            39                    -           
+12:00:00         30,31,41                 -           
+13:00:00         30,31,33                 31          
+14:00:00          31,33                30,31,33       
+15:00:00       30,31,38,39              30,31         
+16:00:00  31,33,35,37,38,39,40,41          -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T03:00:38.906Z', 'dates': 2}
+
+===== Sun 07/26/2026 22:30:02.01 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-02 (Sun)   
+------------------------------------------------------
+[32m06:00:00          30,31                   -           [0m
+[32m07:00:00          30,31                   -           [0m
+[32m08:00:00            31                    -           [0m
+09:00:00          31,33                   -           
+10:00:00            31                    -           
+11:00:00            39                    -           
+12:00:00         30,31,41                 -           
+13:00:00         30,31,33                 -           
+14:00:00          31,33                30,31,33       
+15:00:00       30,31,38,39              30,31         
+16:00:00  31,33,35,37,38,39,40,41          -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T03:30:13.132Z', 'dates': 2}
+
+===== Sun 07/26/2026 23:00:02.20 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-02 (Sun)   
+------------------------------------------------------
+[32m06:00:00          30,31                   -           [0m
+[32m07:00:00          30,31                   -           [0m
+[32m08:00:00            31                    -           [0m
+09:00:00          31,33                   -           
+10:00:00            31                    -           
+11:00:00            39                    -           
+12:00:00         30,31,41                 -           
+13:00:00         30,31,33                 -           
+14:00:00          31,33                30,31,33       
+15:00:00         30,31,39               30,31         
+16:00:00  31,33,35,37,38,39,40,41          -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T04:00:41.437Z', 'dates': 2}
+
+===== Mon 07/27/2026 10:44:40.24 =====
+^C===== Mon 07/27/2026 11:00:01.82 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+No Authorization header found on disponibilidad request.
+
+===== Mon 07/27/2026 11:30:01.85 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+No Authorization header found on disponibilidad request.
+
+===== Mon 07/27/2026 13:43:21.30 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-27 (Mon)      2026-07-30 (Thu)      2026-07-31 (Fri)      2026-08-02 (Sun)      2026-08-03 (Mon)   
+------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00            -                     -                   30,31                   -                  30,31,33       [0m
+[32m07:00:00            -                     -                     30                    -                     -           [0m
+[32m08:00:00            -                     -                     31                    -                     31          [0m
+09:00:00            -                     -                     -                     -                     31          
+10:00:00            -                     -                     31                    -                   30,31         
+11:00:00            -                     -                     39                    -                     -           
+12:00:00            -                     -                  30,31,41                 -                     -           
+13:00:00            -                     -                  30,31,33                 -                     -           
+14:00:00            -                     -                   31,33                 30,31              30,31,36,38      
+15:00:00            -                     -                  30,31,39                 31                 30,31,37       
+16:00:00            -                     -            31,33,37,38,39,40,41           -                     -           
+[32m17:00:00            -                     -                   31,33                   -                     -           [0m
+[32m18:00:00            36                    40                    -                     -                     -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T18:43:36.942Z', 'dates': 5}
+
+===== Mon 07/27/2026 14:00:01.80 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-27 (Mon)      2026-07-30 (Thu)      2026-07-31 (Fri)      2026-08-02 (Sun)      2026-08-03 (Mon)   
+------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00            -                     -                   30,31                   -                  30,31,33       [0m
+[32m07:00:00            -                     -                     30                    -                     -           [0m
+[32m08:00:00            -                     -                     31                    -                     31          [0m
+09:00:00            -                     -                     31                    -                     31          
+10:00:00            -                     -                     31                    -                   30,31         
+12:00:00            -                     -                  30,31,41                 -                     -           
+13:00:00            -                     -                  30,31,33                 -                     -           
+14:00:00            -                     -                   31,33                 30,31              30,31,36,38      
+15:00:00            -                     -                  30,31,39                 31                  30,31         
+16:00:00            -                     -            31,33,37,38,39,40,41           -                     -           
+[32m17:00:00            -                     -                   31,33                   -                     -           [0m
+[32m18:00:00            36                    40                    -                     -                     -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T19:00:39.105Z', 'dates': 5}
+
+===== Mon 07/27/2026 14:30:01.82 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-27 (Mon)      2026-07-30 (Thu)      2026-07-31 (Fri)      2026-08-02 (Sun)      2026-08-03 (Mon)   
+------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00            -                     -                   30,31                   -                  30,31,33       [0m
+[32m07:00:00            -                     -                     30                    -                     -           [0m
+[32m08:00:00            -                     -                     31                    -                     31          [0m
+09:00:00            -                     -                     31                    -                     31          
+10:00:00            -                     -                     31                    -                   30,31         
+11:00:00            -                     -                     39                    -                     -           
+12:00:00            -                     -                  30,31,41                 -                     -           
+13:00:00            -                     -                  30,31,33                 -                     -           
+14:00:00            -                     -                   31,33                 30,31              30,31,36,38      
+15:00:00            -                     -                  30,31,39                 -                   30,31         
+16:00:00            -                     -            31,33,37,38,39,40,41           -                     -           
+[32m17:00:00            -                     -                   31,33                   -                     -           [0m
+[32m18:00:00            36                    40                    -                     -                     -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T19:30:14.476Z', 'dates': 5}
+
+===== Mon 07/27/2026 15:00:01.82 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-30 (Thu)      2026-07-31 (Fri)      2026-08-02 (Sun)      2026-08-03 (Mon)   
+--------------------------------------------------------------------------------------------------
+[32m06:00:00            -                   30,31                   -                  30,31,33       [0m
+[32m07:00:00            -                     30                    -                     -           [0m
+[32m08:00:00            -                     31                    -                     31          [0m
+09:00:00            -                     31                    -                     31          
+10:00:00            -                     31                    -                   30,31         
+11:00:00            -                     39                    -                     -           
+12:00:00            -                  30,31,41                 -                     -           
+13:00:00            -                  30,31,33                 -                     -           
+14:00:00            -                   31,33                 30,31              30,31,36,38      
+15:00:00            -                  30,31,39                 31                    -           
+16:00:00            -            31,33,37,38,39,40,41           -                     -           
+[32m17:00:00            -                   31,33                   -                     -           [0m
+[32m18:00:00            40                    -                     -                     -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T20:00:42.966Z', 'dates': 4}
+
+===== Mon 07/27/2026 17:00:36.18 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-03 (Mon)   
+------------------------------------------------------
+[32m06:00:00          30,31                 30,31         [0m
+[32m07:00:00            30                    -           [0m
+[32m08:00:00            31                    31          [0m
+09:00:00            31                    31          
+10:00:00            31                  30,31         
+11:00:00            39                    -           
+12:00:00         30,31,41                 -           
+13:00:00         30,31,33                 -           
+14:00:00          31,33                 30,31         
+15:00:00          30,31                   -           
+16:00:00    31,33,37,38,39,41             -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T22:00:51.341Z', 'dates': 2}
+
+===== Mon 07/27/2026 18:00:02.24 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-03 (Mon)   
+------------------------------------------------------
+[32m06:00:00          30,31                 30,31         [0m
+[32m07:00:00            30                    -           [0m
+[32m08:00:00            31                    31          [0m
+09:00:00            31                    31          
+10:00:00            31                  30,31         
+11:00:00            39                    -           
+12:00:00          30,31                   -           
+13:00:00         30,31,33                 -           
+14:00:00          31,33                 30,31         
+15:00:00          30,31                   -           
+16:00:00    31,33,37,38,39,41             -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-27T23:00:39.275Z', 'dates': 2}
+
+===== Mon 07/27/2026 20:18:44.62 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+No Authorization header found on disponibilidad request.
+
+===== Mon 07/27/2026 21:00:01.80 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+No Authorization header found on disponibilidad request.
+
+===== Mon 07/27/2026 22:00:02.08 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-03 (Mon)   
+------------------------------------------------------
+[32m06:00:00          30,31                 30,31         [0m
+[32m08:00:00            -                     31          [0m
+09:00:00            31                    31          
+10:00:00            31                  30,31         
+11:00:00            39                    -           
+12:00:00          30,31                   -           
+13:00:00         30,31,33                 -           
+14:00:00          31,33                   -           
+15:00:00          30,31                   -           
+16:00:00      31,33,38,39,41              -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-28T03:00:41.104Z', 'dates': 2}
+
+===== Mon 07/27/2026 23:00:01.81 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-03 (Mon)   
+------------------------------------------------------
+[32m06:00:00          30,31                 30,31         [0m
+[32m08:00:00            -                     31          [0m
+09:00:00            31                    31          
+10:00:00            31                  30,31         
+11:00:00            39                    -           
+12:00:00          30,31                   -           
+13:00:00         30,31,33                 -           
+14:00:00          31,33                   -           
+15:00:00          30,31                   -           
+16:00:00      31,33,38,39,41              -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-28T04:00:43.580Z', 'dates': 2}
+
+===== Tue 07/28/2026  0:00:01.84 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-03 (Mon)   
+------------------------------------------------------
+[32m06:00:00          30,31                 30,31         [0m
+[32m08:00:00            -                     31          [0m
+09:00:00            31                    31          
+10:00:00            31                  30,31         
+11:00:00            39                    -           
+12:00:00          30,31                   -           
+13:00:00         30,31,33                 -           
+14:00:00          31,33                   -           
+15:00:00          30,31                   -           
+16:00:00      31,33,38,39,41              -           
+[32m17:00:00          31,33                   -           [0m
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-28T05:00:40.660Z', 'dates': 2}
+^C===== Thu 07/30/2026 23:00:01.93 =====
+There was an error managing chromedriver (error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json)); using driver found in the cache
+Error sending stats to Plausible: error sending request for url (https://plausible.io/api/event)
+Traceback (most recent call last):
+  File "D:\coding\tenis\bot\open_chrome.py", line 341, in <module>
+    main()
+  File "D:\coding\tenis\bot\open_chrome.py", line 280, in main
+    driver.get(LOGIN_URL)
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 452, in get
+    self.execute(Command.GET, {"url": url})
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 432, in execute
+    self.error_handler.check_response(response)
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_INTERNET_DISCONNECTED
+  (Session info: chrome=150.0.7871.187)
+Stacktrace:
+	chromedriver!GetHandleVerifier [0x7ff71ee60d25+155a5]
+	chromedriver!GetHandleVerifier [0x7ff71ee60d80+15600]
+	chromedriver!(No symbol) [0x7ff71e9b594d]
+	chromedriver!(No symbol) [0x7ff71e9b2709]
+	chromedriver!(No symbol) [0x7ff71e9a2a91]
+	chromedriver!(No symbol) [0x7ff71e9a48ff]
+	chromedriver!(No symbol) [0x7ff71e9a3033]
+	chromedriver!(No symbol) [0x7ff71e9a27fb]
+	chromedriver!(No symbol) [0x7ff71e9a24b1]
+	chromedriver!(No symbol) [0x7ff71e9a0167]
+	chromedriver!(No symbol) [0x7ff71e9a08e2]
+	chromedriver!(No symbol) [0x7ff71e9b9bf6]
+	chromedriver!(No symbol) [0x7ff71ea5ee24]
+	chromedriver!(No symbol) [0x7ff71ea391ca]
+	chromedriver!(No symbol) [0x7ff71ea5e01b]
+	chromedriver!(No symbol) [0x7ff71ea02e6c]
+	chromedriver!(No symbol) [0x7ff71ea03d93]
+	chromedriver!GetHandleVerifier [0x7ff71f446431+5facb1]
+	chromedriver!GetHandleVerifier [0x7ff71f440a9b+5f531b]
+	chromedriver!GetHandleVerifier [0x7ff71f465865+61a0e5]
+	chromedriver!GetHandleVerifier [0x7ff71ee7dace+3234e]
+	chromedriver!GetHandleVerifier [0x7ff71ee8661c+3ae9c]
+	chromedriver!GetHandleVerifier [0x7ff71ee6ab74+1f3f4]
+	chromedriver!GetHandleVerifier [0x7ff71ee6ad04+1f584]
+	chromedriver!GetHandleVerifier [0x7ff71ee4d9d7+2257]
+	KERNEL32!BaseThreadInitThunk [0x7fff1861e957+17]
+	ntdll!RtlUserThreadStart [0x7fff1936ad6c+2c]
+
+Exit code: 
+
+===== Fri 07/31/2026  0:00:01.99 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-07-31 (Fri)      2026-08-02 (Sun)      2026-08-03 (Mon)      2026-08-04 (Tue)      2026-08-05 (Wed)      2026-08-06 (Thu)   
+----------------------------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00            31                    -                   30,31                 31,33                   30                  31,33         [0m
+[32m08:00:00            -                     -                     -                     30                    31                    -           [0m
+09:00:00            -                     -                     31                    -                     -                     -           
+13:00:00         30,31,33                 30                    -                   31,33                   -                     31          
+14:00:00            -                     -                     -                   31,33                 30,31                   -           
+15:00:00          30,31                   -                     -                   31,33                 30,31                   -           
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-07-31T05:00:39.852Z', 'dates': 6}
+
+===== Mon 08/03/2026 23:00:02.10 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-08-03 (Mon)      2026-08-04 (Tue)      2026-08-05 (Wed)      2026-08-06 (Thu)      2026-08-07 (Fri)      2026-08-10 (Mon)   
+----------------------------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00          30,31                   -                     30                    33                    31                 30,31,33       [0m
+09:00:00            -                     -                     -                     -                     -                     31          
+10:00:00            -                     -                     -                     -                     -                     31          
+12:00:00            -                     -                     -                     -                     -                     31          
+13:00:00            -                     -                     -                     30                    -                   30,31         
+14:00:00            39                  31,33                   31                    -                     -                   30,31         
+15:00:00            -                     -                   30,31                 35,36                   -                     30          
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-08-04T04:00:42.699Z', 'dates': 6}
+
+===== Tue 08/04/2026  0:00:01.88 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+No Authorization header found on disponibilidad request.
+
+===== Wed 08/05/2026 16:00:02.35 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-08-10 (Mon)      2026-08-11 (Tue)      2026-08-12 (Wed)   
+----------------------------------------------------------------------------
+[32m06:00:00          30,31                   -                   30,31         [0m
+[32m07:00:00            -                     31                    30          [0m
+[32m08:00:00            -                     -                     31          [0m
+09:00:00            31                    -                     -           
+10:00:00            31                    -                     31          
+12:00:00            31                    -                     -           
+13:00:00          30,31                 31,33                 30,31         
+14:00:00          30,31                   -                   30,31         
+15:00:00            -                   31,33                 30,31         
+Rally sync failed: 500 Server Error: Internal Server Error for url: https://rally-beta-rose.vercel.app/api/availability/sync
+
+===== Wed 08/05/2026 17:00:01.85 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+No Authorization header found on disponibilidad request.
+
+===== Fri 08/07/2026 10:39:27.55 =====
+^C===== Fri 08/07/2026 11:00:01.89 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Traceback (most recent call last):
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 1395, in getresponse
+    response.begin()
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 286, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\socket.py", line 706, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\ssl.py", line 1314, in recv_into
+    return self.read(nbytes, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\ssl.py", line 1166, in read
+    return self._sslobj.read(len, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\util\retry.py", line 490, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.miraflores.gob.pe', port=443): Read timed out. (read timeout=30)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\coding\tenis\bot\open_chrome.py", line 341, in <module>
+    main()
+  File "D:\coding\tenis\bot\open_chrome.py", line 328, in main
+    response = requests.post(
+               ^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rodsc\AppData\Local\Programs\Python\Python311\Lib\site-packages\requests\adapters.py", line 690, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.miraflores.gob.pe', port=443): Read timed out. (read timeout=30)
+Exit code: 
+
+===== Sat 08/08/2026  1:07:07.12 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-08-10 (Mon)      2026-08-12 (Wed)      2026-08-13 (Thu)      2026-08-14 (Fri)   
+--------------------------------------------------------------------------------------------------
+[32m06:00:00            -                     30                  30,31                   -           [0m
+[32m07:00:00            -                     -                     -                     30          [0m
+09:00:00            -                     -                     30                    31          
+10:00:00            -                     -                     -                     31          
+11:00:00            -                     -                   31,33                   -           
+13:00:00            31                    -                     31                    31          
+14:00:00          30,31                   31               31,37,38,39              30,31         
+15:00:00            -                     30                    31                    31          
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-08-08T06:07:19.879Z', 'dates': 4}
+
+===== Sun 08/09/2026 23:00:01.91 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-08-10 (Mon)      2026-08-12 (Wed)      2026-08-13 (Thu)      2026-08-14 (Fri)      2026-08-16 (Sun)   
+------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00            -                     30                  30,31                   -                     -           [0m
+11:00:00            -                     -                     31                    -                     -           
+13:00:00            31                    -                     -                     31                    -           
+14:00:00          30,31                   -                  31,37,39                 31                    -           
+15:00:00            -                     -                     31                    -                     31          
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-08-10T04:00:43.502Z', 'dates': 5}
+
+===== Mon 08/10/2026 23:00:02.14 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-08-10 (Mon)      2026-08-12 (Wed)      2026-08-13 (Thu)      2026-08-14 (Fri)      2026-08-17 (Mon)   
+------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00            -                     30                  30,31                   -                     31          [0m
+10:00:00            36                    -                     -                     -                   30,31         
+12:00:00            -                     -                     -                     -                     31          
+13:00:00            31                    -                     -                     31                  30,31         
+14:00:00          30,31                   -                     31                    31                 30,31,38       
+15:00:00            -                     -                     -                     -                     30          
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-08-11T04:00:42.891Z', 'dates': 5}
+
+===== Tue 08/11/2026 23:00:02.74 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+No Authorization header found on disponibilidad request.
+
+===== Wed 08/12/2026 11:25:39.41 =====
+Disponibilidad request:
+  URL: https://api.miraflores.gob.pe/alquiler-de-cancha/public/api/v1/canchas/disponibilidad
+  postData: {"parametro_busqueda":953994}
+Fecha map (calendar):
+Time         2026-08-12 (Wed)      2026-08-13 (Thu)      2026-08-17 (Mon)      2026-08-18 (Tue)      2026-08-19 (Wed)   
+------------------------------------------------------------------------------------------------------------------------
+[32m06:00:00            30                    31                    31                    -                     30          [0m
+[32m07:00:00            -                     -                     -                     -                   30,31         [0m
+[32m08:00:00            -                     -                     -                     30                    31          [0m
+09:00:00            -                     -                     -                     30                    31          
+10:00:00            36                    -                     30                    -                     30          
+11:00:00            -                     -                     -                   31,33                   -           
+13:00:00            -                     -                   30,31                31,33,34                 30          
+14:00:00            -                     -                     30                    31                  30,31         
+15:00:00            -                     -                     -                     31                    -           
+Synced to Rally: {'ok': True, 'fetchedAt': '2026-08-12T16:25:53.744Z', 'dates': 5}
+
