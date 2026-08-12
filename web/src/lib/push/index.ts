@@ -24,6 +24,7 @@ export {
   getSinglesGamesLeaderId,
   isMaterialFechaUpdate,
   notifyAttendanceChanged,
+  notifyDebtPaymentClaimed,
   notifyDebtSettled,
   notifyFechaCreated,
   notifyFechaDeleted,

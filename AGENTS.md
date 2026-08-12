@@ -46,8 +46,8 @@ Leer antes de implementar features de producto:
 - Pantallas: `/` (discovery; si el usuario ya tiene grupos, redirige a las Fechas de su primer grupo — `?discover=1` fuerza ver discovery, y es a donde apunta la pestaña "Grupos"), `/grupos/nuevo`, `/join/[code]`, `/grupos/[slug]` (Fechas; canchas/integrantes en modal), `.../sessions/*` (ficha stats Games de la Fecha desde Resumen), `.../rankings/*` (ficha stats Games|Sets career al tocar jugador), `.../deudas`, `/ajustes` (perfil + sticker avatar + notificaciones), `/login`.
 - Header (`AppShell`): botón de info ("Cómo funciona") con panel de instrucciones por pestañas para usuarios (`HelpButton`).
 - Setup: `web/docs/SETUP.md` (incluye VAPID). Ranking = Elo singles por unit Games/Sets (`web/src/lib/ranking/elo.ts`); resumen de fecha (`sessionResumen.ts`); ficha de jugador Games|Sets desde Ranking (`playerStats.ts`). Sin ranking de dobles en UI. Tests: `cd web && npm test`. Auditoría Elo vs DB: `cd web && npm run audit:elo`.
-- Resultados: Games con ganador obligatorio + Servidor opcional; Sets pueden quedar En curso; soft-delete + historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S); UX optimista. Sin chat de fecha. Deudas: Historial de saldadas.
-- Push: opt-in en `/ajustes`; prefs Fecha / RSVP / Game|Set agregado / ranking #1 / deudas; `web/src/lib/push/` + `/api/push/*`.
+- Resultados: Games con ganador obligatorio + Servidor opcional; Sets pueden quedar En curso; soft-delete + historial en modal; Resumen Games (Elo.G) + Resumen Sets si hubo sets (Elo.S); UX optimista. Sin chat de fecha. Deudas: Te deben/Debes agrupadas, sheet Pagar (Yape/Plin + WhatsApp), “Ya pagué” + push, Historial de saldadas. Perfil: celular de cobro en `/ajustes`.
+- Push: opt-in en `/ajustes`; prefs Fecha / RSVP / Game|Set agregado / ranking #1 / deudas (saldar + “ya pagué”); `web/src/lib/push/` + `/api/push/*`.
 - Modelo tenis `PlaySession` (no confundir con Auth `Session`). Scoped por `groupId`.
 - Documentación: `docs/DOMAIN.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`.
 

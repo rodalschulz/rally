@@ -11,6 +11,7 @@ import {
  * - Open debts are always rebuilt.
  * - Settled debts that still match a computed edge are kept.
  * - Settled debts that no longer apply (e.g. debtor left Voy) are deleted.
+ * - `paymentClaimedAt` on matching open edges is preserved across rebuild.
  */
 export async function syncOpenDebtsForSession(playSessionId: string) {
   const session = await prisma.playSession.findUnique({
@@ -37,6 +38,19 @@ export async function syncOpenDebtsForSession(playSessionId: string) {
       amount: Number(d.amount),
     }));
 
+  const claimedAtByEdge = new Map<string, Date>();
+  for (const d of session.debts) {
+    if (d.status !== "open" || !d.paymentClaimedAt) continue;
+    claimedAtByEdge.set(
+      debtEdgeKey({
+        fromPlayerId: d.fromUserId,
+        toPlayerId: d.toUserId,
+        amount: Number(d.amount),
+      }),
+      d.paymentClaimedAt,
+    );
+  }
+
   const { orphanSettledKeys, openToCreate } = reconcileDebtsAgainstComputed(
     settled,
     computed,
@@ -62,7 +76,8 @@ export async function syncOpenDebtsForSession(playSessionId: string) {
       fromUserId: d.fromPlayerId,
       toUserId: d.toPlayerId,
       amount: d.amount,
-      status: "open",
+      status: "open" as const,
+      paymentClaimedAt: claimedAtByEdge.get(debtEdgeKey(d)) ?? null,
     })),
   });
 }

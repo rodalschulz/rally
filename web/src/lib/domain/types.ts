@@ -3,6 +3,9 @@
 export type PlayerId = string;
 export type SessionId = string;
 
+/** How the user prefers to receive Yape/Plin transfers. */
+export type PaymentWallet = "yape" | "plin" | "either";
+
 export type Player = {
   id: PlayerId;
   displayName: string;
@@ -11,6 +14,10 @@ export type Player = {
   hue: number;
   /** Optional sticker avatar URL; initials+hue when absent. */
   avatarUrl?: string | null;
+  /** Peru mobile (9 digits) for Yape/Plin P2P — optional. */
+  paymentPhone?: string | null;
+  /** Preferred wallet when receiving debt payments. */
+  paymentWallet?: PaymentWallet | null;
 };
 
 export type SessionStatus = "scheduled" | "completed" | "cancelled";
@@ -55,6 +62,8 @@ export type Debt = {
   settledAt?: string;
   /** Who marked it settled (creditor or app admin). Absent on legacy rows. */
   settledById?: PlayerId;
+  /** Debtor tapped "Ya pagué". Cleared when settled. */
+  paymentClaimedAt?: string;
 };
 
 /** Debt plus fecha context for list UIs. */

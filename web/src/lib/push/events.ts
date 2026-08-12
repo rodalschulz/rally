@@ -266,3 +266,35 @@ export async function notifyDebtSettled(args: {
     { excludeUserIds: [args.actorId] },
   );
 }
+
+/** Debtor claimed they paid outside the app — notify the creditor. */
+export async function notifyDebtPaymentClaimed(args: {
+  groupId: string;
+  fromUserId: string;
+  toUserId: string;
+  amount: { toString(): string } | number;
+  debtCount: number;
+  actorId: string;
+}): Promise<void> {
+  const group = await loadGroupMeta(args.groupId);
+  if (!group) return;
+
+  const actor = await prisma.user.findUnique({
+    where: { id: args.actorId },
+    select: { displayName: true, name: true },
+  });
+  const amount = Number(args.amount).toFixed(2);
+  const countHint =
+    args.debtCount > 1 ? ` (${args.debtCount} fechas)` : "";
+
+  await sendPushToUsers(
+    [args.toUserId],
+    {
+      title: `${group.name} · Te avisaron un pago`,
+      body: `${displayNameOf(actor)} dice que ya te pagó S/ ${amount}${countHint}`,
+      url: `/grupos/${group.slug}/deudas`,
+    },
+    "debtSettled",
+    { excludeUserIds: [args.actorId] },
+  );
+}

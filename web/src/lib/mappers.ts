@@ -22,6 +22,8 @@ export function toPlayer(user: User): Player {
       (user.displayName || user.name || "J").slice(0, 2).toUpperCase(),
     hue: user.hue,
     avatarUrl: user.avatarUrl,
+    paymentPhone: user.paymentPhone,
+    paymentWallet: user.paymentWallet,
   };
 }
 
@@ -60,6 +62,7 @@ export function toDebt(row: Debt): DomainDebt {
     status: row.status,
     settledAt: row.settledAt?.toISOString(),
     settledById: row.settledById ?? undefined,
+    paymentClaimedAt: row.paymentClaimedAt?.toISOString(),
   };
 }
 

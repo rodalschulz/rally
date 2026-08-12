@@ -2,6 +2,10 @@
 
 import { signOut, unstable_update } from "@/auth";
 import { deleteAvatarBlob, uploadAvatarBlob } from "@/lib/avatar/storage";
+import {
+  normalizePaymentPhone,
+  parsePaymentWallet,
+} from "@/lib/debts/paymentProfile";
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/groups";
 import { deleteUserAccount } from "@/lib/groups/membership";
@@ -29,10 +33,30 @@ export async function updateProfileAction(formData: FormData) {
     throw new Error("Nombre muy largo");
   }
 
+  const phoneRaw = String(formData.get("paymentPhone") || "");
+  const phoneNormalized = normalizePaymentPhone(phoneRaw);
+  if (phoneRaw.trim() && !phoneNormalized) {
+    throw new Error("Celular inválido. Usa 9 dígitos (ej. 987654321).");
+  }
+
+  const walletRaw = String(formData.get("paymentWallet") || "");
+  let paymentWallet = parsePaymentWallet(walletRaw);
+  if (phoneNormalized && !paymentWallet) {
+    paymentWallet = "either";
+  }
+  if (!phoneNormalized) {
+    paymentWallet = null;
+  }
+
   const shortName = deriveShortName(displayName);
   await prisma.user.update({
     where: { id: userId },
-    data: { displayName, shortName },
+    data: {
+      displayName,
+      shortName,
+      paymentPhone: phoneNormalized,
+      paymentWallet,
+    },
   });
 
   await unstable_update({
@@ -41,6 +65,7 @@ export async function updateProfileAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/ajustes");
+  revalidatePath("/grupos", "layout");
   redirect("/ajustes");
 }
 

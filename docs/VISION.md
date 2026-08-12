@@ -49,7 +49,7 @@ Tras (o durante) la sesión se cargan Games y/o Sets. El ranking usa Elo on-read
 ## Fuera de alcance (por ahora)
 
 - Reservar la cancha automáticamente en Miraflores (el bot solo consulta disponibilidad).
-- Pagos online reales (Yape/Plin/Stripe): el MVP lleva **registro de deudas**, no cobro automático.
+- Pagos online reales (Yape/Plin vía pasarela / Niubiz): el MVP lleva **registro de deudas** + ayuda P2P (celular en perfil, sheet Pagar, WhatsApp). Sin cobro automático ni liquidación por rally.
 - Ligas abiertas al público: es una app **de grupo cerrado** (amigos). Allowlist / invites más estrictos pueden llegar después; hoy el login es Google con el link.
 
 ## Principios de producto

@@ -19,7 +19,14 @@ export default async function UserSettingsPage() {
   const isAppAdmin = await userIsAppAdmin(session.user.id);
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { avatarUrl: true, hue: true, shortName: true, displayName: true },
+    select: {
+      avatarUrl: true,
+      hue: true,
+      shortName: true,
+      displayName: true,
+      paymentPhone: true,
+      paymentWallet: true,
+    },
   });
 
   const player = {
@@ -77,6 +84,42 @@ export default async function UserSettingsPage() {
             />
           </label>
         ) : null}
+
+        <fieldset className="space-y-3 rounded-2xl bg-sand px-4 py-4">
+          <legend className="px-1 text-[0.85rem] font-medium text-ink">
+            Cobro de deudas
+          </legend>
+          <p className="text-[0.8rem] leading-snug text-muted">
+            Tu celular de Yape o Plin. Los miembros del grupo lo ven cuando te
+            deben, para transferirte fuera de rally.
+          </p>
+          <label className="block text-[0.8rem] text-muted">
+            Celular
+            <input
+              name="paymentPhone"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              placeholder="987 654 321"
+              maxLength={16}
+              defaultValue={dbUser?.paymentPhone ?? ""}
+              className="mt-1 w-full rounded-xl bg-mist px-3 py-3 text-ink"
+            />
+          </label>
+          <label className="block text-[0.8rem] text-muted">
+            Prefieres recibir en
+            <select
+              name="paymentWallet"
+              defaultValue={dbUser?.paymentWallet ?? "either"}
+              className="mt-1 w-full rounded-xl bg-mist px-3 py-3 text-ink"
+            >
+              <option value="either">Yape o Plin</option>
+              <option value="yape">Yape</option>
+              <option value="plin">Plin</option>
+            </select>
+          </label>
+        </fieldset>
+
         <PendingSubmitButton
           pendingLabel="Guardando…"
           className="w-full rounded-2xl bg-ball py-3.5 text-[1rem] font-semibold text-on-ball"

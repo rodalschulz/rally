@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSettleDebt } from "./permissions";
+import { canClaimDebtPaid, canSettleDebt } from "./permissions";
 
 const startsAt = new Date("2026-07-26T20:00:00.000Z");
 const duringResults = new Date("2026-07-26T21:30:00.000Z");
@@ -65,5 +65,31 @@ describe("canSettleDebt", () => {
         afterPast,
       ),
     ).toBe(true);
+  });
+});
+
+describe("canClaimDebtPaid", () => {
+  it("allows only the debtor on open debts", () => {
+    expect(
+      canClaimDebtPaid({
+        debtorId: "debtor",
+        userId: "debtor",
+        status: "open",
+      }),
+    ).toBe(true);
+    expect(
+      canClaimDebtPaid({
+        debtorId: "debtor",
+        userId: "creditor",
+        status: "open",
+      }),
+    ).toBe(false);
+    expect(
+      canClaimDebtPaid({
+        debtorId: "debtor",
+        userId: "debtor",
+        status: "settled",
+      }),
+    ).toBe(false);
   });
 });

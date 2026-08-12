@@ -120,12 +120,17 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 | `status` | `open` \| `settled` |
 | `settledAt` | Cuándo se marcó saldada |
 | `settledById` | Quién la saldó (acreedor o admin de app). Null en filas legacy |
+| `paymentClaimedAt` | El deudor tocó “Ya pagué” (transferencia fuera de rally). Se limpia al saldar |
 
-Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`), cada fila abierta muestra la fecha de origen (chip + hora + cancha) con link al detalle. La sección **Historial** lista las deudas `settled` (más reciente primero): quién saldó (acreedor vs admin) + `settledAt`.
+Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`): secciones **Te deben** / **Debes** (agrupadas por contraparte) + **Entre otros** si aplica; **Historial** de `settled`.
 
-**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Al saldar se guardan `settledAt` y `settledById` (el actor). En Historial: “Saldó el acreedor (Nombre)” o “Saldó un admin (Nombre)” según `settledById === toUserId` o no. Filas sin `settledById` (antes del campo) solo muestran la fecha.
+**Perfil de cobro (P2P, sin pasarela):** en `/ajustes` el usuario puede guardar `paymentPhone` (celular PE 9 dígitos) y `paymentWallet` (`yape` \| `plin` \| `either`). Visible a miembros del grupo en el sheet **Pagar** (copiar número/monto, WhatsApp con mensaje). rally **no** procesa pagos.
 
-**Sync al cambiar Voy / costo / financiador** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”). Módulo: `web/src/lib/debts/reconcile.ts`.
+**Pagar / Ya pagué:** el deudor abre el sheet, transfiere por Yape/Plin fuera de la app, y puede marcar “Ya pagué” (una o varias deudas al mismo acreedor) → push al acreedor (`debtSettled`). No cierra la deuda.
+
+**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Al saldar se guardan `settledAt` y `settledById` (el actor) y se limpia `paymentClaimedAt`. En Historial: “Saldó el acreedor (Nombre)” o “Saldó un admin (Nombre)” según `settledById === toUserId` o no. Filas sin `settledById` (antes del campo) solo muestran la fecha.
+
+**Sync al cambiar Voy / costo / financiador** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”); preserva `paymentClaimedAt` en edges open que se recrean. Módulo: `web/src/lib/debts/reconcile.ts`.
 
 Fórmula base (financiador asiste, N asistentes `going`):
 
@@ -225,7 +230,7 @@ Opt-in por usuario en `/ajustes` (permiso del navegador + suscripción Web Push)
 | `attendanceChanged` | RSVP Voy / Quizás / No voy / Pendiente | Otros miembros del grupo |
 | `resultAdded` | Se agrega un Game o Set nuevo (no edit/delete) | Otros miembros del grupo |
 | `rankingLeaderChanged` | Cambia el #1 de **Singles Games** (Elo.G) | Solo el #1 anterior y el nuevo |
-| `debtSettled` | Deuda marcada saldada | La otra parte (o ambas si salda un admin) |
+| `debtSettled` | Deuda marcada saldada **o** deudor avisó “Ya pagué” | La otra parte (settle) / el acreedor (claim) |
 
 Nunca se notifica al actor de su propia acción. Fallos de push no bloquean la mutación. Master enable = tener suscripción en el dispositivo; los toggles filtran tipos. iOS: requiere PWA en pantalla de inicio. **Admin de app:** botón “Enviar notificación de prueba” en `/ajustes` (ping a sus propios dispositivos; ignora toggles). Módulo: `web/src/lib/push/`.
 

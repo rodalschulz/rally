@@ -1,12 +1,11 @@
 import Link from "next/link";
+import { OpenDebtsSections } from "@/components/OpenDebtsSections";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
-import { canSettleDebt } from "@/lib/debts/permissions";
 import { settleActorLabel } from "@/lib/debts/settleLabel";
 import { userIsAppAdmin } from "@/lib/admin";
 import { netBalances } from "@/lib/domain/split";
 import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
-import { SettleDebtButton } from "@/components/SettleDebtButton";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -53,8 +52,8 @@ export default async function DebtsPage({
           Deudas
         </h1>
         <p className="mt-1 text-[0.95rem] text-muted">
-          Cada deuda pertenece a una fecha. Saldar solo el acreedor, y solo
-          cuando esa fecha ya pasó. Positivo = te deben. Negativo = debes.
+          Cada deuda pertenece a una fecha. Paga por Yape/Plin y avisa; solo el
+          acreedor salda cuando confirmó el cobro (fecha ya pasada).
         </p>
       </section>
 
@@ -113,81 +112,21 @@ export default async function DebtsPage({
         </ul>
       </section>
 
-      <section>
-        <div className="mb-2 flex items-center gap-1.5">
-          <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-            Abiertas
-          </h2>
-          <details className="relative">
-            <summary
-              className="flex size-6 cursor-pointer list-none items-center justify-center rounded-full text-muted transition hover:bg-mist-2 hover:text-ink [&::-webkit-details-marker]:hidden"
-              aria-label="Cómo saldar una deuda"
-            >
-              <InfoIcon />
-            </summary>
-            <p className="absolute left-0 top-full z-10 mt-1.5 w-[16.5rem] rounded-xl bg-sand px-3 py-2.5 text-[0.8rem] leading-snug text-muted shadow-sm ring-1 ring-ink/8">
-              Solo quien recibe el pago (o un admin) puede{" "}
-              <span className="font-medium text-ink">Saldar</span>, y recién
-              cuando esa fecha ya pasó y los asistentes fueron confirmados.
-            </p>
-          </details>
+      <section className="mb-2">
+        <div className="mb-4 flex items-start justify-between gap-2">
+          <p className="text-[0.85rem] leading-snug text-muted">
+            En <span className="font-medium text-ink">Debes</span>, toca Pagar
+            para el celular del acreedor. Solo quien recibe (o un admin) puede
+            Saldar cuando la fecha ya pasó.
+          </p>
         </div>
-        {open.length === 0 ? (
-          <p className="text-[0.95rem] text-muted">Nadie se debe nada.</p>
-        ) : (
-          <ul className="overflow-hidden rounded-2xl bg-sand">
-            {open.map((d) => {
-              const from = playersById.get(d.fromPlayerId);
-              const to = playersById.get(d.toPlayerId);
-              const when = formatSessionWhen(d.sessionStartsAt);
-              const fechaLabel = `${formatSessionChip(d.sessionStartsAt)} · ${when.time}`;
-              return (
-                <li
-                  key={d.id}
-                  className="border-b border-ink/6 px-4 py-3 text-[0.9rem] last:border-b-0"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p>
-                        <span className="font-medium text-ink">
-                          {from?.displayName}
-                        </span>
-                        <span className="text-muted"> → {to?.displayName}</span>
-                      </p>
-                      <Link
-                        href={`/grupos/${slug}/sessions/${d.sessionId}`}
-                        className="mt-0.5 block truncate text-[0.8rem] text-muted hover:text-ink"
-                      >
-                        {fechaLabel}
-                        {d.sessionCourtLabel
-                          ? ` · ${d.sessionCourtLabel}`
-                          : ""}
-                      </Link>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="font-medium tabular-nums text-ink">
-                        {formatSoles(d.amount)}
-                      </span>
-                      {canSettleDebt({
-                        creditorId: d.toPlayerId,
-                        userId: me,
-                        sessionStartsAt: d.sessionStartsAt,
-                        isAppAdmin,
-                      }) ? (
-                        <SettleDebtButton
-                          debtId={d.id}
-                          fromName={from?.displayName ?? "Alguien"}
-                          toName={to?.displayName ?? "Alguien"}
-                          amountLabel={formatSoles(d.amount)}
-                        />
-                      ) : null}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <OpenDebtsSections
+          slug={slug}
+          me={me}
+          isAppAdmin={isAppAdmin}
+          open={open}
+          playersById={playersById}
+        />
       </section>
 
       <section className="mt-8 mb-4">
@@ -275,20 +214,5 @@ function Stat({
         {value}
       </p>
     </div>
-  );
-}
-
-function InfoIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.75" />
-      <path
-        d="M12 10.5v6"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-      <circle cx="12" cy="7.25" r="1" fill="currentColor" />
-    </svg>
   );
 }

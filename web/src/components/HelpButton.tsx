@@ -104,8 +104,12 @@ const TABS: HelpTab[] = [
         desc: "El costo de la Fecha se divide entre quienes fueron. Si otro pagó, te queda una deuda con esa persona.",
       },
       {
-        title: "Saldar",
-        desc: "Cuando te pagan, tú (quien puso la plata) marcas la deuda como saldada. Queda guardada en el historial.",
+        title: "Pagar (Yape / Plin)",
+        desc: "En Ajustes guarda tu celular. En Debes, toca Pagar: ves el número del acreedor, copias el monto o abres WhatsApp con el mensaje listo. La plata va directo entre ustedes; rally no cobra.",
+      },
+      {
+        title: "Ya pagué y Saldar",
+        desc: "Cuando transferiste, avisa con Ya pagué (le llega notificación). Quien recibió confirma con Saldar cuando la fecha ya pasó. Queda en el historial.",
       },
       {
         title: "Notificaciones",

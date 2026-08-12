@@ -7,7 +7,7 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { actionErrorMessage } from "@/lib/action-errors";
 import { syncOpenDebtsForSession } from "@/lib/debts/sync";
-import { canSettleDebt } from "@/lib/debts/permissions";
+import { canClaimDebtPaid, canSettleDebt } from "@/lib/debts/permissions";
 import { userIsAppAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import type { Match as DomainMatch } from "@/lib/domain/types";
@@ -30,6 +30,7 @@ import {
   getSinglesGamesLeaderId,
   isMaterialFechaUpdate,
   notifyAttendanceChanged,
+  notifyDebtPaymentClaimed,
   notifyDebtSettled,
   notifyFechaCreated,
   notifyFechaDeleted,
@@ -400,6 +401,7 @@ export async function settleDebtAction(formData: FormData) {
       status: "settled",
       settledAt: new Date(),
       settledById: userId,
+      paymentClaimedAt: null,
     },
   });
   const { slug } = await groupPaths(debt.playSession.groupId);
@@ -413,6 +415,66 @@ export async function settleDebtAction(formData: FormData) {
       fromUserId: debt.fromUserId,
       toUserId: debt.toUserId,
       amount: debt.amount,
+      actorId: userId,
+    }),
+  );
+}
+
+export async function claimDebtPaidAction(formData: FormData) {
+  const userId = await requireUserId();
+  const rawIds = String(formData.get("debtIds") || formData.get("debtId") || "");
+  const debtIds = rawIds
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (debtIds.length === 0) throw new Error("Deuda inválida");
+
+  const debts = await prisma.debt.findMany({
+    where: { id: { in: debtIds } },
+    include: { playSession: true },
+  });
+  if (debts.length !== debtIds.length) {
+    throw new Error("Deuda no encontrada");
+  }
+
+  const groupId = debts[0].playSession.groupId;
+  const toUserId = debts[0].toUserId;
+  for (const debt of debts) {
+    if (debt.playSession.groupId !== groupId) {
+      throw new Error("Deudas de grupos distintos");
+    }
+    if (debt.toUserId !== toUserId) {
+      throw new Error("Las deudas deben ser al mismo acreedor");
+    }
+    await requireMemberOfGroup(debt.playSession.groupId, userId);
+    if (
+      !canClaimDebtPaid({
+        debtorId: debt.fromUserId,
+        userId,
+        status: debt.status,
+      })
+    ) {
+      throw new Error("Solo quien debe puede avisar que ya pagó");
+    }
+  }
+
+  const claimedAt = new Date();
+  await prisma.debt.updateMany({
+    where: { id: { in: debtIds }, status: "open" },
+    data: { paymentClaimedAt: claimedAt },
+  });
+
+  const { slug } = await groupPaths(groupId);
+  revalidatePath(`/grupos/${slug}/deudas`);
+
+  const total = debts.reduce((s, d) => s + Number(d.amount), 0);
+  schedulePush(() =>
+    notifyDebtPaymentClaimed({
+      groupId,
+      fromUserId: userId,
+      toUserId,
+      amount: total,
+      debtCount: debts.length,
       actorId: userId,
     }),
   );

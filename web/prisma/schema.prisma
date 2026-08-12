@@ -61,6 +61,13 @@ enum GroupRole {
   member
 }
 
+/** Preferred wallet for P2P debt settlement (no payment gateway). */
+enum PaymentWallet {
+  yape
+  plin
+  either
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -72,6 +79,10 @@ model User {
   hue           Int       @default(160)
   /** Optional sticker avatar (Vercel Blob public URL). Initials+hue if null. */
   avatarUrl     String?
+  /** Peru mobile (9 digits) for Yape/Plin — shared with group members for debts. */
+  paymentPhone  String?
+  /** Which wallet the user prefers for receiving debt payments. */
+  paymentWallet PaymentWallet?
   /** App-wide admin (not group owner). */
   isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
@@ -219,6 +230,8 @@ model Debt {
   settledAt     DateTime?
   /** Who marked it settled (creditor or app admin). Null = legacy / unknown. */
   settledById   String?
+  /** Debtor tapped "Ya pagué" — awaiting creditor settle. Cleared when settled. */
+  paymentClaimedAt DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 

@@ -38,7 +38,7 @@ const PREF_ROWS: { key: PreferenceKey; label: string; hint: string }[] = [
   {
     key: "debtSettled",
     label: "Deudas",
-    hint: "Cuando se salda una deuda que te involucra",
+    hint: "Cuando te avisan que te pagaron o se salda una deuda tuya",
   },
 ];
 
