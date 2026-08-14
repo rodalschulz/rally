@@ -121,7 +121,7 @@ input[type="datetime-local"] {
   animation: none;
 }
 
-/* RSVP face overlay — Voy / No voy */
+/* RSVP face overlay — Voy / Quizás / No voy */
 @keyframes rsvp-face-scrim {
   0% {
     opacity: 0;
@@ -191,6 +191,22 @@ input[type="datetime-local"] {
   }
 }
 
+@keyframes rsvp-face-think {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  20% {
+    transform: translateY(-4px) rotate(8deg);
+  }
+  45% {
+    transform: translateY(0) rotate(12deg);
+  }
+  70% {
+    transform: translateY(-3px) rotate(6deg);
+  }
+}
+
 .rsvp-face-scrim {
   animation: rsvp-face-scrim 2s ease both;
 }
@@ -207,6 +223,10 @@ input[type="datetime-local"] {
   animation: rsvp-face-wobble 1.2s ease-in-out 0.15s both;
 }
 
+.rsvp-face-think {
+  animation: rsvp-face-think 1.2s ease-in-out 0.15s both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
   .animate-row {
@@ -216,7 +236,8 @@ input[type="datetime-local"] {
   .rsvp-face-scrim,
   .rsvp-face-card,
   .rsvp-face-bounce,
-  .rsvp-face-wobble {
+  .rsvp-face-wobble,
+  .rsvp-face-think {
     animation: none;
   }
 }

@@ -76,9 +76,7 @@ export function RsvpStrip({
               type="button"
               disabled={pending}
               onClick={() => {
-                if (opt === "going" || opt === "not_going") {
-                  setReaction({ kind: opt, token: Date.now() });
-                }
+                setReaction({ kind: opt, token: Date.now() });
                 setPendingOpt(opt);
                 startTransition(async () => {
                   await setAttendanceAction(playSessionId, opt);

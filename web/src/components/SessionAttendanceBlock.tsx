@@ -126,7 +126,7 @@ export function SessionAttendanceBlock({
     setPendingKey(key);
     if (
       playerId === meId &&
-      (status === "going" || status === "not_going")
+      (status === "going" || status === "maybe" || status === "not_going")
     ) {
       setReaction({ kind: status, token: Date.now() });
     }
