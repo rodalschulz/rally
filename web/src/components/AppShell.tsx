@@ -1,8 +1,10 @@
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
+import { loadOverdueDebtNudge } from "@/lib/debts/loadOverdueNudge";
 import { BrandMark } from "./BrandMark";
 import { BottomNav } from "./BottomNav";
 import { HelpButton } from "./HelpButton";
+import { OverdueDebtNudge } from "./OverdueDebtNudge";
 import { ServiceWorkerRegister } from "./ServiceWorkerRegister";
 import { UserMenu } from "./UserMenu";
 
@@ -21,10 +23,13 @@ export async function AppShell({
   const session = await getSession();
   const inGroup = Boolean(groupSlug);
   const showNav = Boolean(session?.user);
+  const userId = session?.user?.id;
+  const overdueNudge = userId ? await loadOverdueDebtNudge(userId) : null;
 
   return (
     <div className="app-shell">
       <ServiceWorkerRegister />
+      {overdueNudge ? <OverdueDebtNudge nudge={overdueNudge} /> : null}
       <header className="app-header sticky top-0 z-30 border-b border-ink/6 bg-mist/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-3">
           <BrandMark compact />

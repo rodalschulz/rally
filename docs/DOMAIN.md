@@ -126,6 +126,8 @@ Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`): 
 
 **Perfil de cobro (P2P, sin pasarela):** en `/ajustes` el usuario puede guardar `paymentPhone` (celular PE 9 dígitos) y `paymentWallet` (`yape` \| `plin` \| `either`). Visible a miembros del grupo en el sheet **Pagar** (copiar número/monto, WhatsApp con mensaje). rally **no** procesa pagos.
 
+**Recordatorio al entrar:** si el usuario tiene deudas `open` (ya generadas) cuya Fecha tiene **más de 7 días de calendario** en `America/Lima` respecto de hoy, al entrar a la app se muestra un modal pidiendo que pague. Se cierra con X, Escape o tocando afuera. Una vez por visita (`sessionStorage`; un refresh no lo reabre). Módulo: `web/src/lib/debts/overdueNudge.ts`.
+
 **Pagar / Ya pagué:** el deudor abre el sheet, transfiere por Yape/Plin fuera de la app, y puede marcar “Ya pagué” (una o varias deudas al mismo acreedor) → push al acreedor (`debtSettled`). No cierra la deuda.
 
 **Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Al saldar se guardan `settledAt` y `settledById` (el actor) y se limpia `paymentClaimedAt`. En Historial: “Saldó el acreedor (Nombre)” o “Saldó un admin (Nombre)” según `settledById === toUserId` o no. Filas sin `settledById` (antes del campo) solo muestran la fecha.

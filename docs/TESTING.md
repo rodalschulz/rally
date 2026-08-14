@@ -33,6 +33,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/sessions/permissions.ts` | Borrar/editar/RSVP en fechas pasadas |
 | `lib/sessions/goingPlayers.ts` | Orden de avatares going: creador + A–Z |
 | `lib/debts/permissions.ts` | Saldar solo acreedor o admin + fecha pasada |
+| `lib/debts/overdueNudge.ts` | Modal al entrar: deuda open + Fecha > 7 días de calendario (Lima) |
 | `lib/debts/settleLabel.ts` | Copy del Historial: acreedor vs admin según `settledById` |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 | `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
