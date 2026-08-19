@@ -4,6 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import type { EloHistoryPoint, EloHistoryRange } from "@/lib/ranking/playerStats";
 import { buildEloHistoryForChart } from "@/lib/ranking/playerStats";
 import { APP_TIMEZONE } from "@/lib/timezone";
+import { useClampedChartTooltip } from "./useClampedChartTooltip";
+import { useChartScrub } from "./useChartScrub";
 
 const RANGES: { id: EloHistoryRange; label: string }[] = [
   { id: "month", label: "Este mes" },
@@ -58,13 +60,17 @@ export function EloHistoryChart({
       ? Math.min(Math.max(hovered, 0), chart.dots.length - 1)
       : null;
 
-  function handlePointer(e: React.PointerEvent<SVGSVGElement>) {
-    if (!chart) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const frac = (e.clientX - rect.left) / rect.width;
-    const idx = Math.round(frac * (chart.dots.length - 1));
-    setHovered(Math.min(Math.max(idx, 0), chart.dots.length - 1));
-  }
+  const pointXRatio =
+    chart && activeIndex != null
+      ? chart.dots[activeIndex]!.x / chart.w
+      : null;
+  const { containerRef, tooltipRef } = useClampedChartTooltip(pointXRatio, {
+    lift: true,
+  });
+  const { surfaceRef, surfaceProps } = useChartScrub(
+    chart?.dots.length ?? 0,
+    setHovered,
+  );
 
   return (
     <div>
@@ -92,20 +98,26 @@ export function EloHistoryChart({
 
       {chart ? (
         <div className={isFecha ? "" : "mt-3"}>
-          <div className="relative rounded-2xl bg-gradient-to-b from-mist-2/40 to-transparent p-1">
+          <div
+            ref={containerRef}
+            className="relative overflow-x-clip rounded-2xl bg-gradient-to-b from-mist-2/40 to-transparent p-1"
+          >
+            <div
+              ref={surfaceRef}
+              className="touch-none overscroll-none [overflow-anchor:none]"
+              style={{ touchAction: "none" }}
+              {...surfaceProps}
+            >
             <svg
               ref={svgRef}
               viewBox={`0 0 ${chart.w} ${chart.h}`}
-              className="h-48 w-full touch-none"
+              className="pointer-events-none h-48 w-full"
               role="img"
               aria-label={
                 isFecha
                   ? "Historial de Elo por Game de la Fecha"
                   : "Historial de Elo por Fecha"
               }
-              onPointerMove={handlePointer}
-              onPointerDown={handlePointer}
-              onPointerLeave={() => setHovered(null)}
             >
               <defs>
                 <linearGradient id="eloArea" x1="0" y1="0" x2="0" y2="1">
@@ -236,11 +248,13 @@ export function EloHistoryChart({
                 </text>
               ))}
             </svg>
+            </div>
 
             {/* Tooltip */}
             {activeIndex != null ? (
               <div
-                className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg bg-mist px-2 py-1 text-center shadow-lg ring-1 ring-ink/10"
+                ref={tooltipRef}
+                className="pointer-events-none absolute z-10 max-w-[calc(100%-1rem)] rounded-lg bg-mist px-2 py-1 text-center shadow-lg ring-1 ring-ink/10"
                 style={{
                   left: `${(chart.dots[activeIndex]!.x / chart.w) * 100}%`,
                   top: `${(chart.dots[activeIndex]!.y / chart.h) * 100}%`,

@@ -2,15 +2,20 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
 import { MembersPanel } from "@/components/MembersPanel";
+import { PastSessionsSection } from "@/components/PastSessionsSection";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
 import {
   listGroupMembers,
-  listPlaySessions,
+  listPastPlaySessions,
+  listUpcomingPlaySessions,
   toAttendance,
   toSession,
 } from "@/lib/data/queries";
 import { requireGroupMember } from "@/lib/groups";
-import { isSessionPast } from "@/lib/sessions/windows";
+import {
+  PAST_SESSIONS_PREVIEW_LIMIT,
+  toHubSessionItem,
+} from "@/lib/sessions/hub";
 
 export const dynamic = "force-dynamic";
 
@@ -22,22 +27,24 @@ export default async function GroupHubPage({
   const { slug } = await params;
   const group = await requireGroupMember(slug);
 
-  const [rows, members] = await Promise.all([
-    listPlaySessions(group.id),
+  const [upcomingRows, pastRows, members] = await Promise.all([
+    listUpcomingPlaySessions(group.id),
+    listPastPlaySessions(group.id, {
+      take: PAST_SESSIONS_PREVIEW_LIMIT + 1,
+    }),
     listGroupMembers(group.id),
   ]);
   const players = members.map((m) => m.player);
-  const sessions = rows
-    .map(toSession)
-    .filter((s) => s.status !== "cancelled");
-  const attendances = rows.flatMap((r) => r.attendances.map(toAttendance));
 
-  const upcoming = sessions
-    .filter((s) => !isSessionPast(s.startsAt))
-    .sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
-  const past = sessions
-    .filter((s) => isSessionPast(s.startsAt))
-    .sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt));
+  const upcoming = upcomingRows.map(toSession);
+  const upcomingAttendances = upcomingRows.flatMap((r) =>
+    r.attendances.map(toAttendance),
+  );
+
+  const hasMorePast = pastRows.length > PAST_SESSIONS_PREVIEW_LIMIT;
+  const pastPreview = pastRows
+    .slice(0, PAST_SESSIONS_PREVIEW_LIMIT)
+    .map((row) => toHubSessionItem(row, players));
 
   const isOwner = group.membership.role === "owner";
 
@@ -108,7 +115,7 @@ export default async function GroupHubPage({
         <div className="overflow-hidden rounded-2xl bg-sand">
           {upcoming.length === 0 ? (
             <p className="px-4 py-8 text-center text-[0.9rem] text-muted">
-              {past.length > 0
+              {pastPreview.length > 0
                 ? "No hay próximas fechas."
                 : "No hay fechas todavía. Crea la primera."}
             </p>
@@ -116,7 +123,7 @@ export default async function GroupHubPage({
             upcoming.map((session, i) => {
               const g = goingFrom(
                 session.id,
-                attendances,
+                upcomingAttendances,
                 players,
                 session.createdById,
               );
@@ -135,35 +142,12 @@ export default async function GroupHubPage({
         </div>
       </section>
 
-      {past.length > 0 ? (
-        <section className="mt-8" aria-labelledby="past-heading">
-          <h2
-            id="past-heading"
-            className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
-          >
-            Fechas Pasadas
-          </h2>
-          <div className="overflow-hidden rounded-2xl bg-sand">
-            {past.map((session, i) => {
-              const g = goingFrom(
-                session.id,
-                attendances,
-                players,
-                session.createdById,
-              );
-              return (
-                <SessionRow
-                  key={session.id}
-                  session={session}
-                  goingPlayers={g.players}
-                  goingCount={g.count}
-                  index={i}
-                  hrefBase={`/grupos/${slug}/sessions`}
-                />
-              );
-            })}
-          </div>
-        </section>
+      {pastPreview.length > 0 ? (
+        <PastSessionsSection
+          slug={slug}
+          preview={pastPreview}
+          hasMore={hasMorePast}
+        />
       ) : null}
     </>
   );

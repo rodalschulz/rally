@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { OpenDebtsSections } from "@/components/OpenDebtsSections";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { listAllDebts, listGroupPlayers } from "@/lib/data/queries";
-import { settleActorLabel } from "@/lib/debts/settleLabel";
+import { SettledDebtsHistory } from "@/components/SettledDebtsHistory";
+import { listGroupPlayers, listOpenDebts, listSettledDebts } from "@/lib/data/queries";
+import { SETTLED_DEBTS_PREVIEW_LIMIT } from "@/lib/debts/history";
 import { userIsAppAdmin } from "@/lib/admin";
 import { netBalances } from "@/lib/domain/split";
-import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
+import { formatSoles } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -20,30 +20,21 @@ export default async function DebtsPage({
   const group = await requireGroupMember(slug);
   const me = group.membership.userId;
 
-  const [debts, players, isAppAdmin] = await Promise.all([
-    listAllDebts(group.id),
+  const [open, settledRows, players, isAppAdmin] = await Promise.all([
+    listOpenDebts(group.id),
+    listSettledDebts(group.id, { take: SETTLED_DEBTS_PREVIEW_LIMIT + 1 }),
     listGroupPlayers(group.id),
     userIsAppAdmin(me),
   ]);
   const balances = netBalances(
-    debts,
+    open,
     players.map((p) => p.id),
   );
-  const open = debts.filter((d) => d.status === "open");
-  const settled = debts
-    .filter((d) => d.status === "settled")
-    .slice()
-    .sort((a, b) => {
-      const aMs = a.settledAt ? Date.parse(a.settledAt) : 0;
-      const bMs = b.settledAt ? Date.parse(b.settledAt) : 0;
-      return bMs - aMs;
-    });
+  const hasMoreSettled = settledRows.length > SETTLED_DEBTS_PREVIEW_LIMIT;
+  const settledPreview = settledRows.slice(0, SETTLED_DEBTS_PREVIEW_LIMIT);
   const owedToMe = open.filter((d) => d.toPlayerId === me);
   const iOwe = open.filter((d) => d.fromPlayerId === me);
   const playersById = new Map(players.map((p) => [p.id, p]));
-  const displayNameById = new Map(
-    players.map((p) => [p.id, p.displayName] as const),
-  );
 
   return (
     <>
@@ -128,67 +119,12 @@ export default async function DebtsPage({
         />
       </section>
 
-      <section className="mt-8 mb-4">
-        <h2 className="mb-2 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-          Historial
-        </h2>
-        {settled.length === 0 ? (
-          <p className="text-[0.95rem] text-muted">
-            Todavía no hay deudas saldadas.
-          </p>
-        ) : (
-          <ul className="overflow-hidden rounded-2xl bg-sand">
-            {settled.map((d) => {
-              const from = playersById.get(d.fromPlayerId);
-              const to = playersById.get(d.toPlayerId);
-              const when = formatSessionWhen(d.sessionStartsAt);
-              const fechaLabel = `${formatSessionChip(d.sessionStartsAt)} · ${when.time}`;
-              const settledWhen = d.settledAt
-                ? formatSessionWhen(d.settledAt)
-                : null;
-              const settledByLabel = settleActorLabel(d, displayNameById);
-              return (
-                <li
-                  key={d.id}
-                  className="border-b border-ink/6 px-4 py-3 text-[0.9rem] last:border-b-0"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p>
-                        <span className="font-medium text-ink">
-                          {from?.displayName}
-                        </span>
-                        <span className="text-muted"> → {to?.displayName}</span>
-                      </p>
-                      <Link
-                        href={`/grupos/${slug}/sessions/${d.sessionId}`}
-                        className="mt-0.5 block truncate text-[0.8rem] text-muted hover:text-ink"
-                      >
-                        {fechaLabel}
-                        {d.sessionCourtLabel
-                          ? ` · ${d.sessionCourtLabel}`
-                          : ""}
-                      </Link>
-                      <p className="mt-0.5 text-[0.75rem] text-muted">
-                        {settledByLabel
-                          ? settledWhen
-                            ? `${settledByLabel} · ${settledWhen.dayMonth} · ${settledWhen.time}`
-                            : settledByLabel
-                          : settledWhen
-                            ? `Saldada ${settledWhen.dayMonth} · ${settledWhen.time}`
-                            : "Saldada"}
-                      </p>
-                    </div>
-                    <span className="shrink-0 font-medium tabular-nums text-muted">
-                      {formatSoles(d.amount)}
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      <SettledDebtsHistory
+        slug={slug}
+        preview={settledPreview}
+        hasMore={hasMoreSettled}
+        players={players}
+      />
     </>
   );
 }

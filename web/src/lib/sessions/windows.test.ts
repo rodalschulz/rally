@@ -3,6 +3,7 @@ import {
   isSessionGamesOpen,
   isSessionPast,
   sessionEndsAt,
+  sessionPastCutoff,
 } from "./windows";
 
 const startsAt = new Date("2026-07-26T20:00:00.000Z");
@@ -31,5 +32,15 @@ describe("session windows", () => {
     expect(isSessionPast(startsAt, new Date("2026-07-26T22:00:00.000Z"))).toBe(
       true,
     );
+  });
+
+  it("aligns hub cutoff with isSessionPast", () => {
+    const now = new Date("2026-07-26T22:00:00.000Z");
+    const cutoff = sessionPastCutoff(now);
+    expect(cutoff.toISOString()).toBe("2026-07-26T20:00:00.000Z");
+    expect(isSessionPast(cutoff, now)).toBe(true);
+    expect(
+      isSessionPast(new Date(cutoff.getTime() + 1), now),
+    ).toBe(false);
   });
 });

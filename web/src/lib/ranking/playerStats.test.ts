@@ -275,6 +275,22 @@ describe("buildPlayerGameStats", () => {
       wins: 1,
       losses: 1,
     });
+    expect(s.rivals).toEqual([
+      {
+        playerId: "b",
+        displayName: "Bruno",
+        played: 2,
+        wins: 1,
+        losses: 1,
+      },
+      {
+        playerId: "c",
+        displayName: "Carla",
+        played: 1,
+        wins: 1,
+        losses: 0,
+      },
+    ]);
   });
 
   it("builds last-3 attended trend with elo deltas", () => {
@@ -357,6 +373,7 @@ describe("buildPlayerGameStats", () => {
     expect(s.attendance.going).toBe(1);
     expect(s.maxEloGainInSession).toBeNull();
     expect(s.topRival).toBeNull();
+    expect(s.rivals).toEqual([]);
   });
 
   it("Sets unit ignores Games and uses Elo.S (K=32)", () => {
@@ -434,6 +451,7 @@ describe("buildPlayerGameStats", () => {
     expect(s.winRate).toBeNull();
     expect(s.longestWinStreak).toBe(0);
     expect(s.topRival).toBeNull();
+    expect(s.rivals).toEqual([]);
     expect(s.maxEloGainInSession).toBeNull();
     expect(s.serverStats).toBeNull();
     expect(s.attendance.going).toBe(1);

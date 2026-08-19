@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import type { DebtWithSession } from "@/lib/domain/types";
 import {
   toAttendance,
   toDebt,
@@ -7,6 +8,7 @@ import {
   toSession,
 } from "@/lib/mappers";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
+import { sessionPastCutoff } from "@/lib/sessions/windows";
 
 export async function listGroupPlayers(groupId: string) {
   const members = await listGroupMembers(groupId);
@@ -32,6 +34,8 @@ export async function listGroupMembers(groupId: string) {
     });
 }
 
+const hubSessionInclude = { attendances: true } as const;
+
 export async function listPlaySessions(groupId: string) {
   return prisma.playSession.findMany({
     where: { groupId },
@@ -40,6 +44,36 @@ export async function listPlaySessions(groupId: string) {
       attendances: true,
       financier: true,
     },
+  });
+}
+
+/** Próximas Fechas: still inside the results window, not cancelled. */
+export async function listUpcomingPlaySessions(groupId: string, now = new Date()) {
+  return prisma.playSession.findMany({
+    where: {
+      groupId,
+      status: { not: "cancelled" },
+      startsAt: { gt: sessionPastCutoff(now) },
+    },
+    orderBy: { startsAt: "asc" },
+    include: hubSessionInclude,
+  });
+}
+
+/** Fechas Pasadas, newest first. Pass `take` for the hub preview. */
+export async function listPastPlaySessions(
+  groupId: string,
+  opts?: { take?: number; now?: Date },
+) {
+  return prisma.playSession.findMany({
+    where: {
+      groupId,
+      status: { not: "cancelled" },
+      startsAt: { lte: sessionPastCutoff(opts?.now) },
+    },
+    orderBy: { startsAt: "desc" },
+    take: opts?.take,
+    include: hubSessionInclude,
   });
 }
 
@@ -56,19 +90,46 @@ export async function getPlaySession(id: string, groupId?: string) {
   });
 }
 
-export async function listAllDebts(groupId: string) {
-  const rows = await prisma.debt.findMany({
-    where: { playSession: { groupId } },
-    include: {
-      playSession: { select: { startsAt: true, courtLabel: true } },
-    },
-    orderBy: [{ playSession: { startsAt: "desc" } }, { createdAt: "asc" }],
-  });
-  return rows.map((row) => ({
+const debtSessionSelect = {
+  playSession: { select: { startsAt: true, courtLabel: true } },
+} as const;
+
+function toDebtWithSession(
+  row: Parameters<typeof toDebt>[0] & {
+    playSession: { startsAt: Date; courtLabel: string | null };
+  },
+): DebtWithSession {
+  return {
     ...toDebt(row),
     sessionStartsAt: row.playSession.startsAt.toISOString(),
     sessionCourtLabel: row.playSession.courtLabel ?? undefined,
-  }));
+  };
+}
+
+export async function listOpenDebts(groupId: string): Promise<DebtWithSession[]> {
+  const rows = await prisma.debt.findMany({
+    where: { status: "open", playSession: { groupId } },
+    include: debtSessionSelect,
+    orderBy: [{ playSession: { startsAt: "desc" } }, { createdAt: "asc" }],
+  });
+  return rows.map(toDebtWithSession);
+}
+
+/** Saldadas, newest settled first. Pass `take` for the Historial preview. */
+export async function listSettledDebts(
+  groupId: string,
+  opts?: { take?: number },
+): Promise<DebtWithSession[]> {
+  const rows = await prisma.debt.findMany({
+    where: { status: "settled", playSession: { groupId } },
+    include: debtSessionSelect,
+    orderBy: [
+      { settledAt: { sort: "desc", nulls: "last" } },
+      { createdAt: "desc" },
+    ],
+    take: opts?.take,
+  });
+  return rows.map(toDebtWithSession);
 }
 
 export async function listMatches(groupId: string) {

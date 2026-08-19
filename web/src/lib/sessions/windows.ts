@@ -23,3 +23,13 @@ export function isSessionPast(startsAt: Date | string, now = new Date()): boolea
   const start = typeof startsAt === "string" ? new Date(startsAt) : startsAt;
   return !isSessionGamesOpen(start, now);
 }
+
+/**
+ * Hub cutoff: fechas with `startsAt <= cutoff` are Pasadas.
+ * Equals `now − (1 h slot + 60 min grace)`.
+ */
+export function sessionPastCutoff(now = new Date()): Date {
+  return new Date(
+    now.getTime() - SESSION_DURATION_MS - GAMES_GRACE_AFTER_END_MS,
+  );
+}

@@ -8,6 +8,8 @@ import {
   type SessionEloPathSeries,
 } from "@/lib/ranking/playerStats";
 import { APP_TIMEZONE } from "@/lib/timezone";
+import { useClampedChartTooltip } from "./useClampedChartTooltip";
+import { useChartScrub } from "./useChartScrub";
 
 const ELO_BASELINE = 1000;
 
@@ -92,6 +94,20 @@ export function SessionEloPathsChart({
       ? "Todavía no hay suficiente historial de Elo."
       : "Sin Fechas en este rango.";
 
+  const activeIndex =
+    chart && hovered != null
+      ? Math.min(Math.max(hovered, 0), chart.xCount - 1)
+      : null;
+  const pointXRatio =
+    chart && activeIndex != null ? chart.xOf(activeIndex) / chart.w : null;
+  const { containerRef, tooltipRef } = useClampedChartTooltip(pointXRatio, {
+    lift: false,
+  });
+  const { surfaceRef, surfaceProps } = useChartScrub(
+    chart?.xCount ?? 0,
+    setHovered,
+  );
+
   if (!chart) {
     return (
       <div>
@@ -121,18 +137,6 @@ export function SessionEloPathsChart({
         </p>
       </div>
     );
-  }
-
-  const activeIndex =
-    hovered != null
-      ? Math.min(Math.max(hovered, 0), chart.xCount - 1)
-      : null;
-
-  function handlePointer(e: React.PointerEvent<SVGSVGElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const frac = (e.clientX - rect.left) / rect.width;
-    const idx = Math.round(frac * (chart!.xCount - 1));
-    setHovered(Math.min(Math.max(idx, 0), chart!.xCount - 1));
   }
 
   const tooltipRows =
@@ -173,19 +177,25 @@ export function SessionEloPathsChart({
         </div>
       ) : null}
 
-      <div className="relative rounded-2xl bg-gradient-to-b from-mist-2/40 to-transparent px-1 pb-1 pt-3">
+      <div
+        ref={containerRef}
+        className="relative overflow-x-clip rounded-2xl bg-gradient-to-b from-mist-2/40 to-transparent px-1 pb-1 pt-3"
+      >
+        <div
+          ref={surfaceRef}
+          className="touch-none overscroll-none [overflow-anchor:none]"
+          style={{ touchAction: "none" }}
+          {...surfaceProps}
+        >
         <svg
           viewBox={`0 0 ${chart.w} ${chart.h}`}
-          className="h-60 w-full touch-none"
+          className="pointer-events-none h-60 w-full"
           role="img"
           aria-label={
             isFecha
               ? "Trayectorias de Elo de todos los jugadores en la Fecha"
               : "Trayectorias de Elo del ranking por Fecha"
           }
-          onPointerMove={handlePointer}
-          onPointerDown={handlePointer}
-          onPointerLeave={() => setHovered(null)}
         >
           {chart.ticks.map((t) => (
             <g key={t.value}>
@@ -300,14 +310,15 @@ export function SessionEloPathsChart({
             </text>
           ))}
         </svg>
+        </div>
 
         {activeIndex != null ? (
           <div
-            className="pointer-events-none absolute z-10 max-w-[11rem] -translate-x-1/2 -translate-y-full rounded-lg bg-mist px-2 py-1.5 shadow-lg ring-1 ring-ink/10"
+            ref={tooltipRef}
+            className="pointer-events-none absolute z-10 max-w-[min(11rem,calc(100%-1rem))] rounded-lg bg-mist px-2 py-1.5 shadow-lg ring-1 ring-ink/10"
             style={{
               left: `${(chart.xOf(activeIndex) / chart.w) * 100}%`,
-              top: `${(chart.padT / chart.h) * 100}%`,
-              marginTop: "-4px",
+              top: 8,
             }}
           >
             <p className="mb-1 text-[0.65rem] font-medium text-muted">

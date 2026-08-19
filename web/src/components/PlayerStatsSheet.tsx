@@ -16,6 +16,7 @@ import {
   type PlayerGameStats,
   type PlayerStatsAttendanceInput,
   type PlayerStatsSessionInput,
+  type RivalRecord,
 } from "@/lib/ranking/playerStats";
 import { EloHistoryChart } from "./EloHistoryChart";
 import { PlayerAvatar } from "./PlayerAvatar";
@@ -118,7 +119,7 @@ export function PlayerStatsSheet(props: PlayerStatsSheetProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="player-stats-title"
-        className="flex max-h-[min(88dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-sand shadow-lg"
+        className="relative flex max-h-[min(88dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-sand shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {isFecha && fechaStats ? (
@@ -152,6 +153,7 @@ function CareerStatsBody({
   unit: MatchUnit;
   onClose: () => void;
 }) {
+  const [rivalsOpen, setRivalsOpen] = useState(false);
   const isSets = unit === "set";
   const unitLabel = isSets ? "Sets" : "Games";
   const eloLabel = isSets ? "Elo.S" : "Elo.G";
@@ -243,6 +245,11 @@ function CareerStatsBody({
                 ? `${stats.topRival.wins}G · ${stats.topRival.losses}P (${stats.topRival.played})`
                 : undefined
             }
+            onClick={
+              stats.rivals.length > 0
+                ? () => setRivalsOpen(true)
+                : undefined
+            }
           />
         </div>
 
@@ -293,6 +300,12 @@ function CareerStatsBody({
           )}
         </section>
       </div>
+      {rivalsOpen ? (
+        <RivalsPanel
+          rivals={stats.rivals}
+          onBack={() => setRivalsOpen(false)}
+        />
+      ) : null}
     </>
   );
 }
@@ -306,6 +319,7 @@ function FechaStatsBody({
   stats: PlayerFechaGameStats;
   onClose: () => void;
 }) {
+  const [rivalsOpen, setRivalsOpen] = useState(false);
   const delta = stats.eloDelta;
   return (
     <>
@@ -398,6 +412,11 @@ function FechaStatsBody({
                 ? `${stats.topRival.wins}G · ${stats.topRival.losses}P (${stats.topRival.played})`
                 : undefined
             }
+            onClick={
+              stats.rivals.length > 0
+                ? () => setRivalsOpen(true)
+                : undefined
+            }
           />
         </div>
 
@@ -430,6 +449,12 @@ function FechaStatsBody({
           </div>
         </section>
       </div>
+      {rivalsOpen ? (
+        <RivalsPanel
+          rivals={stats.rivals}
+          onBack={() => setRivalsOpen(false)}
+        />
+      ) : null}
     </>
   );
 }
@@ -558,17 +583,90 @@ function ServerSection({
   );
 }
 
+function RivalsPanel({
+  rivals,
+  onBack,
+}: {
+  rivals: RivalRecord[];
+  onBack: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopImmediatePropagation();
+      onBack();
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [onBack]);
+
+  return (
+    <div
+      className="absolute inset-0 z-20 flex flex-col bg-sand"
+      role="dialog"
+      aria-labelledby="rivals-title"
+    >
+      <div className="flex items-start justify-between gap-3 border-b border-ink/6 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[0.7rem] font-medium uppercase tracking-[0.04em] text-muted">
+            Vs cada jugador
+          </p>
+          <h2
+            id="rivals-title"
+            className="text-[1.15rem] font-semibold tracking-[-0.02em] text-ink"
+          >
+            Rivales
+          </h2>
+        </div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="shrink-0 rounded-lg px-2 py-1 text-[0.9rem] font-medium text-muted"
+        >
+          Atrás
+        </button>
+      </div>
+      <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {rivals.map((r) => {
+          const rate = r.played > 0 ? Math.round((r.wins / r.played) * 100) : null;
+          return (
+            <li
+              key={r.playerId}
+              className="flex items-center justify-between gap-3 border-b border-ink/6 px-4 py-3 last:border-b-0"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-[0.95rem] font-medium text-ink">
+                  {r.displayName}
+                </p>
+                <p className="text-[0.75rem] text-muted">
+                  {r.played} {r.played === 1 ? "enfrentamiento" : "enfrentamientos"}
+                  {rate != null ? ` · ${rate}%` : ""}
+                </p>
+              </div>
+              <p className="shrink-0 text-[0.95rem] font-semibold tabular-nums text-ink">
+                {r.wins}G · {r.losses}P
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function StatTile({
   label,
   value,
   hint,
+  onClick,
 }: {
   label: string;
   value: string;
   hint?: string;
+  onClick?: () => void;
 }) {
-  return (
-    <div className="rounded-xl bg-mist-2/50 px-3 py-2.5">
+  const body = (
+    <>
       <p className="text-[0.7rem] text-muted">{label}</p>
       <p className="mt-0.5 truncate text-[1rem] font-semibold tracking-[-0.02em] text-ink">
         {value}
@@ -576,6 +674,24 @@ function StatTile({
       {hint ? (
         <p className="mt-0.5 truncate text-[0.7rem] text-muted">{hint}</p>
       ) : null}
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="rounded-xl bg-mist-2/50 px-3 py-2.5 text-left transition active:opacity-80"
+        aria-label={`${label}: ${value}. Ver vs cada jugador`}
+      >
+        {body}
+        <p className="mt-1 text-[0.65rem] font-medium text-muted/80">
+          Ver todos ›
+        </p>
+      </button>
+    );
+  }
+
+  return <div className="rounded-xl bg-mist-2/50 px-3 py-2.5">{body}</div>;
 }

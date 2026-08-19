@@ -86,7 +86,7 @@ const TABS: HelpTab[] = [
       },
       {
         title: "Toca un jugador",
-        desc: "En el Ranking, toca a cualquier jugador para abrir su ficha: historial de Elo, racha más larga, rival más jugado, asistencia y más.",
+        desc: "En el Ranking, toca a cualquier jugador para abrir su ficha: historial de Elo, racha más larga, rival más jugado (y vs cada uno), asistencia y más.",
       },
       {
         title: "Stats de una Fecha",

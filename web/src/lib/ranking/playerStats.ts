@@ -22,6 +22,14 @@ export type EloHistoryPoint = {
   label?: string;
 };
 
+export type RivalRecord = {
+  playerId: PlayerId;
+  displayName: string;
+  played: number;
+  wins: number;
+  losses: number;
+};
+
 /** Stats for one player scoped to a single Fecha (Games only). */
 export type PlayerFechaGameStats = {
   playerId: PlayerId;
@@ -51,13 +59,9 @@ export type PlayerFechaGameStats = {
     totalGames: number;
     rate: number | null;
   };
-  topRival: {
-    playerId: PlayerId;
-    displayName: string;
-    played: number;
-    wins: number;
-    losses: number;
-  } | null;
+  topRival: RivalRecord | null;
+  /** All opponents, most played first (name tie-break). */
+  rivals: RivalRecord[];
 };
 
 export type EloHistoryRange = "month" | "30d" | "all";
@@ -111,14 +115,35 @@ export type PlayerGameStats = {
     wins: number;
     losses: number;
   }>;
-  topRival: {
-    playerId: PlayerId;
-    displayName: string;
-    played: number;
-    wins: number;
-    losses: number;
-  } | null;
+  topRival: RivalRecord | null;
+  /** All opponents, most played first (name tie-break). */
+  rivals: RivalRecord[];
 };
+
+function summarizeRivals(
+  rivals: Map<PlayerId, { played: number; wins: number; losses: number }>,
+  displayNameById: ReadonlyMap<PlayerId, string>,
+): { topRival: RivalRecord | null; rivals: RivalRecord[] } {
+  const list: RivalRecord[] = [];
+  for (const [oppId, r] of rivals) {
+    list.push({
+      playerId: oppId,
+      displayName: displayNameById.get(oppId) ?? oppId,
+      played: r.played,
+      wins: r.wins,
+      losses: r.losses,
+    });
+  }
+  list.sort((a, b) => {
+    if (b.played !== a.played) return b.played - a.played;
+    const byName = a.displayName.localeCompare(b.displayName, "es", {
+      sensitivity: "base",
+    });
+    if (byName !== 0) return byName;
+    return a.playerId.localeCompare(b.playerId);
+  });
+  return { topRival: list[0] ?? null, rivals: list };
+}
 
 function expectedScore(ratingA: number, ratingB: number): number {
   return 1 / (1 + 10 ** ((ratingB - ratingA) / 400));
@@ -463,31 +488,10 @@ export function buildPlayerGameStats(input: {
         }
       : null;
 
-  let topRival: PlayerGameStats["topRival"] = null;
-  for (const [oppId, r] of rivals) {
-    const candidate = {
-      playerId: oppId,
-      displayName: displayNameById.get(oppId) ?? oppId,
-      played: r.played,
-      wins: r.wins,
-      losses: r.losses,
-    };
-    if (!topRival) {
-      topRival = candidate;
-      continue;
-    }
-    if (candidate.played > topRival.played) {
-      topRival = candidate;
-      continue;
-    }
-    if (candidate.played < topRival.played) continue;
-    const byName = candidate.displayName.localeCompare(
-      topRival.displayName,
-      "es",
-      { sensitivity: "base" },
-    );
-    if (byName < 0) topRival = candidate;
-  }
+  const { topRival, rivals: rivalList } = summarizeRivals(
+    rivals,
+    displayNameById,
+  );
 
   let maxEloGainInSession: PlayerGameStats["maxEloGainInSession"] = null;
   for (const sp of sessionPlay.values()) {
@@ -572,6 +576,7 @@ export function buildPlayerGameStats(input: {
     maxEloGainInSession,
     last3Trend,
     topRival,
+    rivals: rivalList,
   };
 }
 
@@ -966,31 +971,10 @@ export function buildPlayerFechaGameStats(input: {
         }
       : null;
 
-  let topRival: PlayerFechaGameStats["topRival"] = null;
-  for (const [oppId, r] of rivals) {
-    const candidate = {
-      playerId: oppId,
-      displayName: displayNameById.get(oppId) ?? oppId,
-      played: r.played,
-      wins: r.wins,
-      losses: r.losses,
-    };
-    if (!topRival) {
-      topRival = candidate;
-      continue;
-    }
-    if (candidate.played > topRival.played) {
-      topRival = candidate;
-      continue;
-    }
-    if (candidate.played < topRival.played) continue;
-    const byName = candidate.displayName.localeCompare(
-      topRival.displayName,
-      "es",
-      { sensitivity: "base" },
-    );
-    if (byName < 0) topRival = candidate;
-  }
+  const { topRival, rivals: rivalList } = summarizeRivals(
+    rivals,
+    displayNameById,
+  );
 
   return {
     playerId,
@@ -1013,5 +997,6 @@ export function buildPlayerFechaGameStats(input: {
       rate: totalGames > 0 ? played / totalGames : null,
     },
     topRival,
+    rivals: rivalList,
   };
 }
