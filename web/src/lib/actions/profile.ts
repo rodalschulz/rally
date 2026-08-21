@@ -10,7 +10,12 @@ import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/groups";
 import { deleteUserAccount } from "@/lib/groups/membership";
 import { deriveShortName } from "@/lib/user-profile";
+import {
+  HOME_GROUP_COOKIE,
+  parseHomeGroupSlug,
+} from "@/lib/pwa/home-group";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export type AvatarActionResult =
@@ -21,6 +26,13 @@ function revalidateAvatarPaths() {
   revalidatePath("/");
   revalidatePath("/ajustes");
   revalidatePath("/grupos", "layout");
+}
+
+async function userSettingsPath(): Promise<string> {
+  const slug = parseHomeGroupSlug(
+    (await cookies()).get(HOME_GROUP_COOKIE)?.value,
+  );
+  return slug ? `/grupos/${slug}/cuenta` : "/ajustes";
 }
 
 export async function updateProfileAction(formData: FormData) {
@@ -66,7 +78,7 @@ export async function updateProfileAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/ajustes");
   revalidatePath("/grupos", "layout");
-  redirect("/ajustes");
+  redirect(await userSettingsPath());
 }
 
 export async function uploadAvatarAction(
@@ -119,6 +131,10 @@ export async function removeAvatarAction(): Promise<AvatarActionResult> {
       err instanceof Error ? err.message : "No se pudo quitar el sticker.";
     return { ok: false, error: message };
   }
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/login" });
 }
 
 export async function deleteAccountAction() {

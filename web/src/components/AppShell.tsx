@@ -62,6 +62,9 @@ export async function AppShell({
             {session?.user ? <HelpButton /> : null}
             {session?.user ? (
               <UserMenu
+                settingsHref={
+                  navSlug ? `/grupos/${navSlug}/cuenta` : "/ajustes"
+                }
                 logoutAction={async () => {
                   "use server";
                   await signOut({ redirectTo: "/login" });
