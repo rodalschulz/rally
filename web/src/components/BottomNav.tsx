@@ -13,8 +13,8 @@ type NavItem = {
 };
 
 export function BottomNav({ slug }: { slug?: string }) {
-  const pathname = usePathname();
-  const items = navItems(slug);
+  const pathname = usePathname() ?? "/";
+  const items = navItems(slug, pathname);
 
   return (
     <nav
@@ -61,8 +61,13 @@ export function BottomNav({ slug }: { slug?: string }) {
   );
 }
 
-function navItems(slug?: string): NavItem[] {
+function isUserSettingsPath(pathname: string): boolean {
+  return pathname === "/ajustes" || pathname.startsWith("/ajustes/");
+}
+
+function navItems(slug: string | undefined, pathname: string): NavItem[] {
   const base = slug ? `/grupos/${slug}` : null;
+  const onUserSettings = isUserSettingsPath(pathname);
 
   return [
     {
@@ -104,11 +109,10 @@ function navItems(slug?: string): NavItem[] {
       key: "ajustes",
       label: "Ajustes",
       icon: GearIcon,
-      href: base ? `${base}/ajustes` : "/ajustes",
+      // Stay on user settings while viewing /ajustes; otherwise group settings.
+      href: onUserSettings ? "/ajustes" : base ? `${base}/ajustes` : "/ajustes",
       isActive: (p) =>
-        base
-          ? p.startsWith(`${base}/ajustes`)
-          : p === "/ajustes" || p.startsWith("/ajustes/"),
+        isUserSettingsPath(p) || (!!base && p.startsWith(`${base}/ajustes`)),
     },
   ];
 }

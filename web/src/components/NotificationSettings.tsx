@@ -70,6 +70,27 @@ function isStandalonePwa(): boolean {
   );
 }
 
+/** `serviceWorker.ready` never rejects — time out so Ajustes doesn't hang on "Cargando…". */
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  fallback: T,
+): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    void promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      },
+    );
+  });
+}
+
 export function NotificationSettings({
   isAppAdmin = false,
 }: {
@@ -104,8 +125,12 @@ export function NotificationSettings({
             subscribed: boolean;
             preferences: NotificationPrefs;
           };
-          setPrefs(data.preferences);
-          const reg = await navigator.serviceWorker.ready.catch(() => null);
+          setPrefs(data.preferences ?? DEFAULT_NOTIFICATION_PREFS);
+          const reg = await withTimeout<ServiceWorkerRegistration | null>(
+            navigator.serviceWorker.ready,
+            2500,
+            null,
+          );
           const browserSub = reg
             ? await reg.pushManager.getSubscription()
             : null;
@@ -179,7 +204,11 @@ export function NotificationSettings({
     setError(null);
     startTransition(async () => {
       try {
-        const reg = await navigator.serviceWorker.ready.catch(() => null);
+        const reg = await withTimeout<ServiceWorkerRegistration | null>(
+          navigator.serviceWorker.ready,
+          2500,
+          null,
+        );
         const subscription = reg
           ? await reg.pushManager.getSubscription()
           : null;

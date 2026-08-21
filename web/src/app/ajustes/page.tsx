@@ -1,5 +1,4 @@
 import { signOut } from "@/auth";
-import { AppShell } from "@/components/AppShell";
 import { AvatarStickerPicker } from "@/components/AvatarStickerPicker";
 import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 import { NotificationSettings } from "@/components/NotificationSettings";
@@ -33,12 +32,12 @@ export default async function UserSettingsPage() {
     id: session.user.id,
     displayName: dbUser?.displayName || session.user.displayName || "Jugador",
     shortName: dbUser?.shortName || session.user.shortName || "J",
-    hue: dbUser?.hue ?? session.user.hue,
+    hue: dbUser?.hue ?? session.user.hue ?? 160,
     avatarUrl: dbUser?.avatarUrl ?? null,
   };
 
   return (
-    <AppShell title="Ajustes de Usuario">
+    <>
       <section className="animate-rise mb-6">
         <h1 className="text-[1.75rem] font-semibold tracking-[-0.03em] text-ink">
           Ajustes de Usuario
@@ -85,7 +84,7 @@ export default async function UserSettingsPage() {
           </label>
         ) : null}
 
-        <fieldset className="space-y-3 rounded-2xl bg-sand px-4 py-4">
+        <fieldset className="min-w-0 space-y-3 rounded-2xl bg-sand px-4 py-4">
           <legend className="px-1 text-[0.85rem] font-medium text-ink">
             Cobro de deudas
           </legend>
@@ -93,7 +92,7 @@ export default async function UserSettingsPage() {
             Tu celular de Yape o Plin. Los miembros del grupo lo ven cuando te
             deben, para transferirte fuera de rally.
           </p>
-          <label className="block text-[0.8rem] text-muted">
+          <label className="block min-w-0 text-[0.8rem] text-muted">
             Celular
             <input
               name="paymentPhone"
@@ -103,15 +102,15 @@ export default async function UserSettingsPage() {
               placeholder="987 654 321"
               maxLength={16}
               defaultValue={dbUser?.paymentPhone ?? ""}
-              className="mt-1 w-full rounded-xl bg-mist px-3 py-3 text-ink"
+              className="mt-1 w-full min-w-0 rounded-xl bg-mist px-3 py-3 text-ink"
             />
           </label>
-          <label className="block text-[0.8rem] text-muted">
+          <label className="block min-w-0 text-[0.8rem] text-muted">
             Prefieres recibir en
             <select
               name="paymentWallet"
               defaultValue={dbUser?.paymentWallet ?? "either"}
-              className="mt-1 w-full rounded-xl bg-mist px-3 py-3 text-ink"
+              className="mt-1 w-full min-w-0 rounded-xl bg-mist px-3 py-3 text-ink"
             >
               <option value="either">Yape o Plin</option>
               <option value="yape">Yape</option>
@@ -149,6 +148,6 @@ export default async function UserSettingsPage() {
         <p className="mb-2 text-[0.8rem] text-muted">Zona de peligro</p>
         <DeleteAccountButton />
       </section>
-    </AppShell>
+    </>
   );
 }

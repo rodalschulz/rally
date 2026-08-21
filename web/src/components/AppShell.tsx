@@ -1,6 +1,11 @@
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { loadOverdueDebtNudge } from "@/lib/debts/loadOverdueNudge";
+import {
+  HOME_GROUP_COOKIE,
+  parseHomeGroupSlug,
+} from "@/lib/pwa/home-group";
+import { cookies } from "next/headers";
 import { BrandMark } from "./BrandMark";
 import { BottomNav } from "./BottomNav";
 import { HelpButton } from "./HelpButton";
@@ -21,6 +26,12 @@ export async function AppShell({
   groupSlug?: string;
 }) {
   const session = await getSession();
+  const cookieSlug = parseHomeGroupSlug(
+    (await cookies()).get(HOME_GROUP_COOKIE)?.value,
+  );
+  // Explicit slug (group routes) wins; cookie keeps Fechas/Ranking/Deudas
+  // usable on global pages like /ajustes after leaving the group layout.
+  const navSlug = groupSlug ?? cookieSlug;
   const inGroup = Boolean(groupSlug);
   const showNav = Boolean(session?.user);
   const userId = session?.user?.id;
@@ -61,7 +72,7 @@ export async function AppShell({
         </div>
       </header>
       <main className="app-main">{children}</main>
-      {showNav ? <BottomNav slug={groupSlug} /> : null}
+      {showNav ? <BottomNav slug={navSlug} /> : null}
     </div>
   );
 }

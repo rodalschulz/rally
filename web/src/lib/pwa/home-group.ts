@@ -6,3 +6,11 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
 export function isSafeGroupSlug(slug: string): boolean {
   return slug.length > 0 && slug.length <= 64 && SLUG_RE.test(slug);
 }
+
+/** Last group hub slug from the PWA cookie, if present and well-formed. */
+export function parseHomeGroupSlug(
+  value: string | undefined | null,
+): string | undefined {
+  if (value && isSafeGroupSlug(value)) return value;
+  return undefined;
+}
