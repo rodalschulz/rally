@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import {
   AVATAR_MAX_BYTES,
   AVATAR_MAX_EDGE,
@@ -12,6 +11,11 @@ export type OptimizedAvatar = {
   contentType: "image/png" | "image/webp";
 };
 
+async function loadSharp() {
+  const mod = await import("sharp");
+  return mod.default;
+}
+
 /**
  * Server-side sticker normalize with sharp: resize + PNG palette / WebP
  * quality ladder until ≤ AVATAR_MAX_BYTES. Palette PNG is the same idea as
@@ -20,6 +24,7 @@ export type OptimizedAvatar = {
 export async function optimizeAvatarBuffer(
   input: Buffer,
 ): Promise<OptimizedAvatar> {
+  const sharp = await loadSharp();
   for (const edge of EDGE_STEPS) {
     const base = sharp(input, { failOn: "none" })
       .rotate()

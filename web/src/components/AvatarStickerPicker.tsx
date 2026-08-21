@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import {
   removeAvatarAction,
   uploadAvatarAction,
-} from "@/lib/actions/profile";
+} from "@/lib/actions/avatar";
 import { prepareStickerFile } from "@/lib/avatar/prepareSticker";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { Spinner } from "@/components/Spinner";
