@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { formatSetScore, parseSetScore } from "./gameScore";
+import { formatSetScore, parseSetScore, tryParseSetGames } from "./gameScore";
+
+describe("tryParseSetGames", () => {
+  it("parses A-B without tennis-rule checks", () => {
+    expect(tryParseSetGames("6-0")).toEqual({ gamesA: 6, gamesB: 0 });
+    expect(tryParseSetGames(" 7–6 ")).toEqual({ gamesA: 7, gamesB: 6 });
+    expect(tryParseSetGames("5-3")).toEqual({ gamesA: 5, gamesB: 3 });
+  });
+
+  it("returns null for empty or malformed scores", () => {
+    expect(tryParseSetGames("")).toBeNull();
+    expect(tryParseSetGames("foo")).toBeNull();
+    expect(tryParseSetGames("6")).toBeNull();
+  });
+});
 
 describe("parseSetScore", () => {
   it("parses winner from 6-4", () => {

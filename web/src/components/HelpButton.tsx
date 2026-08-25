@@ -82,7 +82,7 @@ const TABS: HelpTab[] = [
     tips: [
       {
         title: "Games y Sets aparte",
-        desc: "Hay un ranking por Games y otro por Sets. Cambia entre ellos con el selector de arriba.",
+        desc: "Hay un ranking por Games y otro por Sets. Cambia entre ellos con el selector de arriba. En Sets, un 6-0 mueve más Elo que un 6-4; en Games cada game cuenta igual.",
       },
       {
         title: "Toca un jugador",

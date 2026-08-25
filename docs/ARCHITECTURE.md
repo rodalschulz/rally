@@ -144,7 +144,7 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Multi-grupo | Root = discovery; coordinación bajo `/grupos/[slug]` |
 | Grupos privados | Invite + contraseña; no listados en root |
 | Canchas libres | Globales (sin groupId) |
-| Algoritmo de ranking | Singles Elo por unit (K_game=24, K_set=32); sin ranking dobles en UI |
+| Algoritmo de ranking | Singles Elo por unit (K_game=24, K_set=32 × margen de games); sin ranking dobles en UI |
 | Tests | Vitest en módulos puros (`docs/TESTING.md`) |
 | Nombre de marca UI | **rally** |
 | Setup local | `web/docs/SETUP.md` |
@@ -161,4 +161,4 @@ Hecho: scaffold web, DB + auth, sesiones + RSVP + financiador + deudas, matches,
 
 Hecho (push): Web Push + preferencias en `/ajustes`; eventos Fecha / RSVP / Game|Set agregado / ranking Singles Games #1 / deuda saldada.
 
-Pendiente / nice-to-have: rotar invite/password UI completa, Elo unificado / margen de set, bot sin PC, mute por grupo, Elo.S push.
+Pendiente / nice-to-have: rotar invite/password UI completa, Elo unificado, bot sin PC, mute por grupo, Elo.S push.

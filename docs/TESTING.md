@@ -23,7 +23,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 
 | Módulo | Por qué |
 |--------|---------|
-| `lib/ranking/elo.ts` | Singles Elo por unit (K, orden cronológico, no doble conteo) |
+| `lib/ranking/elo.ts` | Singles Elo por unit (K, margen de games en Sets, orden cronológico, no doble conteo) |
 | `lib/ranking/sessionResumen.ts` | Resumen de fecha por unit (Games/Sets): W–L + Elo.G / Elo.S inicio/fin; cutoff cronológico (sin filtrar fechas futuras) |
 | `lib/ranking/playerStats.ts` | Ficha de jugador: career por unit Games|Sets (racha, asistencia, historial por Fecha, rivales) + Fecha-scoped Games (historial por Game, participación) + gráficos Elo multi-jugador (`buildSessionEloPaths`, `buildGroupEloPaths`) |
 | `lib/ranking/simple.ts` | Puntos por unit (helper; sin ranking dobles en UI) |

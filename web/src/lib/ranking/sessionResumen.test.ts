@@ -265,4 +265,40 @@ describe("buildSessionSinglesResumen", () => {
     expect(rows[1]!.playerId).toBe("b");
     expect(rows[2]!.playerId).toBe("c");
   });
+
+  it("weighs set margin in Elo.S (6-0 moves more than 6-4)", () => {
+    const close = buildSessionSinglesResumen(
+      [
+        match({
+          id: "s-close",
+          sessionId: "s1",
+          unit: "set",
+          score: "6-4",
+          winnerSide: "A",
+        }),
+      ],
+      "s1",
+      "set",
+    );
+    const bagel = buildSessionSinglesResumen(
+      [
+        match({
+          id: "s-bagel",
+          sessionId: "s1",
+          unit: "set",
+          score: "6-0",
+          winnerSide: "A",
+        }),
+      ],
+      "s1",
+      "set",
+    );
+    const k = ELO_K_BY_UNIT.set;
+    expect(close.find((r) => r.playerId === "a")!.eloEnd).toBe(
+      Math.round(ELO_INITIAL + k * 0.5),
+    );
+    expect(bagel.find((r) => r.playerId === "a")!.eloEnd).toBeGreaterThan(
+      close.find((r) => r.playerId === "a")!.eloEnd,
+    );
+  });
 });

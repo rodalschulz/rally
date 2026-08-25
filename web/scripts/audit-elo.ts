@@ -31,15 +31,28 @@ type RawMatch = {
   unit: string;
   sideA: string[];
   sideB: string[];
+  score: string;
   winnerSide: "A" | "B" | null;
   deletedAt: Date | null;
   createdAt: Date;
   playSession: { startsAt: Date; groupId: string };
 };
 
+/** Independent set-margin factor — must match elo.ts but not import it. */
+function independentSetMarginFactor(score: string): number {
+  const m = score.trim().match(/^(\d{1,2})\s*[-–:]\s*(\d{1,2})$/);
+  if (!m) return 1;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  if (!Number.isInteger(a) || !Number.isInteger(b)) return 1;
+  const diff = Math.abs(a - b);
+  if (diff < 1) return 1;
+  return Math.log(diff + 1) / Math.log(3);
+}
+
 /** Independent Elo recompute — intentionally NOT sharing code with elo.ts. */
 function recomputeElo(matches: Match[], unit: MatchUnit) {
-  const K = ELO_K_BY_UNIT[unit];
+  const baseK = ELO_K_BY_UNIT[unit];
   const ordered = matches
     .filter(
       (m) =>
@@ -68,12 +81,14 @@ function recomputeElo(matches: Match[], unit: MatchUnit) {
     const w = (m.winnerSide === "A" ? m.sideA : m.sideB)[0];
     const l = (m.winnerSide === "A" ? m.sideB : m.sideA)[0];
     if (!w || !l || w === l) continue;
+    const k =
+      unit === "set" ? baseK * independentSetMarginFactor(m.score) : baseK;
     const rw = get(w);
     const rl = get(l);
     const expW = 1 / (1 + 10 ** ((rl - rw) / 400));
     const expL = 1 / (1 + 10 ** ((rw - rl) / 400));
-    rating.set(w, rw + K * (1 - expW));
-    rating.set(l, rl + K * (0 - expL));
+    rating.set(w, rw + k * (1 - expW));
+    rating.set(l, rl + k * (0 - expL));
     wins.set(w, (wins.get(w) ?? 0) + 1);
     losses.set(l, (losses.get(l) ?? 0) + 1);
   }
@@ -121,7 +136,7 @@ async function main() {
       unit: r.unit as MatchUnit,
       sideA: r.sideA,
       sideB: r.sideB,
-      score: "",
+      score: r.score,
       winnerSide: r.winnerSide,
       deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
       createdAt: r.createdAt.toISOString(),

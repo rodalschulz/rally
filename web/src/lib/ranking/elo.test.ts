@@ -4,6 +4,7 @@ import {
   ELO_INITIAL,
   ELO_K_BY_UNIT,
   buildEloRanking,
+  setEloMarginFactor,
 } from "./elo";
 
 function match(
@@ -275,5 +276,66 @@ describe("buildEloRanking", () => {
     ]);
     const rows = buildEloRanking(matches, "set", [], names);
     expect(rows.map((r) => r.playerId)).toEqual(["z", "a", "m"]);
+  });
+
+  it("moves more Elo.S for a 6-0 than a 6-4, and less for a 7-6", () => {
+    const k = ELO_K_BY_UNIT.set;
+    const close = buildEloRanking(
+      [match({ id: "close", score: "6-4", winnerSide: "A" })],
+      "set",
+    );
+    const bagel = buildEloRanking(
+      [match({ id: "bagel", score: "6-0", winnerSide: "A" })],
+      "set",
+    );
+    const tb = buildEloRanking(
+      [match({ id: "tb", score: "7-6", winnerSide: "A" })],
+      "set",
+    );
+
+    const closePts = close.find((r) => r.playerId === "a")!.points;
+    const bagelPts = bagel.find((r) => r.playerId === "a")!.points;
+    const tbPts = tb.find((r) => r.playerId === "a")!.points;
+
+    expect(closePts).toBe(Math.round(ELO_INITIAL + k * 0.5));
+    expect(bagelPts).toBeGreaterThan(closePts);
+    expect(tbPts).toBeLessThan(closePts);
+
+    // Games stay binary: score does not change K.
+    const g1 = buildEloRanking(
+      [
+        match({
+          id: "g1",
+          unit: "game",
+          score: "1-0",
+          winnerSide: "A",
+        }),
+      ],
+      "game",
+    );
+    expect(g1[0]?.points).toBe(Math.round(ELO_INITIAL + ELO_K_BY_UNIT.game * 0.5));
+  });
+});
+
+describe("setEloMarginFactor", () => {
+  it("treats 6-4 / 7-5 as the standard set (factor 1)", () => {
+    expect(setEloMarginFactor("6-4")).toBe(1);
+    expect(setEloMarginFactor("7-5")).toBe(1);
+    expect(setEloMarginFactor("4-6")).toBe(1);
+  });
+
+  it("weighs a bagel more than a close set, and a tiebreak less", () => {
+    const bagel = setEloMarginFactor("6-0");
+    const standard = setEloMarginFactor("6-4");
+    const tiebreak = setEloMarginFactor("7-6");
+    expect(bagel).toBeGreaterThan(standard);
+    expect(tiebreak).toBeLessThan(standard);
+    expect(bagel).toBeCloseTo(Math.log(7) / Math.log(3), 10);
+    expect(tiebreak).toBeCloseTo(Math.log(2) / Math.log(3), 10);
+  });
+
+  it("falls back to 1 when the score is missing or unparseable", () => {
+    expect(setEloMarginFactor("")).toBe(1);
+    expect(setEloMarginFactor("en curso")).toBe(1);
   });
 });

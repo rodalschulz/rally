@@ -6,7 +6,7 @@ import type {
   SessionStatus,
 } from "../domain/types";
 import { appZonedParts, fromAppZonedDateTime } from "../timezone";
-import { ELO_INITIAL, ELO_K_BY_UNIT, buildEloRanking } from "./elo";
+import { ELO_INITIAL, applySinglesElo, buildEloRanking } from "./elo";
 import { compareMatches } from "./matchOrder";
 
 const SERVER_STATS_MIN_SAMPLE = 10;
@@ -145,10 +145,6 @@ function summarizeRivals(
   return { topRival: list[0] ?? null, rivals: list };
 }
 
-function expectedScore(ratingA: number, ratingB: number): number {
-  return 1 / (1 + 10 ** ((ratingB - ratingA) / 400));
-}
-
 function isCountableUnitMatch(m: Match, unit: MatchUnit): boolean {
   if (m.format !== "singles" || m.unit !== unit) return false;
   if (m.deletedAt) return false;
@@ -183,26 +179,6 @@ function rangeStartMs(range: EloHistoryRange, now: Date): number | null {
   }
   const p = appZonedParts(now);
   return fromAppZonedDateTime(p.year, p.month, 1, 0, 0, 0).getTime();
-}
-
-function applyUnitElo(
-  ratings: Map<PlayerId, number>,
-  m: Match,
-  unit: MatchUnit,
-): void {
-  const k = ELO_K_BY_UNIT[unit];
-  const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0]!;
-  const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0]!;
-  const ra = ratings.get(winnerId) ?? ELO_INITIAL;
-  const rb = ratings.get(loserId) ?? ELO_INITIAL;
-  const ea = expectedScore(ra, rb);
-  const eb = expectedScore(rb, ra);
-  ratings.set(winnerId, ra + k * (1 - ea));
-  ratings.set(loserId, rb + k * (0 - eb));
-}
-
-function applyGameElo(ratings: Map<PlayerId, number>, m: Match): void {
-  applyUnitElo(ratings, m, "game");
 }
 
 /**
@@ -243,7 +219,7 @@ export function buildGroupFechaEloHistory(
       const m = unitMatches[mi]!;
       const mStart = m.sessionStartsAt ? Date.parse(m.sessionStartsAt) : 0;
       if (m.sessionId === s.id || mStart < sStart) {
-        applyUnitElo(ratings, m, unit);
+        applySinglesElo(ratings, m);
         mi += 1;
       } else {
         break;
@@ -409,7 +385,7 @@ export function buildPlayerGameStats(input: {
       }
     }
 
-    applyUnitElo(ratings, m, unit);
+    applySinglesElo(ratings, m);
 
     if (!involves) continue;
 
@@ -644,7 +620,7 @@ export function buildSessionEloPaths(input: {
     .sort(compareMatches);
 
   const ratings = new Map<PlayerId, number>();
-  for (const m of prior) applyGameElo(ratings, m);
+  for (const m of prior) applySinglesElo(ratings, m);
 
   const playerIds = new Set<PlayerId>();
   for (const m of sessionGames) {
@@ -680,7 +656,7 @@ export function buildSessionEloPaths(input: {
 
   for (let i = 0; i < sessionGames.length; i++) {
     const m = sessionGames[i]!;
-    applyGameElo(ratings, m);
+    applySinglesElo(ratings, m);
     const at = matchAt(m) || startAt;
     for (const id of playerIds) {
       const row = series.get(id)!;
@@ -772,7 +748,7 @@ export function buildGroupEloPaths(input: {
       const m = unitMatches[mi]!;
       const mStart = m.sessionStartsAt ? Date.parse(m.sessionStartsAt) : 0;
       if (m.sessionId === s.id || mStart < sStart) {
-        applyUnitElo(ratings, m, unit);
+        applySinglesElo(ratings, m);
         mi += 1;
       } else {
         break;
@@ -863,7 +839,7 @@ export function buildPlayerFechaGameStats(input: {
     .sort(compareMatches);
 
   const ratings = new Map<PlayerId, number>();
-  for (const m of prior) applyGameElo(ratings, m);
+  for (const m of prior) applySinglesElo(ratings, m);
 
   const eloStart = Math.round(ratings.get(playerId) ?? ELO_INITIAL);
   let eloMax = eloStart;
@@ -902,7 +878,7 @@ export function buildPlayerFechaGameStats(input: {
     const involves = playerInMatch(m, playerId);
     const eloBefore = Math.round(ratings.get(playerId) ?? ELO_INITIAL);
 
-    applyGameElo(ratings, m);
+    applySinglesElo(ratings, m);
     const eloAfter = Math.round(ratings.get(playerId) ?? ELO_INITIAL);
     if (eloAfter > eloMax) eloMax = eloAfter;
 

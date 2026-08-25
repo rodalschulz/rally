@@ -153,9 +153,9 @@ Resultado jugado en el contexto de una sesión. Hay **dos unidades independiente
 | Unidad (`unit`) | Qué es | Entrada | Ranking |
 |-----------------|--------|---------|---------|
 | `game` | Game suelto (rotación 1v1) | 2 jugadores; ganador obligatorio al crear; `score` = `1-0`; Servidor opcional | Singles **Games**: ladder Elo (K=24) |
-| `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores; marcador opcional al crear (`En curso` → luego `6-4`) | Singles **Sets**: Elo (K=32) |
+| `set` | Set a 6 (diff. 2, regla suave) | 2 jugadores; marcador opcional al crear (`En curso` → luego `6-4`) | Singles **Sets**: Elo (K=32, ponderado por margen de games) |
 
-Un Set **no** se descompone en N Games para el ranking: el `6-4` es metadata del Set, no genera filas de Game.
+Un Set **no** se descompone en N Games para el ranking: el `6-4` no genera filas de Game. En Elo.S el marcador **sí** pondera el K (margen de games).
 
 | Campo | Notas |
 |-------|--------|
@@ -183,7 +183,7 @@ Vista agregada (on-read; no tabla persistida en MVP), **por grupo**:
 
 Solo cuentan matches con ganador (`winnerSide` no nulo), no borrados (`deletedAt` null), cuya `PlaySession.startsAt` ya pasó (`startsAt < now`; fechas futuras y En curso no suman). Al editar, soft-borrar o restaurar, el ladder se recalcula on-read (no hay ratings persistidos).
 
-**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Ladders independientes por unit; en UI de Resumen se etiquetan **Elo.G** (Games, K=24) y **Elo.S** (Sets, K=32). Si nadie tiene resultados en el ladder, todos los miembros aparecen con **1000** (0–0); en cuanto hay al menos un resultado, solo figuran quienes ya jugaron. W/L binario (el marcador del set no pesa); orden cronológico `session.startsAt` → `match.createdAt`; lista ordenada por Elo desc, luego nombre (`es`). Games y Sets no se mezclan.
+**Singles Elo** (`web/src/lib/ranking/elo.ts`): on-read, sin ratings persistidos. Ladders independientes por unit; en UI de Resumen se etiquetan **Elo.G** (Games, K=24) y **Elo.S** (Sets, K=32). Si nadie tiene resultados en el ladder, todos los miembros aparecen con **1000** (0–0); en cuanto hay al menos un resultado, solo figuran quienes ya jugaron. Games: W/L binario. Sets: el K se escala con el margen de games (`ln(diff+1)/ln(3)`), de modo que un **6-4** (diff 2) es el set estándar (factor 1), un **6-0** pesa más (~1.77×) y un **7-6** menos (~0.63×); sin marcador parseable, factor 1. Orden cronológico `session.startsAt` → `match.createdAt`; lista ordenada por Elo desc, luego nombre (`es`). Games y Sets no se mezclan.
 
 **Resultados en una fecha:** cualquier asistente `going` puede agregar, editar, soft-borrar o restaurar Games sueltos y Sets singles (quien no marcó Voy no gestiona resultados). Hacen falta **dos jugadores distintos** (UI: cada select excluye al otro; servidor rechaza el mismo id). Un **Game** exige ganador al crear (Servidor opcional). En **Agregar game**, el botón **Siguiente Pareja** elige dos Voy de forma determinista: prioriza pares con menos enfrentamientos en la Fecha (round-robin), luego equilibra Games jugados y rota quien descansa; soft-deletes no cuentan. **Servidor:** la primera vez que ese par tiene servidor registrado es al azar; en rematch saca quien no sacó la vez anterior (`lib/matches/nextGamePair.ts`). No aplica a Sets ni al editar. Los selects de jugadores arrancan vacíos (“Elegir jugador”). Un **Set** sí puede quedar **En curso** sin marcador y completarse después. Plazo: ver **Ventanas temporales** (`startsAt + 2 h`).
 

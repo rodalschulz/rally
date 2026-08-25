@@ -1,5 +1,5 @@
 import type { Match, MatchUnit, PlayerId } from "../domain/types";
-import { ELO_INITIAL, ELO_K_BY_UNIT } from "./elo";
+import { ELO_INITIAL, applySinglesElo } from "./elo";
 import { compareMatches } from "./matchOrder";
 
 export type SessionResumenRow = {
@@ -10,10 +10,6 @@ export type SessionResumenRow = {
   eloEnd: number;
 };
 
-function expectedScore(ratingA: number, ratingB: number): number {
-  return 1 / (1 + 10 ** ((ratingB - ratingA) / 400));
-}
-
 function isCountableSingles(m: Match, unit: MatchUnit): boolean {
   if (m.format !== "singles" || m.unit !== unit) return false;
   if (m.deletedAt) return false;
@@ -21,21 +17,6 @@ function isCountableSingles(m: Match, unit: MatchUnit): boolean {
   const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0];
   const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0];
   return Boolean(winnerId && loserId && winnerId !== loserId);
-}
-
-function applyElo(
-  ratings: Map<PlayerId, number>,
-  m: Match,
-  k: number,
-): void {
-  const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0]!;
-  const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0]!;
-  const ra = ratings.get(winnerId) ?? ELO_INITIAL;
-  const rb = ratings.get(loserId) ?? ELO_INITIAL;
-  const ea = expectedScore(ra, rb);
-  const eb = expectedScore(rb, ra);
-  ratings.set(winnerId, ra + k * (1 - ea));
-  ratings.set(loserId, rb + k * (0 - eb));
 }
 
 /**
@@ -53,8 +34,6 @@ export function buildSessionSinglesResumen(
   sessionMatchesOverride?: Match[],
   displayNameById: ReadonlyMap<PlayerId, string> = new Map(),
 ): SessionResumenRow[] {
-  const k = ELO_K_BY_UNIT[unit];
-
   const sessionSource =
     sessionMatchesOverride !== undefined
       ? sessionMatchesOverride
@@ -95,7 +74,7 @@ export function buildSessionSinglesResumen(
     .sort(compareMatches);
 
   const ratings = new Map<PlayerId, number>();
-  for (const m of prior) applyElo(ratings, m, k);
+  for (const m of prior) applySinglesElo(ratings, m);
 
   const stats = new Map<
     PlayerId,
@@ -120,7 +99,7 @@ export function buildSessionSinglesResumen(
     const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0]!;
     ensure(winnerId);
     ensure(loserId);
-    applyElo(ratings, m, k);
+    applySinglesElo(ratings, m);
     const w = stats.get(winnerId)!;
     const l = stats.get(loserId)!;
     w.wins += 1;

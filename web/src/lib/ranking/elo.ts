@@ -1,4 +1,5 @@
 import type { Match, MatchUnit, PlayerId, RankingRow } from "../domain/types";
+import { tryParseSetGames } from "../domain/gameScore";
 import { compareMatches } from "./matchOrder";
 
 export const ELO_INITIAL = 1000;
@@ -7,12 +8,56 @@ export const ELO_K_BY_UNIT: Record<MatchUnit, number> = {
   set: 32,
 };
 
+/** Game difference of a "standard" set (6-4, 7-5). Margin factor = 1 at this diff. */
+export const SET_ELO_STANDARD_MARGIN = 2;
+
 function expectedScore(ratingA: number, ratingB: number): number {
   return 1 / (1 + 10 ** ((ratingB - ratingA) / 400));
 }
 
 /**
+ * Sets-only weight on K. ln(diff+1) / ln(3) so 6-4 stays the baseline:
+ * 7-6 ≈ 0.63×, 6-4 = 1×, 6-0 ≈ 1.77×. Missing/unparseable score → 1.
+ * Games never use this (always 1).
+ */
+export function setEloMarginFactor(score: string): number {
+  const parsed = tryParseSetGames(score);
+  if (!parsed) return 1;
+  const diff = Math.abs(parsed.gamesA - parsed.gamesB);
+  if (diff < 1) return 1;
+  return Math.log(diff + 1) / Math.log(SET_ELO_STANDARD_MARGIN + 1);
+}
+
+export function eloKForMatch(m: Match): number {
+  const base = ELO_K_BY_UNIT[m.unit];
+  if (m.unit !== "set") return base;
+  return base * setEloMarginFactor(m.score);
+}
+
+/**
+ * Apply one finished singles result to an in-memory ratings map.
+ * Sets scale K by game margin; Games stay binary at K=24.
+ */
+export function applySinglesElo(
+  ratings: Map<PlayerId, number>,
+  m: Match,
+): void {
+  const winnerId = (m.winnerSide === "A" ? m.sideA : m.sideB)[0];
+  const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0];
+  if (!winnerId || !loserId || winnerId === loserId) return;
+
+  const k = eloKForMatch(m);
+  const ra = ratings.get(winnerId) ?? ELO_INITIAL;
+  const rb = ratings.get(loserId) ?? ELO_INITIAL;
+  const ea = expectedScore(ra, rb);
+  const eb = expectedScore(rb, ra);
+  ratings.set(winnerId, ra + k * (1 - ea));
+  ratings.set(loserId, rb + k * (0 - eb));
+}
+
+/**
  * Classic Elo for singles, one ladder per unit. Sets do not expand into games.
+ * Set K is scaled by game-margin (6-0 moves more than 6-4); Games stay binary.
  * Only players with at least one result appear — except when the ladder has no
  * results yet: then seed all `memberIds` at 1000 so the board is never empty.
  * Sort: Elo desc, then display name (es), then playerId.
@@ -23,7 +68,6 @@ export function buildEloRanking(
   memberIds: PlayerId[] = [],
   displayNameById: ReadonlyMap<PlayerId, string> = new Map(),
 ): RankingRow[] {
-  const k = ELO_K_BY_UNIT[unit];
   const filtered = matches
     .filter((m) => m.format === "singles" && m.unit === unit)
     .slice()
@@ -55,14 +99,11 @@ export function buildEloRanking(
     const loserId = (m.winnerSide === "A" ? m.sideB : m.sideA)[0];
     if (!winnerId || !loserId || winnerId === loserId) continue;
 
-    const ra = ratingOf(winnerId);
-    const rb = ratingOf(loserId);
-    const ea = expectedScore(ra, rb);
-    const eb = expectedScore(rb, ra);
-    const nextA = ra + k * (1 - ea);
-    const nextB = rb + k * (0 - eb);
-    ratings.set(winnerId, nextA);
-    ratings.set(loserId, nextB);
+    ratingOf(winnerId);
+    ratingOf(loserId);
+    applySinglesElo(ratings, m);
+    const nextA = ratings.get(winnerId) ?? ELO_INITIAL;
+    const nextB = ratings.get(loserId) ?? ELO_INITIAL;
 
     const w = bump(winnerId);
     w.played += 1;
