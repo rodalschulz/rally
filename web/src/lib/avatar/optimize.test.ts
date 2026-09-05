@@ -41,4 +41,29 @@ describe("optimizeAvatarBuffer", () => {
     expect(out.buffer.length).toBeLessThanOrEqual(AVATAR_MAX_BYTES);
     expect(["image/png", "image/webp"]).toContain(out.contentType);
   }, 20_000);
+
+  it("accepts a small PNG whose File.type is empty", async () => {
+    const png = await sharp({
+      create: {
+        width: 64,
+        height: 64,
+        channels: 4,
+        background: { r: 20, g: 180, b: 80, alpha: 0.8 },
+      },
+    })
+      .png()
+      .toBuffer();
+
+    const { detectAvatarMime } = await import("./detect");
+    const emptyType = new File([png], "sticker.png", { type: "" });
+    const mime = detectAvatarMime(
+      new Uint8Array(await emptyType.arrayBuffer()),
+      emptyType.type,
+      emptyType.name,
+    );
+    expect(mime).toBe("image/png");
+
+    const out = await optimizeAvatarBuffer(png);
+    expect(out.buffer.length).toBeLessThanOrEqual(AVATAR_MAX_BYTES);
+  });
 });

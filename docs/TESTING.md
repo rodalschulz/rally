@@ -40,6 +40,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
 | `lib/matches/nextGamePair.ts` | Siguiente Pareja de Games: RR + rotar descanso + Servidor en rematch |
 | `lib/avatar/optimize.ts` | Sticker ≤ 500 KB (resize + palette/WebP) |
+| `lib/avatar/detect.ts` | PNG/WebP por magic bytes (MIME vacío / octet-stream) |
 | `lib/push/recipients.ts` | Excluir actor, filtro por preferencia, allow-list Fecha, cleanup 404/410 |
 | `lib/push/leader.ts` | Detección de cambio de #1 Singles Games |
 | `lib/push/fechaDiff.ts` | Qué cuenta como update material de Fecha |

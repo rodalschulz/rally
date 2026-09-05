@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       dynamic: 0,
       static: 30,
     },
+    // Default 1 MB; Flight + a 500 KB sticker can trip it and look like a bad PNG.
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
   },
 };
 

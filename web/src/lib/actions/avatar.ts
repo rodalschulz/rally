@@ -20,8 +20,8 @@ export async function uploadAvatarAction(
   formData: FormData,
 ): Promise<AvatarActionResult> {
   const userId = await requireUserId();
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
+  const file = asUploadedBlob(formData.get("file"));
+  if (!file) {
     return { ok: false, error: "Elige una imagen." };
   }
 
@@ -66,4 +66,23 @@ export async function removeAvatarAction(): Promise<AvatarActionResult> {
       err instanceof Error ? err.message : "No se pudo quitar el sticker.";
     return { ok: false, error: message };
   }
+}
+
+/** Next server actions sometimes give a Blob, not a cross-realm File. */
+function asUploadedBlob(value: FormDataEntryValue | null): Blob | null {
+  if (typeof Blob !== "undefined" && value instanceof Blob && value.size > 0) {
+    return value;
+  }
+  if (
+    value &&
+    typeof value === "object" &&
+    "size" in value &&
+    typeof (value as { size: unknown }).size === "number" &&
+    (value as { size: number }).size > 0 &&
+    "arrayBuffer" in value &&
+    typeof (value as { arrayBuffer: unknown }).arrayBuffer === "function"
+  ) {
+    return value as Blob;
+  }
+  return null;
 }
