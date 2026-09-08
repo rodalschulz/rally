@@ -1,7 +1,7 @@
 import { del, put } from "@vercel/blob";
 import { AVATAR_MAX_SOURCE_BYTES } from "@/lib/avatar/constants";
 import { detectAvatarMime } from "@/lib/avatar/detect";
-import { optimizeAvatarBuffer } from "@/lib/avatar/optimize";
+import { toStoredAvatar } from "@/lib/avatar/toStored";
 
 function assertBlobConfigured() {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
@@ -23,10 +23,11 @@ export async function uploadAvatarBlob(
 
   const input = Buffer.from(await file.arrayBuffer());
   const filename = "name" in file ? String((file as File).name) : "";
-  if (!detectAvatarMime(input, file.type, filename)) {
+  const mime = detectAvatarMime(input, file.type, filename);
+  if (!mime) {
     throw new Error("Usa un PNG o WebP (sticker con fondo transparente).");
   }
-  const optimized = await optimizeAvatarBuffer(input);
+  const optimized = await toStoredAvatar(input, mime);
   const ext = optimized.contentType === "image/webp" ? "webp" : "png";
 
   // Blob + copied bytes: @vercel/blob put() uses fetch/undici, which throws

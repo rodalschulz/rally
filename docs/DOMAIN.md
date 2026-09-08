@@ -38,7 +38,7 @@ Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grup
 
 Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google OAuth + `displayName` / `shortName` (derivados del perfil). Scoped al grupo vía `GroupMember`.
 
-**Avatar:** opcional `avatarUrl` (sticker PNG/WebP en Vercel Blob, máx. **500 KB** final). El usuario puede elegir un PNG/WebP más grande (hasta ~12 MB); el cliente lo redimensiona/re-encodea y el servidor lo normaliza con `sharp` (palette PNG / WebP) hasta quedar ≤ 500 KB. El sticker solo se muestra en **Ranking** (lista + ficha de jugador); en el resto de la app se usan iniciales + `hue`. No reutiliza `User.image` de Auth (foto de Google). Subida/quita en `/ajustes`.
+**Avatar:** opcional `avatarUrl` (sticker PNG/WebP en Vercel Blob, máx. **500 KB** final). El usuario puede elegir un PNG/WebP más grande (hasta ~12 MB); el cliente lo redimensiona/re-encodea hasta ≤ 500 KB. El servidor valida PNG/WebP (magic bytes) y sube ese archivo; `sharp` solo se intenta si aún pesa más (no en el camino normal de Vercel). El sticker solo se muestra en **Ranking** (lista + ficha de jugador); en el resto de la app se usan iniciales + `hue`. No reutiliza `User.image` de Auth (foto de Google). Subida/quita en `/ajustes`.
 
 **Admin de app (`User.isAdmin`):** flag global, independiente del owner de un grupo. Privilegios (siempre como miembro del grupo):
 

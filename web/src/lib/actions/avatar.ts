@@ -1,6 +1,7 @@
 "use server";
 
 import { unstable_update } from "@/auth";
+import { isSharpRuntimeError } from "@/lib/avatar/toStored";
 import { deleteAvatarBlob, uploadAvatarBlob } from "@/lib/avatar/storage";
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/groups";
@@ -40,9 +41,7 @@ export async function uploadAvatarAction(
     revalidateAvatarPaths();
     return { ok: true, avatarUrl };
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "No se pudo subir el sticker.";
-    return { ok: false, error: message };
+    return { ok: false, error: publicAvatarError(err, "No se pudo subir el sticker.") };
   }
 }
 
@@ -66,6 +65,13 @@ export async function removeAvatarAction(): Promise<AvatarActionResult> {
       err instanceof Error ? err.message : "No se pudo quitar el sticker.";
     return { ok: false, error: message };
   }
+}
+
+function publicAvatarError(err: unknown, fallback: string): string {
+  if (isSharpRuntimeError(err)) {
+    return "No se pudo procesar el sticker. Prueba un PNG o WebP más liviano.";
+  }
+  return err instanceof Error ? err.message : fallback;
 }
 
 /** Next server actions sometimes give a Blob, not a cross-realm File. */
