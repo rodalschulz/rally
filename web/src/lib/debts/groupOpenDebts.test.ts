@@ -47,6 +47,36 @@ describe("groupDebtsByCounterparty", () => {
     expect(groups[1].counterpartyId).toBe("bruno");
   });
 
+  it("rounds grouped totals to 2 decimals", () => {
+    const groups = groupDebtsByCounterparty(
+      [
+        debt({
+          id: "1",
+          fromPlayerId: "me",
+          toPlayerId: "ana",
+          amount: 5.06,
+        }),
+        debt({
+          id: "2",
+          fromPlayerId: "me",
+          toPlayerId: "ana",
+          amount: 5.06,
+          sessionId: "s2",
+        }),
+        debt({
+          id: "3",
+          fromPlayerId: "me",
+          toPlayerId: "ana",
+          amount: 5.06,
+          sessionId: "s3",
+        }),
+      ],
+      "i_owe",
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0].total).toBe(15.18);
+  });
+
   it("groups Te deben by debtor", () => {
     const open = [
       debt({ id: "1", fromPlayerId: "ana", toPlayerId: "me", amount: 11 }),

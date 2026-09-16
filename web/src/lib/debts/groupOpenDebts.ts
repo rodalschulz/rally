@@ -1,4 +1,5 @@
 import type { DebtWithSession } from "@/lib/domain/types";
+import { sumMoney } from "@/lib/domain/split";
 
 export type DebtCounterpartyGroup = {
   /** The other party (creditor when I owe; debtor when they owe me). */
@@ -34,7 +35,7 @@ export function groupDebtsByCounterparty(
     groups.push({
       counterpartyId,
       debts: sorted,
-      total: sorted.reduce((s, d) => s + d.amount, 0),
+      total: sumMoney(sorted.map((d) => d.amount)),
     });
   }
 

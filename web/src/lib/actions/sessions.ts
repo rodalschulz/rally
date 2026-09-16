@@ -11,6 +11,7 @@ import { canClaimDebtPaid, canSettleDebt } from "@/lib/debts/permissions";
 import { userIsAppAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import type { Match as DomainMatch } from "@/lib/domain/types";
+import { parseCostAmount, roundMoney } from "@/lib/domain/split";
 import { getMembership } from "@/lib/groups";
 import { toMatch } from "@/lib/mappers";
 import {
@@ -192,11 +193,10 @@ export async function setAttendanceAction(
 function parseSessionFields(formData: FormData, creatorId: string) {
   const startsAtRaw = String(formData.get("startsAt") || "");
   const courtLabel = String(formData.get("courtLabel") || "").trim() || null;
-  const costRaw = String(formData.get("costAmount") || "0");
+  const costAmount = parseCostAmount(String(formData.get("costAmount") || "0"));
   const note = String(formData.get("note") || "").trim() || null;
-  const costAmount = Number(costRaw);
 
-  if (!startsAtRaw || Number.isNaN(costAmount) || costAmount < 0) {
+  if (!startsAtRaw || costAmount == null) {
     throw new Error("Datos inválidos");
   }
 
@@ -467,7 +467,7 @@ export async function claimDebtPaidAction(formData: FormData) {
   const { slug } = await groupPaths(groupId);
   revalidatePath(`/grupos/${slug}/deudas`);
 
-  const total = debts.reduce((s, d) => s + Number(d.amount), 0);
+  const total = roundMoney(debts.reduce((s, d) => s + Number(d.amount), 0));
   schedulePush(() =>
     notifyDebtPaymentClaimed({
       groupId,
