@@ -12,6 +12,7 @@ import {
   whatsAppDebtUrl,
   type DebtPayLine,
 } from "@/lib/debts/paymentProfile";
+import { sumMoney } from "@/lib/domain/split";
 import { formatSoles } from "@/lib/format";
 
 export type PayDebtSheetCreditor = {
@@ -68,7 +69,7 @@ export function PayDebtSheet({
 
   if (!portalReady || !open || debts.length === 0) return null;
 
-  const total = debts.reduce((s, d) => s + d.amount, 0);
+  const total = sumMoney(debts.map((d) => d.amount));
   const message = buildDebtPayMessage({
     creditorName: creditor.displayName,
     debts,

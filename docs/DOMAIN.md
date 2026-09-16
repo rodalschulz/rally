@@ -58,7 +58,7 @@ En producto: **sesión** o **fecha**. En DB: **`PlaySession`** (evita choque con
 | `groupId` | Grupo dueño (requerido) |
 | `startsAt` | Instant UTC; en UI siempre como hora de pared en `America/Lima` (24h) |
 | `courtLabel` | Opcional (ej. cancha 30–41 según API Miraflores) |
-| `costAmount` | Costo total en soles (ej. 22.50) |
+| `costAmount` | Costo total en soles, hasta 2 decimales (ej. 20.25, 22.50) |
 | `currency` | Default `PEN` |
 | `financierCoversAll` | Si true, el financiador regala la cancha → no se generan deudas |
 | `financierId` | Quién pagó la cancha (**financiador**) |
@@ -137,10 +137,12 @@ Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`): 
 Fórmula base (financiador asiste, N asistentes `going`):
 
 ```
-share = costAmount / N
+share = round(costAmount / N, 2)
 para cada asistente ≠ financiador:
   Debt(from: asistente, to: financiador, amount: share)
 ```
+
+Montos (`costAmount`, `Debt.amount`, saldos agrupados) se redondean a **2 decimales**.
 
 El financiador ya cubrió `costAmount` al municipio; internamente “pagó” su `share` y adelantó el resto.
 

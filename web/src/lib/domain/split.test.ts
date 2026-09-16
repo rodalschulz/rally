@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Attendance, Session } from "./types";
-import { computeSessionDebts, netBalances, roundMoney } from "./split";
+import {
+  computeSessionDebts,
+  netBalances,
+  parseCostAmount,
+  roundMoney,
+  sumMoney,
+} from "./split";
 
 function session(partial: Partial<Session> = {}): Session {
   return {
@@ -77,11 +83,43 @@ describe("computeSessionDebts", () => {
       computeSessionDebts(session({ costAmount: 0 }), going("ana", "carlos")),
     ).toEqual([]);
   });
+
+  it("rounds each share to 2 decimals for a 20.25 court", () => {
+    const debts = computeSessionDebts(
+      session({ costAmount: 20.25 }),
+      going("ana", "bruno", "carlos", "diana"),
+    );
+    expect(debts).toHaveLength(3);
+    expect(debts.every((d) => d.amount === 5.06)).toBe(true);
+  });
 });
 
 describe("roundMoney", () => {
   it("rounds to cents", () => {
     expect(roundMoney(22 / 3)).toBe(7.33);
+    expect(roundMoney(20.25 / 4)).toBe(5.06);
+    expect(roundMoney(10.125)).toBe(10.13);
+  });
+});
+
+describe("parseCostAmount", () => {
+  it("accepts two-decimal soles and rounds extras", () => {
+    expect(parseCostAmount("20.25")).toBe(20.25);
+    expect(parseCostAmount("20.259")).toBe(20.26);
+    expect(parseCostAmount("0")).toBe(0);
+  });
+
+  it("rejects missing or negative amounts", () => {
+    expect(parseCostAmount("")).toBeNull();
+    expect(parseCostAmount("nope")).toBeNull();
+    expect(parseCostAmount("-1")).toBeNull();
+  });
+});
+
+describe("sumMoney", () => {
+  it("adds then rounds so grouped cents stay at 2 decimals", () => {
+    expect(sumMoney([5.06, 5.06, 5.06])).toBe(15.18);
+    expect(sumMoney([0.1, 0.2])).toBe(0.3);
   });
 });
 
@@ -111,5 +149,39 @@ describe("netBalances", () => {
     expect(map.get("ana")).toBe(11);
     expect(map.get("bruno")).toBe(-11);
     expect(map.get("carla")).toBe(0);
+  });
+
+  it("rounds nets to 2 decimals", () => {
+    const map = netBalances(
+      [
+        {
+          id: "1",
+          fromPlayerId: "bruno",
+          toPlayerId: "ana",
+          sessionId: "s1",
+          amount: 5.06,
+          status: "open",
+        },
+        {
+          id: "2",
+          fromPlayerId: "carla",
+          toPlayerId: "ana",
+          sessionId: "s1",
+          amount: 5.06,
+          status: "open",
+        },
+        {
+          id: "3",
+          fromPlayerId: "diana",
+          toPlayerId: "ana",
+          sessionId: "s1",
+          amount: 5.06,
+          status: "open",
+        },
+      ],
+      ["ana", "bruno", "carla", "diana"],
+    );
+    expect(map.get("ana")).toBe(15.18);
+    expect(map.get("bruno")).toBe(-5.06);
   });
 });

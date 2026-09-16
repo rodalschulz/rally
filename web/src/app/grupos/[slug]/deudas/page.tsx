@@ -4,7 +4,7 @@ import { SettledDebtsHistory } from "@/components/SettledDebtsHistory";
 import { listGroupPlayers, listOpenDebts, listSettledDebts } from "@/lib/data/queries";
 import { SETTLED_DEBTS_PREVIEW_LIMIT } from "@/lib/debts/history";
 import { userIsAppAdmin } from "@/lib/admin";
-import { netBalances } from "@/lib/domain/split";
+import { netBalances, sumMoney } from "@/lib/domain/split";
 import { formatSoles } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
 
@@ -51,12 +51,12 @@ export default async function DebtsPage({
       <section className="animate-rise mb-6 grid grid-cols-2 gap-3">
         <Stat
           label="Te deben"
-          value={formatSoles(owedToMe.reduce((s, d) => s + d.amount, 0))}
+          value={formatSoles(sumMoney(owedToMe.map((d) => d.amount)))}
           tone="good"
         />
         <Stat
           label="Debes"
-          value={formatSoles(iOwe.reduce((s, d) => s + d.amount, 0))}
+          value={formatSoles(sumMoney(iOwe.map((d) => d.amount)))}
           tone="warn"
         />
       </section>

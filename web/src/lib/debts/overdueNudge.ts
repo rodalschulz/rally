@@ -1,3 +1,4 @@
+import { roundMoney } from "@/lib/domain/split";
 import { appCalendarDayKey } from "@/lib/timezone";
 
 /** Calendar days (America/Lima) between the fecha and today to nag. */
@@ -66,7 +67,7 @@ export function summarizeOverdueDebts(
   }
 
   return {
-    totalAmount,
+    totalAmount: roundMoney(totalAmount),
     debtCount: overdue.length,
     groupSlug,
   };

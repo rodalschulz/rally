@@ -44,6 +44,22 @@ export function roundMoney(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** Sum then round so grouped debt totals stay at cents. */
+export function sumMoney(amounts: Iterable<number>): number {
+  let total = 0;
+  for (const n of amounts) total += n;
+  return roundMoney(total);
+}
+
+/** Parse a soles amount from form input; null if missing or invalid. */
+export function parseCostAmount(raw: string): number | null {
+  const trimmed = String(raw).trim();
+  if (!trimmed) return null;
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return roundMoney(n);
+}
+
 export function netBalances(
   debts: Debt[],
   playerIds: PlayerId[],
@@ -53,6 +69,9 @@ export function netBalances(
     if (d.status !== "open") continue;
     map.set(d.fromPlayerId, (map.get(d.fromPlayerId) ?? 0) - d.amount);
     map.set(d.toPlayerId, (map.get(d.toPlayerId) ?? 0) + d.amount);
+  }
+  for (const [id, amount] of map) {
+    map.set(id, roundMoney(amount));
   }
   return map;
 }

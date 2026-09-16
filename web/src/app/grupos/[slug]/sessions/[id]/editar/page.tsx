@@ -80,7 +80,8 @@ export default async function EditSessionPage({
             type="number"
             name="costAmount"
             min="0"
-            step="0.5"
+            step="0.01"
+            inputMode="decimal"
             defaultValue={session.costAmount}
             required
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"

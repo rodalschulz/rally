@@ -60,7 +60,8 @@ export default async function NewSessionPage({
             type="number"
             name="costAmount"
             min="0"
-            step="0.5"
+            step="0.01"
+            inputMode="decimal"
             defaultValue="22.5"
             required
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"

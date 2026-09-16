@@ -1,4 +1,5 @@
 import type { PaymentWallet } from "@/lib/domain/types";
+import { sumMoney } from "@/lib/domain/split";
 import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
 
 const PE_MOBILE = /^9\d{8}$/;
@@ -56,7 +57,7 @@ export function buildDebtPayMessage(args: {
   creditorName: string;
   debts: DebtPayLine[];
 }): string {
-  const total = args.debts.reduce((s, d) => s + d.amount, 0);
+  const total = sumMoney(args.debts.map((d) => d.amount));
   const lines = args.debts.map((d) => {
     const when = formatSessionWhen(d.sessionStartsAt);
     const chip = formatSessionChip(d.sessionStartsAt);
