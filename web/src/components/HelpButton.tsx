@@ -35,6 +35,10 @@ const TABS: HelpTab[] = [
         title: "Integrantes e invitaciones",
         desc: "Toca el ícono de personas junto al nombre del grupo para ver quiénes están. Si eres dueño, ahí copias el link para invitar.",
       },
+      {
+        title: "Google Calendar",
+        desc: "Junto a Integrantes está el calendario. Tócalo para copiar el link. Si eres dueño o admin, ahí pegas el link de compartir de Google Calendar.",
+      },
     ],
   },
   {

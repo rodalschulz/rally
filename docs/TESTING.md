@@ -33,6 +33,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/ui/clampChartTooltip.ts` | Recuadro Elo: no se sale del gráfico (izquierda/derecha) |
 | `lib/sessions/permissions.ts` | Borrar/editar/RSVP en fechas pasadas |
 | `lib/sessions/goingPlayers.ts` | Orden de avatares going: creador + A–Z |
+| `lib/groups/calendarUrl.ts` | Link de Google Calendar: dueño/admin editan; URL https de calendar.google.com |
 | `lib/debts/permissions.ts` | Saldar solo acreedor o admin + fecha pasada |
 | `lib/debts/overdueNudge.ts` | Modal al entrar: deuda open + Fecha > 7 días de calendario (Lima) |
 | `lib/debts/settleLabel.ts` | Copy del Historial: acreedor vs admin según `settledById` |

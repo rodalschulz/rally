@@ -152,6 +152,8 @@ model Group {
   inviteCode   String          @unique
   /** Cap on GroupMember rows; join fails when at capacity */
   maxMembers   Int             @default(20)
+  /** Shared Google Calendar URL; owner or app admin sets it */
+  calendarUrl  String?
   createdById  String
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt

@@ -14,6 +14,7 @@ Unidad de coordinación. Fechas, deudas y rankings viven **dentro** de un grupo.
 | `passwordHash` | bcrypt; obligatorio si `private` |
 | `inviteCode` | Token opaco único → `/join/[code]` |
 | `maxMembers` | Cupo; join falla si ya hay tantos miembros |
+| `calendarUrl` | Opcional; link https de Google Calendar. Dueño o admin de app lo pega en el hub Fechas; los demás tocan el ícono y copian el link |
 | `createdById` | Creador |
 
 Owner edita nombre, `maxMembers` y (si es privado) contraseña de join en `/grupos/[slug]/ajustes` (slug no cambia). El creador de una fecha puede editarla en `.../sessions/[id]/editar`.
@@ -46,6 +47,7 @@ Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google
 - Borrar cualquier fecha (próxima o pasada)  
 - Cambiar la asistencia (Voy / Quizás / No voy / Pendiente) de cualquier miembro en una fecha **aún no pasada** (recalcula deudas). En Fechas Pasadas nadie cambia RSVP  
 - Saldar cualquier deuda abierta de una fecha ya pasada  
+- Editar el link de Google Calendar del grupo (`calendarUrl`)  
 
 No sustituye al `GroupMember.role = owner` para ajustes del grupo (nombre, invite, borrar grupo).
 

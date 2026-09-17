@@ -6,6 +6,7 @@ import {
   joinPublicGroup,
   joinViaInvite,
   requireUserId,
+  updateGroupCalendarUrl,
   updateGroupSettings,
 } from "@/lib/groups";
 import { deleteGroup, leaveGroup } from "@/lib/groups/membership";
@@ -57,6 +58,40 @@ export async function updateGroupAction(formData: FormData) {
   revalidatePath(`/grupos/${slug}`);
   revalidatePath(`/grupos/${slug}/ajustes`);
   redirect(`/grupos/${slug}`);
+}
+
+export type CalendarActionResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function updateGroupCalendarAction(
+  formData: FormData,
+): Promise<CalendarActionResult> {
+  const userId = await requireUserId();
+  const groupId = String(formData.get("groupId") || "");
+  const slug = String(formData.get("slug") || "");
+  const calendarUrl = String(formData.get("calendarUrl") || "");
+  const clear = String(formData.get("clear") || "") === "1";
+
+  if (!groupId || !slug) {
+    return { ok: false, error: "Grupo inválido" };
+  }
+
+  try {
+    await updateGroupCalendarUrl({
+      groupId,
+      userId,
+      calendarUrl,
+      clear,
+    });
+  } catch (e) {
+    rethrowNextControlFlow(e);
+    const msg = e instanceof Error ? e.message : "No se pudo guardar";
+    return { ok: false, error: msg };
+  }
+
+  revalidatePath(`/grupos/${slug}`);
+  return { ok: true };
 }
 
 export async function joinPublicGroupAction(formData: FormData) {

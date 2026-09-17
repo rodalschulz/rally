@@ -1,5 +1,10 @@
+import { userIsAppAdmin } from "@/lib/admin";
 import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/db";
+import {
+  canEditGroupCalendarUrl,
+  normalizeGroupCalendarUrl,
+} from "@/lib/groups/calendarUrl";
 import {
   hashGroupPassword,
   makeSlug,
@@ -217,6 +222,41 @@ export async function updateGroupSettings(input: {
   return prisma.group.update({
     where: { id: input.groupId },
     data,
+  });
+}
+
+export async function updateGroupCalendarUrl(input: {
+  groupId: string;
+  userId: string;
+  calendarUrl?: string | null;
+  /** When true, clears the stored link. */
+  clear?: boolean;
+}) {
+  const membership = await getMembership(input.groupId, input.userId);
+  if (!membership) {
+    throw new Error("No eres miembro de este grupo");
+  }
+
+  const isAppAdmin = await userIsAppAdmin(input.userId);
+  if (
+    !canEditGroupCalendarUrl({
+      isGroupOwner: membership.role === "owner",
+      isAppAdmin,
+    })
+  ) {
+    throw new Error("Solo el dueño o un admin puede editar el calendario");
+  }
+
+  const calendarUrl = input.clear
+    ? null
+    : normalizeGroupCalendarUrl(input.calendarUrl);
+  if (!input.clear && !calendarUrl) {
+    throw new Error("Pega un link de Google Calendar");
+  }
+
+  return prisma.group.update({
+    where: { id: input.groupId },
+    data: { calendarUrl },
   });
 }
 

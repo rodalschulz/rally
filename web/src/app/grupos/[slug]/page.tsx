@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
+import { GroupCalendarButton } from "@/components/GroupCalendarButton";
 import { MembersPanel } from "@/components/MembersPanel";
 import { PastSessionsSection } from "@/components/PastSessionsSection";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
+import { userIsAppAdmin } from "@/lib/admin";
 import {
   listGroupMembers,
   listPastPlaySessions,
@@ -11,6 +13,7 @@ import {
   toAttendance,
   toSession,
 } from "@/lib/data/queries";
+import { canEditGroupCalendarUrl } from "@/lib/groups/calendarUrl";
 import { requireGroupMember } from "@/lib/groups";
 import {
   PAST_SESSIONS_PREVIEW_LIMIT,
@@ -27,12 +30,13 @@ export default async function GroupHubPage({
   const { slug } = await params;
   const group = await requireGroupMember(slug);
 
-  const [upcomingRows, pastRows, members] = await Promise.all([
+  const [upcomingRows, pastRows, members, isAppAdmin] = await Promise.all([
     listUpcomingPlaySessions(group.id),
     listPastPlaySessions(group.id, {
       take: PAST_SESSIONS_PREVIEW_LIMIT + 1,
     }),
     listGroupMembers(group.id),
+    userIsAppAdmin(group.membership.userId),
   ]);
   const players = members.map((m) => m.player);
 
@@ -47,6 +51,10 @@ export default async function GroupHubPage({
     .map((row) => toHubSessionItem(row, players));
 
   const isOwner = group.membership.role === "owner";
+  const canEditCalendar = canEditGroupCalendarUrl({
+    isGroupOwner: isOwner,
+    isAppAdmin,
+  });
 
   return (
     <>
@@ -55,10 +63,16 @@ export default async function GroupHubPage({
           <h1 className="m-0 min-w-0 truncate text-[1.75rem] font-semibold leading-none tracking-[-0.03em] text-ink">
             {group.name}
           </h1>
-          <div className="ml-1.5 flex h-[1.75rem] shrink-0 items-center">
+          <div className="ml-1.5 flex h-[1.75rem] shrink-0 items-center gap-1">
             <MembersPanel
               members={members}
               inviteCode={isOwner ? group.inviteCode : null}
+            />
+            <GroupCalendarButton
+              calendarUrl={group.calendarUrl}
+              canEdit={canEditCalendar}
+              groupId={group.id}
+              slug={slug}
             />
           </div>
         </div>
