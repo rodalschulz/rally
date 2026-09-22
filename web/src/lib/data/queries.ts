@@ -85,6 +85,7 @@ export async function getPlaySession(id: string, groupId?: string) {
       debts: true,
       matches: { orderBy: { createdAt: "asc" } },
       financier: true,
+      recogeBolasPayer: true,
       group: true,
     },
   });

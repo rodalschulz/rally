@@ -44,6 +44,8 @@ Persona del grupo. En código: modelo Prisma `User` (Auth.js). Identidad: Google
 **Admin de app (`User.isAdmin`):** flag global, independiente del owner de un grupo. Privilegios (siempre como miembro del grupo):
 
 - Editar cualquier fecha (también pasadas), sin ser el creador  
+- Cambiar el financiador (quién pagó) de cualquier fecha, también pasada, a otro miembro del grupo. Recalcula deudas  
+- Cambiar o quitar recoge bolas después de aplicado  
 - Borrar cualquier fecha (próxima o pasada)  
 - Cambiar la asistencia (Voy / Quizás / No voy / Pendiente) de cualquier miembro en una fecha **aún no pasada** (recalcula deudas). En Fechas Pasadas nadie cambia RSVP  
 - Saldar cualquier deuda abierta de una fecha ya pasada  
@@ -64,15 +66,19 @@ En producto: **sesión** o **fecha**. En DB: **`PlaySession`** (evita choque con
 | `currency` | Default `PEN` |
 | `financierCoversAll` | Si true, el financiador regala la cancha → no se generan deudas |
 | `financierId` | Quién pagó la cancha (**financiador**) |
+| `recogeBolasAmount` | Opcional; costo del recoge bolas en soles (2 decimales). Null = no aplicado |
+| `recogeBolasPayerId` | Quién adelantó el recoge bolas (un Voy). Null = no aplicado |
 | `createdById` | Quién creó el registro |
 | `status` | `scheduled` \| `completed` \| `cancelled` |
 | `note` | Opcional |
 | `maxAttendees` | Opcional; cupo de `going` |
 | `allowedUserIds` | Vacío = todos; si hay ids, solo ellos pueden marcar Voy |
 
-**Financiador:** “quien adelantó el pago de la cancha”. En UI: “Pagó la cancha” / “Financiador”.
+**Financiador:** “quien adelantó el pago de la cancha”. En UI: “Pagó la cancha” / “Financiador” (en el header de la fecha, badge Host). Al crear, `financierId` es el creador. Un **admin de app** puede elegir a otro miembro al crear, o reasignarlo después (badge Host o Editar), también en fechas pasadas (`createdById` no cambia). Si el admin no lo cambia, se conserva aunque esa persona ya haya salido del grupo. `syncOpenDebtsForSession` recalcula las deudas `open` hacia el nuevo financiador.
 
-**Regalo de cancha:** `financierCoversAll = true` → no se generan deudas (el financiador cubre todo).
+**Regalo de cancha:** `financierCoversAll = true` → no se generan deudas de **cancha** (el financiador cubre la reserva). No cubre recoge bolas.
+
+**Recoge bolas:** en algunas canchas hay que pagar a quien recoge las pelotas. Es un costo aparte de la reserva: otro Voy puede haberlo adelantado. En la ficha de la Fecha, cualquier asistente `going` (o un admin) carga monto + quién pagó y toca **Aplicar**. Eso genera deudas hacia ese pagador (misma fórmula que la cancha: `monto / N` entre Voy). Si el pagador de cancha y el de recoge bolas son la misma persona, las dos cuotas se suman en una sola deuda. Una vez aplicado, solo un **admin de app** puede cambiar monto/pagador o quitarlo (recalcula deudas). Quien no marcó Voy no lo registra. Módulo: `web/src/lib/sessions/recogeBolas.ts`.
 
 **Hora de creación:** el input de fecha usa pared `America/Lima` (24h); al guardar, los minutos se fijan a `:00` (slots horarios).
 
@@ -134,7 +140,7 @@ Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`): 
 
 **Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Al saldar se guardan `settledAt` y `settledById` (el actor) y se limpia `paymentClaimedAt`. En Historial: “Saldó el acreedor (Nombre)” o “Saldó un admin (Nombre)” según `settledById === toUserId` o no. Filas sin `settledById` (antes del campo) solo muestran la fecha.
 
-**Sync al cambiar Voy / costo / financiador** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”); preserva `paymentClaimedAt` en edges open que se recrean. Módulo: `web/src/lib/debts/reconcile.ts`.
+**Sync al cambiar Voy / costo / financiador / recoge bolas** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”); preserva `paymentClaimedAt` en edges open que se recrean. Módulo: `web/src/lib/debts/reconcile.ts`.
 
 Fórmula base (financiador asiste, N asistentes `going`):
 
@@ -224,6 +230,13 @@ Snapshot JSON publicado por el bot (`POST /api/availability/sync`). **Global** (
 - Share = 10  
 - Deudas: Ana→Carlos 10, Bruno→Carlos 10, Diana→Carlos 10  
 
+### Recoge bolas S/ 8, pagó Bruno
+
+- Misma fecha (cancha S/ 40, financiador Carlos); going Ana, Bruno, Carlos, Diana  
+- Recoge bolas share = 2  
+- Deudas de cancha: Ana→Carlos 10, Bruno→Carlos 10, Diana→Carlos 10  
+- Deudas de recoge bolas: Ana→Bruno 2, Carlos→Bruno 2, Diana→Bruno 2  
+
 ## Notificaciones push
 
 Opt-in por usuario en `/ajustes` (permiso del navegador + suscripción Web Push). Preferencias **globales** (no por grupo); el copy del aviso incluye el nombre del grupo.
@@ -231,7 +244,7 @@ Opt-in por usuario en `/ajustes` (permiso del navegador + suscripción Web Push)
 | Preferencia | Cuándo | Destinatarios |
 |-------------|--------|----------------|
 | `fechaCreated` | Nueva Fecha | Otros miembros (si hay `allowedUserIds`, solo esa lista) |
-| `fechaUpdated` | Cambio material (hora, cancha, costo, cupo, allow-list, regalo, nota) | Igual que arriba |
+| `fechaUpdated` | Cambio material (hora, cancha, costo, cupo, allow-list, regalo, nota, recoge bolas) | Igual que arriba |
 | `fechaDeleted` | Fecha borrada | Igual que arriba |
 | `attendanceChanged` | RSVP Voy / Quizás / No voy / Pendiente | Otros miembros del grupo |
 | `resultAdded` | Se agrega un Game o Set nuevo (no edit/delete) | Otros miembros del grupo |
@@ -251,6 +264,7 @@ Nunca se notifica al actor de su propia acción. Fallos de push no bloquean la m
 | Deuda | Cuánto debe A a B por una sesión |
 | Match | Resultado (`game` o `set`) con ganador |
 | Ranking Games / Sets | Elo singles por unit (Games \| Sets) |
-| Regalo de cancha | `financierCoversAll` — sin deudas |
+| Recoge bolas | Costo aparte de la cancha; un Voy adelanta; se reparte entre Voy |
+| Regalo de cancha | `financierCoversAll` — sin deudas de cancha |
 | Canchas libres | Snapshot Miraflores vía bot (global) |
 | Push | Web Push opt-in + preferencias en `/ajustes` |

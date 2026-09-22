@@ -21,6 +21,8 @@ import {
   type MatchChangeLogEntry,
   type MatchSnapshot,
 } from "@/lib/matches/changelog";
+import { resolveFinancierId } from "@/lib/sessions/financier";
+import { resolveRecogeBolas } from "@/lib/sessions/recogeBolas";
 import {
   canChangeAttendance,
   canDeletePlaySession,
@@ -261,6 +263,14 @@ function parseSessionFields(formData: FormData, creatorId: string) {
   };
 }
 
+async function loadMemberIds(groupId: string) {
+  const rows = await prisma.groupMember.findMany({
+    where: { groupId },
+    select: { userId: true },
+  });
+  return rows.map((m) => m.userId);
+}
+
 export async function createPlaySessionAction(formData: FormData) {
   const userId = await requireUserId();
   const groupId = String(formData.get("groupId") || "");
@@ -268,12 +278,20 @@ export async function createPlaySessionAction(formData: FormData) {
   await requireMemberOfGroup(groupId, userId);
 
   const fields = parseSessionFields(formData, userId);
+  const isAppAdmin = await userIsAppAdmin(userId);
+  const financier = resolveFinancierId({
+    currentFinancierId: userId,
+    submittedFinancierId: String(formData.get("financierId") || ""),
+    isAppAdmin,
+    memberIds: isAppAdmin ? await loadMemberIds(groupId) : [],
+  });
+  if (!financier.ok) throw new Error(financier.error);
 
   const created = await prisma.playSession.create({
     data: {
       groupId,
       ...fields,
-      financierId: userId,
+      financierId: financier.financierId,
       createdById: userId,
       status: "scheduled",
       attendances: {
@@ -325,11 +343,20 @@ export async function updatePlaySessionAction(formData: FormData) {
 
   // Always anchor invite list to the original creator, not the editor.
   const fields = parseSessionFields(formData, row.createdById);
-  const material = isMaterialFechaUpdate(row, fields);
+  const financier = resolveFinancierId({
+    currentFinancierId: row.financierId,
+    submittedFinancierId: String(formData.get("financierId") || ""),
+    isAppAdmin,
+    memberIds: isAppAdmin ? await loadMemberIds(row.groupId) : [],
+  });
+  if (!financier.ok) throw new Error(financier.error);
+
+  const nextFields = { ...fields, financierId: financier.financierId };
+  const material = isMaterialFechaUpdate(row, nextFields);
 
   await prisma.playSession.update({
     where: { id: playSessionId },
-    data: fields,
+    data: nextFields,
   });
 
   // Drop RSVPs for people no longer allowed
@@ -363,6 +390,141 @@ export async function updatePlaySessionAction(formData: FormData) {
   }
 
   redirect(`/grupos/${slug}/sessions/${playSessionId}`);
+}
+
+/** App admin: change who paid without going through the full edit form. */
+export async function reassignFinancierAction(
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const userId = await requireUserId();
+    const playSessionId = String(formData.get("playSessionId") || "");
+    if (!playSessionId) return { ok: false, error: "Fecha inválida" };
+
+    const row = await prisma.playSession.findUnique({
+      where: { id: playSessionId },
+    });
+    if (!row) return { ok: false, error: "Fecha no encontrada" };
+    await requireMemberOfGroup(row.groupId, userId);
+    const isAppAdmin = await userIsAppAdmin(userId);
+    if (!isAppAdmin) {
+      return { ok: false, error: "Solo un admin puede cambiar quién pagó" };
+    }
+
+    const financier = resolveFinancierId({
+      currentFinancierId: row.financierId,
+      submittedFinancierId: String(formData.get("financierId") || ""),
+      isAppAdmin,
+      memberIds: await loadMemberIds(row.groupId),
+    });
+    if (!financier.ok) return financier;
+    if (financier.financierId === row.financierId) {
+      return { ok: true };
+    }
+
+    await prisma.playSession.update({
+      where: { id: playSessionId },
+      data: { financierId: financier.financierId },
+    });
+    await syncOpenDebtsForSession(playSessionId);
+
+    const { slug } = await groupPaths(row.groupId);
+    revalidatePath(`/grupos/${slug}`);
+    revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
+    revalidatePath(`/grupos/${slug}/deudas`);
+
+    schedulePush(() =>
+      notifyFechaUpdated({
+        groupId: row.groupId,
+        playSessionId,
+        startsAt: row.startsAt,
+        allowedUserIds: row.allowedUserIds ?? [],
+        actorId: userId,
+      }),
+    );
+
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: actionErrorMessage(e, "No se pudo cambiar quién pagó"),
+    };
+  }
+}
+
+export async function applyRecogeBolasAction(
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const userId = await requireUserId();
+    const playSessionId = String(formData.get("playSessionId") || "");
+    if (!playSessionId) return { ok: false, error: "Fecha inválida" };
+
+    const row = await prisma.playSession.findUnique({
+      where: { id: playSessionId },
+      include: { attendances: true },
+    });
+    if (!row) return { ok: false, error: "Fecha no encontrada" };
+    await requireMemberOfGroup(row.groupId, userId);
+
+    const isAppAdmin = await userIsAppAdmin(userId);
+    const goingIds = row.attendances
+      .filter((a) => a.status === "going")
+      .map((a) => a.userId);
+    const actorIsGoing = goingIds.includes(userId);
+
+    const resolved = resolveRecogeBolas({
+      currentAmount:
+        row.recogeBolasAmount != null ? Number(row.recogeBolasAmount) : null,
+      currentPayerId: row.recogeBolasPayerId,
+      submittedAmount: parseCostAmount(
+        String(formData.get("recogeBolasAmount") ?? ""),
+      ),
+      submittedPayerId: String(formData.get("recogeBolasPayerId") || ""),
+      goingIds,
+      isAppAdmin,
+      actorIsGoing,
+    });
+    if (!resolved.ok) return resolved;
+
+    const unchanged =
+      (resolved.amount ?? null) ===
+        (row.recogeBolasAmount != null
+          ? Number(row.recogeBolasAmount)
+          : null) && resolved.payerId === row.recogeBolasPayerId;
+    if (unchanged) return { ok: true };
+
+    await prisma.playSession.update({
+      where: { id: playSessionId },
+      data: {
+        recogeBolasAmount: resolved.amount,
+        recogeBolasPayerId: resolved.payerId,
+      },
+    });
+    await syncOpenDebtsForSession(playSessionId);
+
+    const { slug } = await groupPaths(row.groupId);
+    revalidatePath(`/grupos/${slug}`);
+    revalidatePath(`/grupos/${slug}/sessions/${playSessionId}`);
+    revalidatePath(`/grupos/${slug}/deudas`);
+
+    schedulePush(() =>
+      notifyFechaUpdated({
+        groupId: row.groupId,
+        playSessionId,
+        startsAt: row.startsAt,
+        allowedUserIds: row.allowedUserIds ?? [],
+        actorId: userId,
+      }),
+    );
+
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: actionErrorMessage(e, "No se pudo guardar recoge bolas"),
+    };
+  }
 }
 
 export async function settleDebtAction(formData: FormData) {

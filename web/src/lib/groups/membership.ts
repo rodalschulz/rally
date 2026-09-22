@@ -117,6 +117,11 @@ export async function deleteUserAccount(userId: string) {
     });
 
     // Sessions still pointing at this user (shouldn't remain after leave, but safe)
+    await tx.playSession.updateMany({
+      where: { recogeBolasPayerId: userId },
+      data: { recogeBolasPayerId: null, recogeBolasAmount: null },
+    });
+
     const leftoverSessions = await tx.playSession.findMany({
       where: {
         OR: [{ financierId: userId }, { createdById: userId }],

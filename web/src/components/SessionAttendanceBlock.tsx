@@ -41,6 +41,7 @@ export function SessionAttendanceBlock({
   meId,
   players,
   financierId,
+  recogeBolasPayerId,
   initialAttendances,
   syncKey,
   maxAttendees,
@@ -52,6 +53,7 @@ export function SessionAttendanceBlock({
   meId: string;
   players: Player[];
   financierId: string;
+  recogeBolasPayerId?: string | null;
   initialAttendances: { playerId: string; status: AttendanceStatus }[];
   syncKey: string;
   maxAttendees?: number | null;
@@ -237,6 +239,7 @@ export function SessionAttendanceBlock({
           {listedPlayers.map((player) => {
             const status = attByUser[player.id] ?? "pending";
             const isFinancier = player.id === financierId;
+            const paidRecogeBolas = player.id === recogeBolasPayerId;
             const playerAtCapacity =
               maxAttendees != null &&
               goingCount >= maxAttendees &&
@@ -255,6 +258,11 @@ export function SessionAttendanceBlock({
                     {isFinancier ? (
                       <span className="ml-2 text-[0.75rem] font-normal text-muted">
                         pagó la cancha
+                      </span>
+                    ) : null}
+                    {paidRecogeBolas ? (
+                      <span className="ml-2 text-[0.75rem] font-normal text-muted">
+                        pagó recoge bolas
                       </span>
                     ) : null}
                   </p>

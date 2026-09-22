@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { FreshOnMount } from "@/components/FreshOnMount";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
+import { RecogeBolasBlock } from "@/components/RecogeBolasBlock";
+import { SessionFinancierControl } from "@/components/SessionFinancierControl";
 import { SinglesResultsPanel } from "@/components/SinglesResultsPanel";
 import {
   getPlaySession,
@@ -23,6 +25,10 @@ import {
   canEditPlaySession,
 } from "@/lib/sessions/permissions";
 import { userIsAppAdmin } from "@/lib/admin";
+import {
+  canEditRecogeBolas,
+  isRecogeBolasApplied,
+} from "@/lib/sessions/recogeBolas";
 import { isSessionGamesOpen } from "@/lib/sessions/windows";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +64,19 @@ export default async function SessionDetailPage({
   );
   const share =
     going.length > 0 ? roundMoney(session.costAmount / going.length) : 0;
+  const recogeApplied = isRecogeBolasApplied(session);
+  const recogeShare =
+    recogeApplied && going.length > 0
+      ? roundMoney((session.recogeBolasAmount ?? 0) / going.length)
+      : null;
+  const actorIsGoing = going.some((a) => a.playerId === userId);
+  const canEditRecoge = canEditRecogeBolas({
+    applied: recogeApplied,
+    actorIsGoing,
+    isAppAdmin,
+  });
+  const recogePayer =
+    row.recogeBolasPayer != null ? toPlayer(row.recogeBolasPayer) : null;
   const sessionMatches = row.matches.map(toMatch);
   const goingPlayers = allPlayers.filter((p) =>
     going.some((a) => a.playerId === p.id),
@@ -96,14 +115,18 @@ export default async function SessionDetailPage({
     <>
       <FreshOnMount />
       <div className="mb-5 flex items-center justify-between gap-3">
-        <p className="inline-flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-[0.9rem] font-medium text-ink">
-            {financier.displayName}
-          </span>
-          <span className="shrink-0 rounded-md bg-mist-2 px-1.5 py-0.5 text-[0.65rem] font-medium leading-none text-muted">
-            Host
-          </span>
-        </p>
+        <SessionFinancierControl
+          playSessionId={session.id}
+          financier={{
+            id: financier.id,
+            displayName: financier.displayName,
+          }}
+          players={allPlayers.map((p) => ({
+            id: p.id,
+            displayName: p.displayName,
+          }))}
+          canReassign={isAppAdmin}
+        />
         {canEdit ? (
           <Link
             href={`/grupos/${slug}/sessions/${session.id}/editar`}
@@ -128,12 +151,17 @@ export default async function SessionDetailPage({
         </div>
         <div className="mt-1 flex items-baseline justify-between gap-3">
           <p className="min-w-0 text-[0.95rem] text-muted">{when.label}</p>
-          <p className="shrink-0 text-[0.85rem] tabular-nums text-muted">
+          <p className="shrink-0 text-right text-[0.85rem] tabular-nums text-muted">
             {session.financierCoversAll
               ? "Regalada"
               : going.length > 0
                 ? `${formatSoles(share)} c/u`
                 : "— c/u"}
+            {recogeShare != null ? (
+              <span className="mt-0.5 block">
+                + {formatSoles(recogeShare)} recoge bolas
+              </span>
+            ) : null}
           </p>
         </div>
         {session.allowedUserIds.length > 0 ? (
@@ -151,6 +179,7 @@ export default async function SessionDetailPage({
         meId={userId}
         players={allPlayers}
         financierId={session.financierId}
+        recogeBolasPayerId={session.recogeBolasPayerId}
         initialAttendances={sessionAtt.map((a) => ({
           playerId: a.playerId,
           status: a.status,
@@ -171,6 +200,21 @@ export default async function SessionDetailPage({
         changeLog={changeLog}
         canManage={canManageGames}
         gamesOpen={gamesOpen}
+      />
+
+      <RecogeBolasBlock
+        playSessionId={session.id}
+        amount={session.recogeBolasAmount ?? null}
+        payerId={session.recogeBolasPayerId ?? null}
+        payerName={recogePayer?.displayName ?? null}
+        goingPlayers={goingPlayers.map((p) => ({
+          id: p.id,
+          displayName: p.displayName,
+        }))}
+        canEdit={canEditRecoge}
+        isAppAdmin={isAppAdmin}
+        defaultPayerId={actorIsGoing ? userId : (goingPlayers[0]?.id ?? "")}
+        share={recogeShare}
       />
 
       {canDelete ? (

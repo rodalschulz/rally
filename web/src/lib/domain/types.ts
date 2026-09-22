@@ -30,8 +30,12 @@ export type Session = {
   currency: "PEN";
   financierId: PlayerId;
   createdById: PlayerId;
-  /** Financiador regala la cancha — no se generan deudas. */
+  /** Financiador regala la cancha — no se generan deudas de cancha. */
   financierCoversAll: boolean;
+  /** Recoge bolas cost; null = not applied. */
+  recogeBolasAmount?: number | null;
+  /** Who paid recoge bolas (a Voy). */
+  recogeBolasPayerId?: PlayerId | null;
   status: SessionStatus;
   note?: string;
   /** null / undefined = sin cupo */

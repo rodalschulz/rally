@@ -37,6 +37,9 @@ export function toSession(row: PlaySession): DomainSession {
     financierId: row.financierId,
     createdById: row.createdById,
     financierCoversAll: row.financierCoversAll,
+    recogeBolasAmount:
+      row.recogeBolasAmount != null ? Number(row.recogeBolasAmount) : null,
+    recogeBolasPayerId: row.recogeBolasPayerId,
     status: row.status,
     note: row.note ?? undefined,
     maxAttendees: row.maxAttendees,

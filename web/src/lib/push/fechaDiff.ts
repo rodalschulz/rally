@@ -4,6 +4,7 @@ type FechaFields = {
   costAmount: { toString(): string } | number;
   maxAttendees: number | null;
   allowedUserIds: string[];
+  financierId: string;
   financierCoversAll: boolean;
   note: string | null;
 };
@@ -17,6 +18,7 @@ export function isMaterialFechaUpdate(
   if ((before.courtLabel ?? "") !== (after.courtLabel ?? "")) return true;
   if (String(before.costAmount) !== String(after.costAmount)) return true;
   if (before.maxAttendees !== after.maxAttendees) return true;
+  if (before.financierId !== after.financierId) return true;
   if (before.financierCoversAll !== after.financierCoversAll) return true;
   if ((before.note ?? "") !== (after.note ?? "")) return true;
   const a = [...before.allowedUserIds].sort().join(",");

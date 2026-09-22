@@ -1,7 +1,9 @@
 import { FinancierCoversField } from "@/components/FinancierCoversField";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { SessionFinancierFields } from "@/components/SessionFinancierFields";
 import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { createPlaySessionAction } from "@/lib/actions/sessions";
+import { userIsAppAdmin } from "@/lib/admin";
 import { listGroupPlayers } from "@/lib/data/queries";
 import { defaultSessionDatetimeLocal } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
@@ -15,7 +17,11 @@ export default async function NewSessionPage({
 }) {
   const { slug } = await params;
   const group = await requireGroupMember(slug);
-  const players = await listGroupPlayers(group.id);
+  const userId = group.membership.userId;
+  const [players, isAppAdmin] = await Promise.all([
+    listGroupPlayers(group.id),
+    userIsAppAdmin(userId),
+  ]);
 
   return (
     <>
@@ -24,9 +30,12 @@ export default async function NewSessionPage({
           Nueva fecha
         </h1>
         <p className="mt-1 text-[0.95rem] text-muted">
-          Quedas como financiador y con asistencia “Voy”. Cada fecha dura{" "}
-          <span className="font-medium text-ink">1 hora</span>. Si reservaste
-          más, crea una fecha por cada hora (con el costo de esa hora).
+          {isAppAdmin
+            ? "Quedas con asistencia “Voy”. Puedes elegir quién pagó."
+            : "Quedas como financiador y con asistencia “Voy”."}{" "}
+          Cada fecha dura <span className="font-medium text-ink">1 hora</span>.
+          Si reservaste más, crea una fecha por cada hora (con el costo de esa
+          hora).
         </p>
       </section>
 
@@ -68,7 +77,17 @@ export default async function NewSessionPage({
           />
         </label>
 
-        <FinancierCoversField />
+        {isAppAdmin ? (
+          <SessionFinancierFields
+            players={players}
+            actorId={userId}
+            defaultFinancierId={userId}
+            defaultCoversAll={false}
+            canReassign
+          />
+        ) : (
+          <FinancierCoversField />
+        )}
 
         <label className="block text-[0.8rem] text-muted">
           Nota (opcional)
@@ -81,7 +100,7 @@ export default async function NewSessionPage({
 
         <SessionLimitsFields
           players={players}
-          creatorId={group.membership.userId}
+          creatorId={userId}
         />
 
         <PendingSubmitButton

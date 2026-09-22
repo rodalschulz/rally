@@ -52,7 +52,11 @@ const TABS: HelpTab[] = [
       },
       {
         title: "Cancha y financiador",
-        desc: "La Fecha guarda el costo de la cancha y quién la paga (el financiador). Con eso se arman las deudas.",
+        desc: "La Fecha guarda el costo de la cancha y quién la paga (el financiador). Con eso se arman las deudas. Si eres admin, puedes elegir quién pagó al crear, o cambiarlo después tocando Host (o en Editar).",
+      },
+      {
+        title: "Recoge bolas",
+        desc: "Si la cancha cobra recoge bolas, quien marcó Voy carga el monto y quién lo pagó, y toca Aplicar. Se reparte entre los Voy. Después de aplicar, solo un admin puede cambiarlo.",
       },
       {
         title: "Se graba en piedra",

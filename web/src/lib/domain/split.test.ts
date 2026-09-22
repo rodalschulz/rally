@@ -77,6 +77,75 @@ describe("computeSessionDebts", () => {
     ).toEqual([]);
   });
 
+  it("still splits recoge bolas when financier covers the court", () => {
+    const debts = computeSessionDebts(
+      session({
+        financierCoversAll: true,
+        recogeBolasAmount: 8,
+        recogeBolasPayerId: "bruno",
+      }),
+      going("ana", "bruno", "carlos", "diana"),
+    );
+    expect(debts).toEqual([
+      {
+        fromPlayerId: "ana",
+        toPlayerId: "bruno",
+        sessionId: "s1",
+        amount: 2,
+      },
+      {
+        fromPlayerId: "carlos",
+        toPlayerId: "bruno",
+        sessionId: "s1",
+        amount: 2,
+      },
+      {
+        fromPlayerId: "diana",
+        toPlayerId: "bruno",
+        sessionId: "s1",
+        amount: 2,
+      },
+    ]);
+  });
+
+  it("merges court and recoge bolas when the same person paid both", () => {
+    const debts = computeSessionDebts(
+      session({
+        costAmount: 40,
+        financierId: "carlos",
+        recogeBolasAmount: 8,
+        recogeBolasPayerId: "carlos",
+      }),
+      going("ana", "bruno", "carlos", "diana"),
+    );
+    expect(debts).toHaveLength(3);
+    expect(debts.every((d) => d.toPlayerId === "carlos")).toBe(true);
+    expect(debts.every((d) => d.amount === 12)).toBe(true);
+  });
+
+  it("keeps separate edges when court and recoge bolas have different payers", () => {
+    const debts = computeSessionDebts(
+      session({
+        costAmount: 40,
+        financierId: "carlos",
+        recogeBolasAmount: 8,
+        recogeBolasPayerId: "bruno",
+      }),
+      going("ana", "bruno", "carlos", "diana"),
+    );
+    const byPair = debts
+      .map((d) => `${d.fromPlayerId}->${d.toPlayerId}:${d.amount}`)
+      .sort();
+    expect(byPair).toEqual([
+      "ana->bruno:2",
+      "ana->carlos:10",
+      "bruno->carlos:10",
+      "carlos->bruno:2",
+      "diana->bruno:2",
+      "diana->carlos:10",
+    ]);
+  });
+
   it("returns no debts with zero going or non-positive cost", () => {
     expect(computeSessionDebts(session(), [])).toEqual([]);
     expect(

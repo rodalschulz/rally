@@ -7,6 +7,7 @@ const base = {
   costAmount: "40",
   maxAttendees: 4 as number | null,
   allowedUserIds: [] as string[],
+  financierId: "ana",
   financierCoversAll: false,
   note: null as string | null,
 };
@@ -31,6 +32,9 @@ describe("isMaterialFechaUpdate", () => {
         ...base,
         allowedUserIds: ["u1"],
       }),
+    ).toBe(true);
+    expect(
+      isMaterialFechaUpdate(base, { ...base, financierId: "bruno" }),
     ).toBe(true);
   });
 });

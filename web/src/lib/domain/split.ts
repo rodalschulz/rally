@@ -1,43 +1,83 @@
 import type { Attendance, Debt, PlayerId, Session } from "./types";
 
+type DebtDraft = Omit<Debt, "id" | "status">;
+
 /**
- * Split court cost among `going` attendees.
+ * Split one cost among `going` attendees toward a payer.
+ * If the payer is not going, each going player owes cost/N.
+ */
+function splitCostAmongGoing(input: {
+  sessionId: string;
+  amount: number;
+  payerId: string;
+  going: Attendance[];
+}): DebtDraft[] {
+  const n = input.going.length;
+  if (n === 0 || input.amount <= 0) return [];
+
+  const share = roundMoney(input.amount / n);
+  const debts: DebtDraft[] = [];
+  for (const a of input.going) {
+    if (a.playerId === input.payerId) continue;
+    debts.push({
+      fromPlayerId: a.playerId,
+      toPlayerId: input.payerId,
+      sessionId: input.sessionId,
+      amount: share,
+    });
+  }
+  return debts;
+}
+
+function mergeDebtEdges(debts: DebtDraft[]): DebtDraft[] {
+  const map = new Map<string, DebtDraft>();
+  for (const d of debts) {
+    const key = `${d.fromPlayerId}->${d.toPlayerId}`;
+    const prev = map.get(key);
+    if (!prev) {
+      map.set(key, { ...d });
+      continue;
+    }
+    prev.amount = roundMoney(prev.amount + d.amount);
+  }
+  return [...map.values()];
+}
+
+/**
+ * Split court cost (and applied recoge bolas) among `going` attendees.
  * Financiador receives debts from every other going player.
- * If financier is not going, each going player owes cost/N to the financier.
+ * Recoge bolas is a separate cost toward `recogeBolasPayerId`; same payer
+ * merges into one edge. `financierCoversAll` skips only the court half.
  */
 export function computeSessionDebts(
   session: Session,
   attendances: Attendance[],
-): Omit<Debt, "id" | "status">[] {
-  if (session.financierCoversAll) return [];
-
+): DebtDraft[] {
   const going = attendances.filter(
     (a) => a.sessionId === session.id && a.status === "going",
   );
-  const n = going.length;
-  if (n === 0 || session.costAmount <= 0) return [];
 
-  const share = roundMoney(session.costAmount / n);
-  const debts: Omit<Debt, "id" | "status">[] = [];
+  const court = session.financierCoversAll
+    ? []
+    : splitCostAmongGoing({
+        sessionId: session.id,
+        amount: session.costAmount,
+        payerId: session.financierId,
+        going,
+      });
 
-  for (const a of going) {
-    if (a.playerId === session.financierId) continue;
-    debts.push({
-      fromPlayerId: a.playerId,
-      toPlayerId: session.financierId,
-      sessionId: session.id,
-      amount: share,
-    });
-  }
+  const recogeApplied =
+    Boolean(session.recogeBolasPayerId) && (session.recogeBolasAmount ?? 0) > 0;
+  const recoge = recogeApplied
+    ? splitCostAmongGoing({
+        sessionId: session.id,
+        amount: session.recogeBolasAmount ?? 0,
+        payerId: session.recogeBolasPayerId ?? "",
+        going,
+      })
+    : [];
 
-  // Edge: financier not in going → still owed full shares from each going player
-  const financierGoing = going.some((a) => a.playerId === session.financierId);
-  if (!financierGoing) {
-    // already covered: every going player owes share; total = share * n ≈ cost
-    return debts;
-  }
-
-  return debts;
+  return mergeDebtEdges([...court, ...recoge]);
 }
 
 export function roundMoney(n: number): number {

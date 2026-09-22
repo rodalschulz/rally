@@ -1,9 +1,14 @@
 import { redirect } from "next/navigation";
-import { FinancierCoversField } from "@/components/FinancierCoversField";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
+import { SessionFinancierFields } from "@/components/SessionFinancierFields";
 import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { updatePlaySessionAction } from "@/lib/actions/sessions";
-import { getPlaySession, listGroupPlayers, toSession } from "@/lib/data/queries";
+import {
+  getPlaySession,
+  listGroupPlayers,
+  toPlayer,
+  toSession,
+} from "@/lib/data/queries";
 import { toDatetimeLocalValue } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
 import { userIsAppAdmin } from "@/lib/admin";
@@ -37,6 +42,8 @@ export default async function EditSessionPage({
   }
 
   const session = toSession(row);
+  const financier = toPlayer(row.financier);
+  const financierStillMember = players.some((p) => p.id === financier.id);
 
   return (
     <>
@@ -45,7 +52,9 @@ export default async function EditSessionPage({
           Editar fecha
         </h1>
         <p className="mt-1 text-[0.95rem] text-muted">
-          Hora, cancha, costo, cupo e invitados. Las deudas se recalculan.
+          Hora, cancha, costo, cupo e invitados.
+          {isAppAdmin ? " Puedes cambiar quién pagó." : ""} Las deudas se
+          recalculan.
         </p>
       </section>
 
@@ -87,7 +96,14 @@ export default async function EditSessionPage({
             className="mt-1 w-full rounded-xl bg-sand px-3 py-3 text-ink"
           />
         </label>
-        <FinancierCoversField defaultChecked={session.financierCoversAll} />
+        <SessionFinancierFields
+          players={players}
+          actorId={userId}
+          defaultFinancierId={session.financierId}
+          defaultCoversAll={session.financierCoversAll}
+          canReassign={isAppAdmin}
+          departedFinancier={financierStillMember ? null : financier}
+        />
 
         <label className="block text-[0.8rem] text-muted">
           Nota (opcional)

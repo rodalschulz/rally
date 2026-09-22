@@ -93,6 +93,7 @@ model User {
 
   createdPlaySessions  PlaySession[] @relation("CreatedBy")
   financedPlaySessions PlaySession[] @relation("Financier")
+  recogeBolasPlaySessions PlaySession[] @relation("RecogeBolasPayer")
   attendances          Attendance[]
   debtsFrom            Debt[]        @relation("DebtFrom")
   debtsTo              Debt[]        @relation("DebtTo")
@@ -193,6 +194,9 @@ model PlaySession {
   /** vacío = todos los miembros; si hay ids, solo ellos pueden marcar Voy */
   allowedUserIds String[]       @default([])
   financierId String
+  /** Recoge bolas: optional extra cost, split among going toward this payer. */
+  recogeBolasAmount Decimal? @db.Decimal(10, 2)
+  recogeBolasPayerId String?
   createdById String
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -200,6 +204,7 @@ model PlaySession {
   group       Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   financier   User         @relation("Financier", fields: [financierId], references: [id])
   createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
+  recogeBolasPayer User?   @relation("RecogeBolasPayer", fields: [recogeBolasPayerId], references: [id], onDelete: SetNull)
   attendances     Attendance[]
   debts           Debt[]
   matches         Match[]
