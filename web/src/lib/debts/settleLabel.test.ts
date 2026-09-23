@@ -31,12 +31,12 @@ describe("settleActorLabel", () => {
     ).toBe("Saldó un admin (Rod)");
   });
 
-  it("falls back when display name is unknown", () => {
+  it("labels a pairwise close without calling it a full payment", () => {
     expect(
       settleActorLabel(
-        { toPlayerId: "cred", settledById: "ghost" },
+        { toPlayerId: "cred", settledById: "cred", settledAsNet: true },
         names,
       ),
-    ).toBe("Saldó un admin (alguien)");
+    ).toBe("Compensación de saldos · Ana");
   });
 });

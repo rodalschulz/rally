@@ -6,11 +6,14 @@ import type { Debt } from "../domain/types";
  * roles can settle. Returns null when settledById is missing (legacy rows).
  */
 export function settleActorLabel(
-  debt: Pick<Debt, "settledById" | "toPlayerId">,
+  debt: Pick<Debt, "settledById" | "toPlayerId" | "settledAsNet">,
   displayNameById: ReadonlyMap<string, string>,
 ): string | null {
   if (!debt.settledById) return null;
   const name = displayNameById.get(debt.settledById) ?? "alguien";
+  if (debt.settledAsNet) {
+    return `Compensación de saldos · ${name}`;
+  }
   if (debt.settledById === debt.toPlayerId) {
     return `Saldó el acreedor (${name})`;
   }

@@ -38,9 +38,7 @@ Ejemplo:
 - Asistentes: Ana (financiadora) y Bruno  
 - Cada uno debe S/ 11 → Bruno le debe S/ 11 a Ana  
 
-Con N asistentes: `costo / N` por cabeza. El financiador ya “pagó” su parte al municipio; los demás le deben su cuota.
-
-Más adelante: marcar deudas como pagadas, saldos netos entre personas, historial.
+Con N asistentes: `costo / N` por cabeza. El financiador ya “pagó” su parte al municipio; los demás le deben su cuota. En Deudas, el saldo entre dos personas descuenta lo que se deben mutuamente, y solo con Fechas pasadas.
 
 ### 4. Resultados y rankings
 

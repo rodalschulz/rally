@@ -109,7 +109,7 @@ const TABS: HelpTab[] = [
     tips: [
       {
         title: "Quién le debe a quién",
-        desc: "El costo de la Fecha se divide entre quienes fueron. Si otro pagó, te queda una deuda con esa persona.",
+        desc: "El costo de la Fecha se divide entre quienes fueron. Solo entra a Deudas cuando la Fecha ya pasó. Si también te deben, ves el saldo: un lado se descuenta del otro.",
       },
       {
         title: "Pagar (Yape / Plin)",
@@ -117,7 +117,7 @@ const TABS: HelpTab[] = [
       },
       {
         title: "Ya pagué y Saldar",
-        desc: "Cuando transferiste, avisa con Ya pagué (le llega notificación). Quien recibió confirma con Saldar cuando la fecha ya pasó. Queda en el historial.",
+        desc: "Cuando transferiste el saldo, avisa con Ya pagué. Quien recibe confirma con Saldar (una fecha) o Saldar saldo (cierra los dos lados). Queda en el historial.",
       },
       {
         title: "Notificaciones",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calendarDaysBetween,
   isOverdueConfirmedOpenDebt,
+  summarizeNetOverdueForUser,
   summarizeOverdueDebts,
 } from "./overdueNudge";
 
@@ -92,5 +93,111 @@ describe("summarizeOverdueDebts", () => {
       debtCount: 2,
       groupSlug: "beta",
     });
+  });
+});
+
+describe("summarizeNetOverdueForUser", () => {
+  const now = "2026-08-14T17:00:00.000Z";
+  const old = "2026-08-01T17:00:00.000Z";
+  const recent = "2026-08-12T17:00:00.000Z";
+
+  it("nags the remainder after the other direction is offset", () => {
+    const nudge = summarizeNetOverdueForUser(
+      [
+        {
+          id: "1",
+          fromPlayerId: "ana",
+          toPlayerId: "bruno",
+          amount: 30,
+          sessionStartsAt: old,
+          groupSlug: "club",
+        },
+        {
+          id: "2",
+          fromPlayerId: "bruno",
+          toPlayerId: "ana",
+          amount: 18,
+          sessionStartsAt: recent,
+          groupSlug: "club",
+        },
+      ],
+      "ana",
+      now,
+    );
+    expect(nudge).toEqual({
+      totalAmount: 12,
+      debtCount: 1,
+      groupSlug: "club",
+    });
+    expect(
+      summarizeNetOverdueForUser(
+        [
+          {
+            id: "1",
+            fromPlayerId: "ana",
+            toPlayerId: "bruno",
+            amount: 30,
+            sessionStartsAt: old,
+            groupSlug: "club",
+          },
+          {
+            id: "2",
+            fromPlayerId: "bruno",
+            toPlayerId: "ana",
+            amount: 18,
+            sessionStartsAt: recent,
+            groupSlug: "club",
+          },
+        ],
+        "bruno",
+        now,
+      ),
+    ).toBeNull();
+  });
+
+  it("does not nag when both sides cancel", () => {
+    expect(
+      summarizeNetOverdueForUser(
+        [
+          {
+            id: "1",
+            fromPlayerId: "ana",
+            toPlayerId: "bruno",
+            amount: 18,
+            sessionStartsAt: old,
+            groupSlug: "club",
+          },
+          {
+            id: "2",
+            fromPlayerId: "bruno",
+            toPlayerId: "ana",
+            amount: 18,
+            sessionStartsAt: old,
+            groupSlug: "club",
+          },
+        ],
+        "ana",
+        now,
+      ),
+    ).toBeNull();
+  });
+
+  it("ignores a future fecha", () => {
+    expect(
+      summarizeNetOverdueForUser(
+        [
+          {
+            id: "1",
+            fromPlayerId: "ana",
+            toPlayerId: "bruno",
+            amount: 40,
+            sessionStartsAt: "2026-08-20T17:00:00.000Z",
+            groupSlug: "club",
+          },
+        ],
+        "ana",
+        now,
+      ),
+    ).toBeNull();
   });
 });

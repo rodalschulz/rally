@@ -109,7 +109,14 @@ function toDebtWithSession(
 
 export async function listOpenDebts(groupId: string): Promise<DebtWithSession[]> {
   const rows = await prisma.debt.findMany({
-    where: { status: "open", playSession: { groupId } },
+    where: {
+      status: "open",
+      playSession: {
+        groupId,
+        status: { not: "cancelled" },
+        startsAt: { lte: sessionPastCutoff() },
+      },
+    },
     include: debtSessionSelect,
     orderBy: [{ playSession: { startsAt: "desc" } }, { createdAt: "asc" }],
   });

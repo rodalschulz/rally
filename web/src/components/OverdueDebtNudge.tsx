@@ -77,11 +77,11 @@ export function OverdueDebtNudge({ nudge }: { nudge: OverdueDebtNudgeData }) {
           Tienes deudas pendientes
         </h2>
         <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">
-          Debes {formatSoles(nudge.totalAmount)} de{" "}
+          Debes {formatSoles(nudge.totalAmount)}. Hay{" "}
           {nudge.debtCount === 1
             ? "una Fecha"
             : `${nudge.debtCount} Fechas`}{" "}
-          de hace más de una semana. Por favor págalas.
+          de hace más de una semana sin saldar.
         </p>
 
         <Link

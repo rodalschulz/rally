@@ -232,6 +232,8 @@ export async function notifyDebtSettled(args: {
   toUserId: string;
   amount: { toString(): string } | number;
   actorId: string;
+  /** Pairwise close. `zero` means both sides cancelled and nothing was transferred. */
+  netKind?: "remainder" | "zero";
 }): Promise<void> {
   const group = await loadGroupMeta(args.groupId);
   if (!group) return;
@@ -254,12 +256,19 @@ export async function notifyDebtSettled(args: {
     select: { displayName: true, name: true },
   });
   const amount = Number(args.amount).toFixed(2);
+  const actorName = displayNameOf(actor);
+  const body =
+    args.netKind === "zero"
+      ? `${actorName} cerró una compensación. Quedaron en cero.`
+      : args.netKind === "remainder"
+        ? `${actorName} saldó el saldo de S/ ${amount} (fechas compensadas)`
+        : `${actorName} marcó S/ ${amount} como saldada`;
 
   await sendPushToUsers(
     recipients,
     {
       title: `${group.name} · Deuda saldada`,
-      body: `${displayNameOf(actor)} marcó S/ ${amount} como saldada`,
+      body,
       url: `/grupos/${group.slug}/deudas`,
     },
     "debtSettled",
@@ -275,6 +284,8 @@ export async function notifyDebtPaymentClaimed(args: {
   amount: { toString(): string } | number;
   debtCount: number;
   actorId: string;
+  /** Transfer is the pairwise remainder, not the sum of the debtor's fechas. */
+  netBalance?: boolean;
 }): Promise<void> {
   const group = await loadGroupMeta(args.groupId);
   if (!group) return;
@@ -286,12 +297,15 @@ export async function notifyDebtPaymentClaimed(args: {
   const amount = Number(args.amount).toFixed(2);
   const countHint =
     args.debtCount > 1 ? ` (${args.debtCount} fechas)` : "";
+  const body = args.netBalance
+    ? `${displayNameOf(actor)} dice que ya te pagó el saldo de S/ ${amount} (se compensaron otras fechas)`
+    : `${displayNameOf(actor)} dice que ya te pagó S/ ${amount}${countHint}`;
 
   await sendPushToUsers(
     [args.toUserId],
     {
       title: `${group.name} · Te avisaron un pago`,
-      body: `${displayNameOf(actor)} dice que ya te pagó S/ ${amount}${countHint}`,
+      body,
       url: `/grupos/${group.slug}/deudas`,
     },
     "debtSettled",

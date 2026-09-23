@@ -123,22 +123,27 @@ Obligación de pago entre dos jugadores, normalmente derivada de una sesión:
 |-------|--------|
 | `fromUserId` | Quien debe |
 | `toUserId` | Quien recibe (casi siempre el financiador) |
-| `playSessionId` | Origen — cada deuda es de **una** fecha (nunca se fusionan entre fechas) |
+| `playSessionId` | Origen — cada fila es de **una** fecha (no se fusionan filas entre fechas) |
 | `amount` | |
 | `status` | `open` \| `settled` |
 | `settledAt` | Cuándo se marcó saldada |
 | `settledById` | Quién la saldó (acreedor o admin de app). Null en filas legacy |
+| `settledAsNet` | true si se cerró al compensar los dos sentidos. El monto de la fila sigue siendo la cuota de esa Fecha |
 | `paymentClaimedAt` | El deudor tocó “Ya pagué” (transferencia fuera de rally). Se limpia al saldar |
 
-Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`): secciones **Te deben** / **Debes** (agrupadas por contraparte) + **Entre otros** si aplica; **Historial** de `settled` (últimas 5; **Ver todo el historial** carga el resto).
+Scoped al grupo al filtrar deudas por `playSession.groupId`. En UI (`/deudas`): secciones **Te deben** / **Debes** con el **saldo** entre dos personas (lo que A le debe a B se descuenta de lo que B le debe a A) + **En cero** si ambos lados coinciden + **Entre otros** si aplica; **Historial** de `settled` (últimas 5; **Ver todo el historial** carga el resto).
+
+**Cuándo cuentan:** solo Fechas **pasadas** (misma regla que el hub: `startsAt + 2 h`). Una Fecha futura o todavía dentro de la ventana de resultados puede tener filas `open` (el sync las arma al cambiar Voy), pero **no entran** a saldos, Te deben / Debes, Pagar, el recordatorio ni Saldar. Módulo: `web/src/lib/debts/netPairs.ts`.
+
+**Saldo entre dos:** si Ana le debe a Bruno S/ 30 (varias Fechas pasadas) y Bruno le debe a Ana S/ 18, Deudas muestra que Ana le debe a Bruno **S/ 12**. Las filas de cada Fecha se conservan y se listan debajo (lo que debes / se descuenta). Pagar y “Ya pagué” usan ese saldo, no la suma bruta. **Saldar saldo** (acreedor del saldo, o admin; si el neto es 0, cualquiera de los dos) marca **todas** las filas abiertas pasadas de ese par como `settled` con `settledAsNet` (no es un pago de cada monto por separado). Saldar una Fecha suelta sigue existiendo y cambia el saldo.
 
 **Perfil de cobro (P2P, sin pasarela):** en `/ajustes` el usuario puede guardar `paymentPhone` (celular PE 9 dígitos) y `paymentWallet` (`yape` \| `plin` \| `either`). Visible a miembros del grupo en el sheet **Pagar** (copiar número/monto, WhatsApp con mensaje). rally **no** procesa pagos.
 
-**Recordatorio al entrar:** si el usuario tiene deudas `open` (ya generadas) cuya Fecha tiene **más de 7 días de calendario** en `America/Lima` respecto de hoy, al entrar a la app se muestra un modal pidiendo que pague. Se cierra con X, Escape o tocando afuera. Una vez por visita (`sessionStorage`; un refresh no lo reabre). Módulo: `web/src/lib/debts/overdueNudge.ts`.
+**Recordatorio al entrar:** si el **saldo** que el usuario debe (después de compensar lo que a él le deben, solo Fechas pasadas) incluye una Fecha con **más de 7 días de calendario** en `America/Lima`, al entrar se muestra un modal. Se cierra con X, Escape o tocando afuera. Una vez por visita (`sessionStorage`; un refresh no lo reabre). Módulo: `web/src/lib/debts/overdueNudge.ts`.
 
-**Pagar / Ya pagué:** el deudor abre el sheet, transfiere por Yape/Plin fuera de la app, y puede marcar “Ya pagué” (una o varias deudas al mismo acreedor) → push al acreedor (`debtSettled`). No cierra la deuda.
+**Pagar / Ya pagué:** el deudor abre el sheet, transfiere por Yape/Plin el **saldo** (no la suma bruta si hay compensación), y puede marcar “Ya pagué” → push al acreedor (`debtSettled`) con ese saldo. No cierra la deuda.
 
-**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar. Al saldar se guardan `settledAt` y `settledById` (el actor) y se limpia `paymentClaimedAt`. En Historial: “Saldó el acreedor (Nombre)” o “Saldó un admin (Nombre)” según `settledById === toUserId` o no. Filas sin `settledById` (antes del campo) solo muestran la fecha.
+**Saldar:** el acreedor (`toUserId`) o un **admin de app**, y solo cuando la fecha ya es pasada (misma regla que el hub). El deudor no puede saldar una fecha suelta. **Saldar saldo** cierra los dos sentidos a la vez (ver arriba). Al saldar se guardan `settledAt` y `settledById` (el actor) y se limpia `paymentClaimedAt`. En Historial: “Saldó el acreedor (Nombre)”, “Saldó un admin (Nombre)”, o “Compensación de saldos · Nombre” si `settledAsNet`. Filas sin `settledById` (antes del campo) solo muestran la fecha.
 
 **Sync al cambiar Voy / costo / financiador / recoge bolas** (`syncOpenDebtsForSession`): recalcula deudas `open`; conserva `settled` que sigan coincidiendo (mismos from/to/monto); **borra** `settled` huérfanas (p. ej. el deudor pasó a “No voy”); preserva `paymentClaimedAt` en edges open que se recrean. Módulo: `web/src/lib/debts/reconcile.ts`.
 

@@ -7,6 +7,7 @@ import {
   paymentWalletLabel,
   whatsAppDebtUrl,
 } from "./paymentProfile";
+import { formatSoles } from "@/lib/format";
 
 describe("normalizePaymentPhone", () => {
   it("accepts 9-digit PE mobile", () => {
@@ -67,6 +68,25 @@ describe("buildDebtPayMessage", () => {
     });
     expect(msg).toContain("estas fechas");
     expect(msg).toContain("S/");
+  });
+
+  it("asks to transfer the remainder when the other side offsets", () => {
+    const msg = buildDebtPayMessage({
+      creditorName: "Bruno",
+      debts: [
+        { amount: 20, sessionStartsAt: "2026-08-12T20:00:00.000Z" },
+        { amount: 10, sessionStartsAt: "2026-08-13T20:00:00.000Z" },
+      ],
+      offsetDebts: [
+        { amount: 18, sessionStartsAt: "2026-08-11T20:00:00.000Z" },
+      ],
+    });
+    expect(msg.split("\n")[0]).toBe(
+      `Hola Bruno, te transferiré ${formatSoles(12)}.`,
+    );
+    expect(msg).toContain(
+      `Se compensan ${formatSoles(18)} que me debes contra ${formatSoles(30)} que te debo.`,
+    );
   });
 });
 

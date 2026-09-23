@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canClaimDebtPaid, canSettleDebt } from "./permissions";
+import { canClaimDebtPaid, canSettleDebt, canSettleNetPair } from "./permissions";
 
 const startsAt = new Date("2026-07-26T20:00:00.000Z");
 const duringResults = new Date("2026-07-26T21:30:00.000Z");
@@ -64,6 +64,44 @@ describe("canSettleDebt", () => {
         },
         afterPast,
       ),
+    ).toBe(true);
+  });
+});
+
+describe("canSettleNetPair", () => {
+  const pair = {
+    debtorId: "ana",
+    creditorId: "bruno",
+    netAmount: 12,
+    offset: 18,
+  };
+
+  it("lets the net creditor close a remainder", () => {
+    expect(canSettleNetPair({ ...pair, userId: "bruno" })).toBe(true);
+    expect(canSettleNetPair({ ...pair, userId: "ana" })).toBe(false);
+  });
+
+  it("lets either side close an exact offset", () => {
+    expect(
+      canSettleNetPair({ ...pair, netAmount: 0, userId: "ana" }),
+    ).toBe(true);
+    expect(
+      canSettleNetPair({ ...pair, netAmount: 0, userId: "bruno" }),
+    ).toBe(true);
+    expect(
+      canSettleNetPair({ ...pair, netAmount: 0, userId: "carlos" }),
+    ).toBe(false);
+  });
+
+  it("does not treat a one-direction balance as a net", () => {
+    expect(canSettleNetPair({ ...pair, offset: 0, userId: "bruno" })).toBe(
+      false,
+    );
+  });
+
+  it("lets an app admin close any offset pair", () => {
+    expect(
+      canSettleNetPair({ ...pair, userId: "admin", isAppAdmin: true }),
     ).toBe(true);
   });
 });

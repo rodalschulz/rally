@@ -1,4 +1,5 @@
 import { roundMoney } from "@/lib/domain/split";
+import { netOpenDebtPairs, type NettableDebt } from "@/lib/debts/netPairs";
 import { appCalendarDayKey } from "@/lib/timezone";
 
 /** Calendar days (America/Lima) between the fecha and today to nag. */
@@ -69,6 +70,59 @@ export function summarizeOverdueDebts(
   return {
     totalAmount: roundMoney(totalAmount),
     debtCount: overdue.length,
+    groupSlug,
+  };
+}
+
+export type NettableOverdueDebt = NettableDebt & { groupSlug: string };
+
+/**
+ * Nag the net debtor for the remainder, not the gross.
+ * A pair that cancels does not nag. The other direction counts even when
+ * that fecha is not itself older than a week.
+ */
+export function summarizeNetOverdueForUser(
+  debts: NettableOverdueDebt[],
+  userId: string,
+  now: string | Date = new Date(),
+): OverdueDebtNudge | null {
+  const pairs = netOpenDebtPairs(
+    debts.map((debt) => ({ ...debt, groupKey: debt.groupSlug })),
+    new Date(now),
+  );
+
+  let totalAmount = 0;
+  let debtCount = 0;
+  const bySlug = new Map<string, number>();
+
+  for (const pair of pairs) {
+    if (pair.debtorId !== userId || pair.netAmount <= 0) continue;
+    const overdueFechas = pair.debtorDebts.filter((debt) =>
+      isOverdueConfirmedOpenDebt(debt.sessionStartsAt, now),
+    );
+    if (overdueFechas.length === 0) continue;
+    totalAmount += pair.netAmount;
+    debtCount += overdueFechas.length;
+    bySlug.set(
+      pair.groupKey,
+      roundMoney((bySlug.get(pair.groupKey) ?? 0) + pair.netAmount),
+    );
+  }
+
+  if (debtCount === 0) return null;
+
+  let groupSlug = pairs[0]?.groupKey ?? "";
+  let best = -1;
+  for (const [slug, amount] of bySlug) {
+    if (amount > best) {
+      best = amount;
+      groupSlug = slug;
+    }
+  }
+
+  return {
+    totalAmount: roundMoney(totalAmount),
+    debtCount,
     groupSlug,
   };
 }

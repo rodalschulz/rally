@@ -12,7 +12,7 @@ import {
   whatsAppDebtUrl,
   type DebtPayLine,
 } from "@/lib/debts/paymentProfile";
-import { sumMoney } from "@/lib/domain/split";
+import { roundMoney, sumMoney } from "@/lib/domain/split";
 import { formatSoles } from "@/lib/format";
 
 export type PayDebtSheetCreditor = {
@@ -32,11 +32,18 @@ export function PayDebtSheet({
   onClose,
   creditor,
   debts,
+  offsetDebts = [],
+  payAmount,
+  claimMode,
 }: {
   open: boolean;
   onClose: () => void;
   creditor: PayDebtSheetCreditor;
   debts: PayDebtSheetDebt[];
+  offsetDebts?: DebtPayLine[];
+  /** Transfer amount when opposite debts are offset. Defaults to the sum. */
+  payAmount?: number;
+  claimMode?: "net";
 }) {
   const [portalReady, setPortalReady] = useState(false);
   const [copied, setCopied] = useState<"phone" | "amount" | "message" | null>(
@@ -69,10 +76,13 @@ export function PayDebtSheet({
 
   if (!portalReady || !open || debts.length === 0) return null;
 
-  const total = sumMoney(debts.map((d) => d.amount));
+  const gross = sumMoney(debts.map((d) => d.amount));
+  const offset = sumMoney(offsetDebts.map((d) => d.amount));
+  const total = payAmount ?? roundMoney(gross - offset);
   const message = buildDebtPayMessage({
     creditorName: creditor.displayName,
     debts,
+    offsetDebts: offset > 0 ? offsetDebts : undefined,
   });
   const phone = creditor.paymentPhone ?? null;
   const wallet = paymentWalletLabel(creditor.paymentWallet);
@@ -112,7 +122,11 @@ export function PayDebtSheet({
             </h2>
             <p className="mt-0.5 text-[0.85rem] text-muted">
               {formatSoles(total)}
-              {debts.length > 1 ? ` · ${debts.length} fechas` : ""}
+              {offset > 0
+                ? ` · se compensan ${formatSoles(offset)}`
+                : debts.length > 1
+                  ? ` · ${debts.length} fechas`
+                  : ""}
             </p>
           </div>
           <button
@@ -191,6 +205,9 @@ export function PayDebtSheet({
             }}
           >
             <input type="hidden" name="debtIds" value={debtIds} />
+            {claimMode === "net" ? (
+              <input type="hidden" name="claimMode" value="net" />
+            ) : null}
             <PendingSubmitButton
               pendingLabel="Avisando…"
               className="w-full rounded-2xl bg-ink py-3 text-[0.95rem] font-semibold text-sand"
@@ -208,9 +225,15 @@ export function PayDebtSheet({
 export function PayDebtButton({
   creditor,
   debts,
+  offsetDebts,
+  payAmount,
+  claimMode,
 }: {
   creditor: PayDebtSheetCreditor;
   debts: PayDebtSheetDebt[];
+  offsetDebts?: DebtPayLine[];
+  payAmount?: number;
+  claimMode?: "net";
 }) {
   const [open, setOpen] = useState(false);
 
@@ -228,6 +251,9 @@ export function PayDebtButton({
         onClose={() => setOpen(false)}
         creditor={creditor}
         debts={debts}
+        offsetDebts={offsetDebts}
+        payAmount={payAmount}
+        claimMode={claimMode}
       />
     </>
   );

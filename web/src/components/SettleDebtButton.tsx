@@ -8,21 +8,22 @@ export function SettleDebtButton({
   fromName,
   toName,
   amountLabel,
+  confirmMessage,
 }: {
   debtId: string;
   fromName: string;
   toName: string;
   amountLabel: string;
+  confirmMessage?: string;
 }) {
+  const message =
+    confirmMessage ??
+    `¿Saldar la deuda de ${fromName} a ${toName} por ${amountLabel}?`;
   return (
     <form
       action={settleDebtAction}
       onSubmit={(e) => {
-        if (
-          !window.confirm(
-            `¿Saldar la deuda de ${fromName} a ${toName} por ${amountLabel}?`,
-          )
-        ) {
+        if (!window.confirm(message)) {
           e.preventDefault();
         }
       }}

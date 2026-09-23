@@ -66,6 +66,8 @@ export type Debt = {
   settledAt?: string;
   /** Who marked it settled (creditor or app admin). Absent on legacy rows. */
   settledById?: PlayerId;
+  /** Closed together with the opposite debts between the same two people. */
+  settledAsNet?: boolean;
   /** Debtor tapped "Ya pagué". Cleared when settled. */
   paymentClaimedAt?: string;
 };

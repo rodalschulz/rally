@@ -3,6 +3,11 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { SettledDebtsHistory } from "@/components/SettledDebtsHistory";
 import { listGroupPlayers, listOpenDebts, listSettledDebts } from "@/lib/data/queries";
 import { SETTLED_DEBTS_PREVIEW_LIMIT } from "@/lib/debts/history";
+import {
+  debtCountsTowardBalance,
+  netOpenDebtPairs,
+  splitNetPairsForViewer,
+} from "@/lib/debts/netPairs";
 import { userIsAppAdmin } from "@/lib/admin";
 import { netBalances, sumMoney } from "@/lib/domain/split";
 import { formatSoles } from "@/lib/format";
@@ -26,14 +31,18 @@ export default async function DebtsPage({
     listGroupPlayers(group.id),
     userIsAppAdmin(me),
   ]);
+  const counting = open.filter((debt) =>
+    debtCountsTowardBalance(debt.sessionStartsAt),
+  );
+  const view = splitNetPairsForViewer(netOpenDebtPairs(counting), me);
   const balances = netBalances(
-    open,
+    counting,
     players.map((p) => p.id),
   );
   const hasMoreSettled = settledRows.length > SETTLED_DEBTS_PREVIEW_LIMIT;
   const settledPreview = settledRows.slice(0, SETTLED_DEBTS_PREVIEW_LIMIT);
-  const owedToMe = open.filter((d) => d.toPlayerId === me);
-  const iOwe = open.filter((d) => d.fromPlayerId === me);
+  const owedToMeTotal = sumMoney(view.owedToMe.map((pair) => pair.netAmount));
+  const iOweTotal = sumMoney(view.iOwe.map((pair) => pair.netAmount));
   const playersById = new Map(players.map((p) => [p.id, p]));
 
   return (
@@ -43,20 +52,20 @@ export default async function DebtsPage({
           Deudas
         </h1>
         <p className="mt-1 text-[0.95rem] text-muted">
-          Cada deuda pertenece a una fecha. Paga por Yape/Plin y avisa; solo el
-          acreedor salda cuando confirmó el cobro (fecha ya pasada).
+          Solo cuentan Fechas pasadas. Si se deben mutuamente, ves el saldo:
+          lo que te deben se descuenta de lo que debes.
         </p>
       </section>
 
       <section className="animate-rise mb-6 grid grid-cols-2 gap-3">
         <Stat
           label="Te deben"
-          value={formatSoles(sumMoney(owedToMe.map((d) => d.amount)))}
+          value={formatSoles(owedToMeTotal)}
           tone="good"
         />
         <Stat
           label="Debes"
-          value={formatSoles(sumMoney(iOwe.map((d) => d.amount)))}
+          value={formatSoles(iOweTotal)}
           tone="warn"
         />
       </section>
@@ -106,15 +115,18 @@ export default async function DebtsPage({
       <section className="mb-2">
         <div className="mb-4 flex items-start justify-between gap-2">
           <p className="text-[0.85rem] leading-snug text-muted">
-            Solo quien recibe (o un admin) puede
-            Saldar cuando la fecha ya pasó.
+            Solo quien recibe el saldo (o un admin) puede
+            Saldar cuando la fecha ya pasó. Saldar saldo cierra los dos lados.
           </p>
         </div>
         <OpenDebtsSections
           slug={slug}
           me={me}
           isAppAdmin={isAppAdmin}
-          open={open}
+          owedToMe={view.owedToMe}
+          iOwe={view.iOwe}
+          settledOff={view.settledOff}
+          others={view.others}
           playersById={playersById}
         />
       </section>

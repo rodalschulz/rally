@@ -237,6 +237,11 @@ model Debt {
   settledAt     DateTime?
   /** Who marked it settled (creditor or app admin). Null = legacy / unknown. */
   settledById   String?
+  /**
+   * Closed as part of a pairwise balance (both directions settled together).
+   * The row amount is still the fecha share, not the cash that changed hands.
+   */
+  settledAsNet  Boolean    @default(false)
   /** Debtor tapped "Ya pagué" — awaiting creditor settle. Cleared when settled. */
   paymentClaimedAt DateTime?
   createdAt     DateTime   @default(now())

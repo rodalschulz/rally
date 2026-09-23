@@ -114,7 +114,7 @@ Tests de dominio: Vitest (`npm test` en `web/`). Auditoría Elo opcional: `npm r
 
 ### Datos y consistencia
 
-- Al cambiar `costAmount`, `financierId`, recoge bolas o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita).
+- Al cambiar `costAmount`, `financierId`, recoge bolas o set de `going`, **recalcular deudas** de esa sesión (reemplazar deudas `open` derivadas; no tocar `settled` sin regla explícita). En `/deudas` el saldo entre dos personas se calcula al leer (solo Fechas pasadas); las filas siguen siendo una por Fecha.
 - Rankings: on-read — Singles `buildEloRanking` por `unit` (Games \| Sets). Sin pantalla de ranking dobles. Resumen de fecha: `buildSessionSinglesResumen` por unit (Elo.G / Elo.S; baseline solo fechas anteriores; Sets solo si hubo sets). Ficha de jugador: `buildPlayerGameStats` (Ranking; `unit` game|set; historial por Fecha del grupo) y `buildPlayerFechaGameStats` (Resumen Games; historial por Game de la Fecha).
 - Contraseñas de grupo: solo `passwordHash` (bcrypt); nunca al cliente.
 

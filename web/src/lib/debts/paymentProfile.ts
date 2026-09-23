@@ -1,5 +1,5 @@
 import type { PaymentWallet } from "@/lib/domain/types";
-import { sumMoney } from "@/lib/domain/split";
+import { roundMoney, sumMoney } from "@/lib/domain/split";
 import { formatSessionChip, formatSessionWhen, formatSoles } from "@/lib/format";
 
 const PE_MOBILE = /^9\d{8}$/;
@@ -56,18 +56,37 @@ export type DebtPayLine = {
 export function buildDebtPayMessage(args: {
   creditorName: string;
   debts: DebtPayLine[];
+  /** Opposite fechas already owed to the debtor; subtracted from the transfer. */
+  offsetDebts?: DebtPayLine[];
 }): string {
-  const total = sumMoney(args.debts.map((d) => d.amount));
-  const lines = args.debts.map((d) => {
+  const gross = sumMoney(args.debts.map((d) => d.amount));
+  const offset = sumMoney((args.offsetDebts ?? []).map((d) => d.amount));
+  const net = roundMoney(gross - offset);
+  const line = (d: DebtPayLine) => {
     const when = formatSessionWhen(d.sessionStartsAt);
     const chip = formatSessionChip(d.sessionStartsAt);
     const court = d.sessionCourtLabel ? ` · ${d.sessionCourtLabel}` : "";
     return `· ${formatSoles(d.amount)} — ${chip} · ${when.time}${court}`;
-  });
+  };
+
+  if (offset > 0) {
+    return [
+      `Hola ${args.creditorName}, te transferiré ${formatSoles(net)}.`,
+      `Se compensan ${formatSoles(offset)} que me debes contra ${formatSoles(gross)} que te debo.`,
+      "",
+      "Lo que te debo:",
+      ...args.debts.map(line),
+      "",
+      "Lo que me debes:",
+      ...(args.offsetDebts ?? []).map(line),
+    ].join("\n");
+  }
+
+  const lines = args.debts.map(line);
   const intro =
     args.debts.length === 1
-      ? `Hola ${args.creditorName}, te transferiré ${formatSoles(total)} por la fecha:`
-      : `Hola ${args.creditorName}, te transferiré ${formatSoles(total)} por estas fechas:`;
+      ? `Hola ${args.creditorName}, te transferiré ${formatSoles(gross)} por la fecha:`
+      : `Hola ${args.creditorName}, te transferiré ${formatSoles(gross)} por estas fechas:`;
   return [intro, ...lines].join("\n");
 }
 

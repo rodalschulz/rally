@@ -36,7 +36,8 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/sessions/recogeBolas.ts` | Aplicar/editar recoge bolas: Voy hasta aplicar; después solo admin |
 | `lib/sessions/goingPlayers.ts` | Orden de avatares going: creador + A–Z |
 | `lib/groups/calendarUrl.ts` | Link de Google Calendar: dueño/admin editan; URL https de calendar.google.com |
-| `lib/debts/permissions.ts` | Saldar solo acreedor o admin + fecha pasada |
+| `lib/debts/permissions.ts` | Saldar solo acreedor o admin + fecha pasada; Saldar saldo solo si hay compensación |
+| `lib/debts/netPairs.ts` | Saldo entre dos personas; Fechas futuras no cuentan |
 | `lib/debts/overdueNudge.ts` | Modal al entrar: deuda open + Fecha > 7 días de calendario (Lima) |
 | `lib/debts/settleLabel.ts` | Copy del Historial: acreedor vs admin según `settledById` |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
