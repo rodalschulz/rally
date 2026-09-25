@@ -93,6 +93,10 @@ const TABS: HelpTab[] = [
         desc: "Hay un ranking por Games y otro por Sets. Cambia entre ellos con el selector de arriba. En Sets, un 6-0 mueve más Elo que un 6-4; en Games cada game cuenta igual.",
       },
       {
+        title: "Sin jugar 21 días",
+        desc: "En Games, si no tuviste un resultado por más de 21 días, bajas al final, sin puesto, en gris. El Elo se mantiene. Sets no tiene este estado. Al volver a jugar un Game, recuperas lugar.",
+      },
+      {
         title: "Toca un jugador",
         desc: "En el Ranking, toca a cualquier jugador para abrir su ficha: historial de Elo, racha más larga, rival más jugado (y vs cada uno), asistencia y más.",
       },

@@ -110,4 +110,9 @@ export type RankingRow = {
   wins: number;
   losses: number;
   points: number;
+  /**
+   * Games ladder only: no ranked Game in more than 21 calendar days (Lima).
+   * Still listed, with Elo, but not assigned a place. Always false on Sets.
+   */
+  inactive: boolean;
 };

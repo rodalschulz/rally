@@ -17,10 +17,19 @@ describe("detectLeaderChange", () => {
 });
 
 describe("leaderIdFromRows", () => {
-  it("reads first row", () => {
+  it("reads the first active row", () => {
     expect(
       leaderIdFromRows([{ playerId: "a" }, { playerId: "b" }]),
     ).toBe("a");
+    expect(
+      leaderIdFromRows([
+        { playerId: "stale", inactive: true },
+        { playerId: "a", inactive: false },
+      ]),
+    ).toBe("a");
+    expect(
+      leaderIdFromRows([{ playerId: "stale", inactive: true }]),
+    ).toBeNull();
     expect(leaderIdFromRows([])).toBeNull();
   });
 });

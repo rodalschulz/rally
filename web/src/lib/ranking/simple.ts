@@ -20,7 +20,14 @@ export function buildRanking(
   const bump = (id: PlayerId) => {
     let row = stats.get(id);
     if (!row) {
-      row = { playerId: id, played: 0, wins: 0, losses: 0, points: 0 };
+      row = {
+        playerId: id,
+        played: 0,
+        wins: 0,
+        losses: 0,
+        points: 0,
+        inactive: false,
+      };
       stats.set(id, row);
     }
     return row;

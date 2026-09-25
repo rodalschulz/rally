@@ -25,8 +25,8 @@ describe("buildRanking", () => {
       "set",
     );
     expect(rows).toEqual([
-      { playerId: "a", played: 1, wins: 1, losses: 0, points: 3 },
-      { playerId: "b", played: 1, wins: 0, losses: 1, points: 0 },
+      { playerId: "a", played: 1, wins: 1, losses: 0, points: 3, inactive: false },
+      { playerId: "b", played: 1, wins: 0, losses: 1, points: 0, inactive: false },
     ]);
   });
 
@@ -52,8 +52,8 @@ describe("buildRanking", () => {
 
     const rows = buildRanking(matches, "singles", "set");
     expect(rows).toEqual([
-      { playerId: "a", played: 2, wins: 1, losses: 1, points: 3 },
-      { playerId: "b", played: 2, wins: 1, losses: 1, points: 3 },
+      { playerId: "a", played: 2, wins: 1, losses: 1, points: 3, inactive: false },
+      { playerId: "b", played: 2, wins: 1, losses: 1, points: 3, inactive: false },
     ]);
   });
 
@@ -81,8 +81,8 @@ describe("buildRanking", () => {
 
     const rows = buildRanking(matches, "singles", "game");
     expect(rows).toEqual([
-      { playerId: "a", played: 2, wins: 2, losses: 0, points: 2 },
-      { playerId: "b", played: 2, wins: 0, losses: 2, points: 0 },
+      { playerId: "a", played: 2, wins: 2, losses: 0, points: 2, inactive: false },
+      { playerId: "b", played: 2, wins: 0, losses: 2, points: 0, inactive: false },
     ]);
   });
 

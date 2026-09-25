@@ -338,7 +338,13 @@ export function buildPlayerGameStats(input: {
   const nowMs = now.getTime();
   const joinedMs = Date.parse(joinedAt);
 
-  const ranking = buildEloRanking(matches, unit, memberIds, displayNameById);
+  const ranking = buildEloRanking(
+    matches,
+    unit,
+    memberIds,
+    displayNameById,
+    now,
+  );
   const rankIndex = ranking.findIndex((r) => r.playerId === playerId);
   const rankRow = rankIndex >= 0 ? ranking[rankIndex]! : null;
 
@@ -535,7 +541,8 @@ export function buildPlayerGameStats(input: {
   return {
     playerId,
     currentElo,
-    rank: rankIndex >= 0 ? rankIndex + 1 : null,
+    rank:
+      rankRow == null || rankRow.inactive ? null : rankIndex + 1,
     wins,
     losses,
     played,

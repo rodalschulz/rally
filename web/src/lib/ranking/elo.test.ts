@@ -27,8 +27,8 @@ describe("buildEloRanking", () => {
   it("seeds all members at the initial rating with no matches", () => {
     expect(buildEloRanking([], "set")).toEqual([]);
     expect(buildEloRanking([], "set", ["b", "a"])).toEqual([
-      { playerId: "a", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
-      { playerId: "b", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
+      { playerId: "a", played: 0, wins: 0, losses: 0, points: ELO_INITIAL, inactive: false },
+      { playerId: "b", played: 0, wins: 0, losses: 0, points: ELO_INITIAL, inactive: false },
     ]);
   });
 
@@ -85,7 +85,13 @@ describe("buildEloRanking", () => {
       }),
     ];
 
-    const rows = buildEloRanking(matches, "set");
+    const rows = buildEloRanking(
+      matches,
+      "set",
+      [],
+      new Map(),
+      new Date("2026-09-24T12:00:00.000Z"),
+    );
     const k = ELO_K_BY_UNIT.set;
     const expectedWinner = Math.round(ELO_INITIAL + k * 0.5);
     const expectedLoser = Math.round(ELO_INITIAL - k * 0.5);
@@ -97,6 +103,7 @@ describe("buildEloRanking", () => {
         wins: 1,
         losses: 0,
         points: expectedWinner,
+        inactive: false,
       },
       {
         playerId: "b",
@@ -104,6 +111,7 @@ describe("buildEloRanking", () => {
         wins: 0,
         losses: 1,
         points: expectedLoser,
+        inactive: false,
       },
     ]);
   });
@@ -245,8 +253,8 @@ describe("buildEloRanking", () => {
 
     // Delete: empty ladder again.
     expect(buildEloRanking([], "game", ["a", "b"])).toEqual([
-      { playerId: "a", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
-      { playerId: "b", played: 0, wins: 0, losses: 0, points: ELO_INITIAL },
+      { playerId: "a", played: 0, wins: 0, losses: 0, points: ELO_INITIAL, inactive: false },
+      { playerId: "b", played: 0, wins: 0, losses: 0, points: ELO_INITIAL, inactive: false },
     ]);
   });
 
@@ -314,6 +322,111 @@ describe("buildEloRanking", () => {
       "game",
     );
     expect(g1[0]?.points).toBe(Math.round(ELO_INITIAL + ELO_K_BY_UNIT.game * 0.5));
+  });
+});
+
+describe("ranking inactivity", () => {
+  const now = new Date("2026-09-24T15:00:00.000Z");
+
+  it("drops players with no ranked match in more than 21 Lima days and keeps Elo order", () => {
+    const names = new Map([
+      ["hot", "Hot"],
+      ["warm", "Warm"],
+      ["cold-high", "Cold High"],
+      ["cold-low", "Cold Low"],
+    ]);
+    const matches: Match[] = [
+      match({
+        id: "recent-high",
+        sideA: ["hot"],
+        sideB: ["warm"],
+        unit: "game",
+        score: "1-0",
+        winnerSide: "A",
+        sessionStartsAt: "2026-09-20T15:00:00.000Z",
+        createdAt: "2026-09-20T16:00:00.000Z",
+      }),
+      match({
+        id: "stale-high",
+        unit: "game",
+        score: "1-0",
+        sideA: ["cold-high"],
+        sideB: ["cold-low"],
+        winnerSide: "A",
+        sessionStartsAt: "2026-08-01T15:00:00.000Z",
+        createdAt: "2026-08-01T16:00:00.000Z",
+      }),
+    ];
+    const rows = buildEloRanking(matches, "game", [], names, now);
+    expect(rows.map((r) => r.playerId)).toEqual([
+      "hot",
+      "warm",
+      "cold-high",
+      "cold-low",
+    ]);
+    expect(rows.map((r) => r.inactive)).toEqual([false, false, true, true]);
+    expect(rows[2]!.points).toBeGreaterThan(rows[3]!.points);
+    expect(rows[2]!.points).toBeGreaterThan(0);
+  });
+
+  it("keeps a player active on day 21 and inactive after that", () => {
+    const onDay21 = buildEloRanking(
+      [
+        match({
+          id: "d21",
+          unit: "game",
+          score: "1-0",
+          winnerSide: "A",
+          sessionStartsAt: "2026-09-03T15:00:00.000Z",
+          createdAt: "2026-09-03T16:00:00.000Z",
+        }),
+      ],
+      "game",
+      [],
+      new Map(),
+      now,
+    );
+    expect(onDay21).toHaveLength(2);
+    expect(onDay21.every((r) => r.inactive === false)).toBe(true);
+
+    const past = buildEloRanking(
+      [
+        match({
+          id: "d22",
+          unit: "game",
+          score: "1-0",
+          winnerSide: "A",
+          sessionStartsAt: "2026-09-02T15:00:00.000Z",
+          createdAt: "2026-09-02T16:00:00.000Z",
+        }),
+      ],
+      "game",
+      [],
+      new Map(),
+      now,
+    );
+    expect(past).toHaveLength(2);
+    expect(past.every((r) => r.inactive)).toBe(true);
+  });
+
+  it("never marks the Sets ladder inactive, even after a long gap", () => {
+    const rows = buildEloRanking(
+      [
+        match({
+          id: "old-set",
+          unit: "set",
+          winnerSide: "A",
+          sessionStartsAt: "2026-01-01T15:00:00.000Z",
+          createdAt: "2026-01-01T16:00:00.000Z",
+        }),
+      ],
+      "set",
+      [],
+      new Map(),
+      now,
+    );
+    expect(rows.map((r) => r.playerId).sort()).toEqual(["a", "b"]);
+    expect(rows.every((r) => r.inactive === false)).toBe(true);
   });
 });
 

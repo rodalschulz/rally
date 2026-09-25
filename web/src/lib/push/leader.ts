@@ -11,9 +11,9 @@ export function detectLeaderChange(
   return { previousId: previousLeaderId, nextId: nextLeaderId };
 }
 
-/** First player id from a ranking rows array (already sorted best-first). */
+/** First active player from a ranking already sorted best-first. Inactive rows have no place. */
 export function leaderIdFromRows(
-  rows: ReadonlyArray<{ playerId: string }>,
+  rows: ReadonlyArray<{ playerId: string; inactive?: boolean }>,
 ): string | null {
-  return rows[0]?.playerId ?? null;
+  return rows.find((row) => !row.inactive)?.playerId ?? null;
 }

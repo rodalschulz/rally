@@ -86,7 +86,7 @@ describe("buildPlayerGameStats", () => {
     expect(s.eloMax).toBeGreaterThanOrEqual(ELO_INITIAL);
     expect(s.eloHistory).toHaveLength(2); // Inicio 1000 + 1 Fecha
     expect(s.eloHistory[0]).toMatchObject({ elo: ELO_INITIAL, isStart: true });
-    expect(s.rank).toBe(1);
+    expect(s.rank).toBeNull();
   });
 
   it("counts win streak across fechas", () => {

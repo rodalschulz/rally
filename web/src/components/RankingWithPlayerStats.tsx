@@ -88,22 +88,33 @@ export function RankingWithPlayerStats({
         {rows.map((row, i) => {
           const player = playersById[row.playerId];
           if (!player) return null;
+          const place = row.inactive
+            ? null
+            : rows.slice(0, i).filter((r) => !r.inactive).length + 1;
           return (
             <li
               key={row.playerId}
-              className="animate-row flex items-center gap-2 border-b border-ink/6 px-3 py-3.5 last:border-b-0"
+              className={`animate-row flex items-center gap-2 border-b border-ink/6 px-3 py-3.5 last:border-b-0 ${
+                row.inactive ? "bg-ink/[0.04] grayscale" : ""
+              }`}
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <span className="mr-1.5 w-5 shrink-0 text-right text-[0.9rem] font-medium tabular-nums text-muted">
-                {i + 1}
+                {place ?? ""}
               </span>
               <button
                 type="button"
                 onClick={() => setSelectedId(player.id)}
-                className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:opacity-80"
+                className={`flex min-w-0 flex-1 items-center gap-3 text-left transition active:opacity-80 ${
+                  row.inactive ? "text-muted" : ""
+                }`}
                 aria-label={`Ver estadísticas de ${player.displayName}`}
               >
-                <span className="inline-grid size-16 shrink-0 place-items-center">
+                <span
+                  className={`inline-grid size-16 shrink-0 place-items-center ${
+                    row.inactive ? "opacity-50" : ""
+                  }`}
+                >
                   <PlayerAvatar
                     player={player}
                     size={player.avatarUrl ? "xl" : "md"}
@@ -111,7 +122,11 @@ export function RankingWithPlayerStats({
                   />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[1rem] font-medium tracking-[-0.01em] text-ink">
+                  <p
+                    className={`truncate text-[1rem] font-medium tracking-[-0.01em] ${
+                      row.inactive ? "text-muted" : "text-ink"
+                    }`}
+                  >
                     {player.displayName}
                   </p>
                   <p className="text-[0.8rem] text-muted">
@@ -119,8 +134,12 @@ export function RankingWithPlayerStats({
                   </p>
                 </div>
               </button>
-              <div className="text-right">
-                <p className="text-[1.1rem] font-semibold tabular-nums tracking-[-0.02em] text-ink">
+              <div className={`text-right ${row.inactive ? "opacity-60" : ""}`}>
+                <p
+                  className={`text-[1.1rem] font-semibold tabular-nums tracking-[-0.02em] ${
+                    row.inactive ? "text-muted" : "text-ink"
+                  }`}
+                >
                   {row.points}
                 </p>
                 <p className="text-[0.7rem] text-muted">{scoreLabel}</p>
