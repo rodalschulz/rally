@@ -5,7 +5,7 @@ import { GroupCalendarButton } from "@/components/GroupCalendarButton";
 import { MembersPanel } from "@/components/MembersPanel";
 import { PastSessionsSection } from "@/components/PastSessionsSection";
 import { SessionRow, goingFrom } from "@/components/SessionRow";
-import { userIsAppAdmin } from "@/lib/admin";
+import { sessionIsAppAdmin } from "@/lib/admin";
 import {
   listGroupMembers,
   listPastPlaySessions,
@@ -28,15 +28,16 @@ export default async function GroupHubPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const group = await requireGroupMember(slug);
+  const scope = { slug };
 
-  const [upcomingRows, pastRows, members, isAppAdmin] = await Promise.all([
-    listUpcomingPlaySessions(group.id),
-    listPastPlaySessions(group.id, {
+  const [group, upcomingRows, pastRows, members, isAppAdmin] = await Promise.all([
+    requireGroupMember(slug),
+    listUpcomingPlaySessions(scope),
+    listPastPlaySessions(scope, {
       take: PAST_SESSIONS_PREVIEW_LIMIT + 1,
     }),
-    listGroupMembers(group.id),
-    userIsAppAdmin(group.membership.userId),
+    listGroupMembers(scope),
+    sessionIsAppAdmin(),
   ]);
   const players = members.map((m) => m.player);
 

@@ -8,7 +8,7 @@ import {
   netOpenDebtPairs,
   splitNetPairsForViewer,
 } from "@/lib/debts/netPairs";
-import { userIsAppAdmin } from "@/lib/admin";
+import { sessionIsAppAdmin } from "@/lib/admin";
 import { netBalances, sumMoney } from "@/lib/domain/split";
 import { formatSoles } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
@@ -22,15 +22,16 @@ export default async function DebtsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const group = await requireGroupMember(slug);
-  const me = group.membership.userId;
+  const scope = { slug };
 
-  const [open, settledRows, players, isAppAdmin] = await Promise.all([
-    listOpenDebts(group.id),
-    listSettledDebts(group.id, { take: SETTLED_DEBTS_PREVIEW_LIMIT + 1 }),
-    listGroupPlayers(group.id),
-    userIsAppAdmin(me),
+  const [group, open, settledRows, players, isAppAdmin] = await Promise.all([
+    requireGroupMember(slug),
+    listOpenDebts(scope),
+    listSettledDebts(scope, { take: SETTLED_DEBTS_PREVIEW_LIMIT + 1 }),
+    listGroupPlayers(scope),
+    sessionIsAppAdmin(),
   ]);
+  const me = group.membership.userId;
   const counting = open.filter((debt) =>
     debtCountsTowardBalance(debt.sessionStartsAt),
   );

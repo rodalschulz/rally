@@ -26,15 +26,15 @@ export default async function SinglesRankingPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ unit?: string | string[] }>;
 }) {
-  const { slug } = await params;
-  const sp = await searchParams;
+  const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const unit = resolveUnit(sp.unit);
-  const group = await requireGroupMember(slug);
+  const scope = { slug };
 
-  const [matches, members, sessionRows] = await Promise.all([
-    listRankingMatches(group.id),
-    listGroupMembers(group.id),
-    listPlaySessions(group.id),
+  const [, matches, members, sessionRows] = await Promise.all([
+    requireGroupMember(slug),
+    listRankingMatches(scope),
+    listGroupMembers(scope),
+    listPlaySessions(scope),
   ]);
   const players = members.map((m) => m.player);
   const memberIds = players.map((p) => p.id);

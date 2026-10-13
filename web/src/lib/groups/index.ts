@@ -61,25 +61,33 @@ export const getMembership = cache(async (groupId: string, userId: string) => {
   });
 });
 
-/** Member gate for group hub routes. Deduped per request via React.cache. */
+/**
+ * Member gate for group hub routes. Deduped per request via React.cache.
+ * Group + this user's membership are one query so navigation is a single
+ * round trip instead of slug, then membership, then the page's data.
+ */
 export const requireGroupMember = cache(
   async (slug: string): Promise<GroupWithRole> => {
-    const [userId, group] = await Promise.all([
-      requireUserId(),
-      getGroupBySlug(slug),
-    ]);
+    const userId = await requireUserId();
+    const group = await prisma.group.findUnique({
+      where: { slug },
+      include: {
+        members: { where: { userId }, take: 1 },
+      },
+    });
     if (!group) {
       await clearHomeGroupCookieIfSlug(slug);
       redirect("/");
     }
 
-    const membership = await getMembership(group.id, userId);
+    const { members, ...rest } = group;
+    const membership = members[0];
     if (!membership) {
       await clearHomeGroupCookieIfSlug(slug);
       redirect(`/join/${group.inviteCode}`);
     }
 
-    return { ...group, membership };
+    return { ...rest, membership };
   },
 );
 

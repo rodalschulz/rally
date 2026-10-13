@@ -11,7 +11,7 @@ import {
 } from "@/lib/data/queries";
 import { toDatetimeLocalValue } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
-import { userIsAppAdmin } from "@/lib/admin";
+import { sessionIsAppAdmin } from "@/lib/admin";
 import { canEditPlaySession } from "@/lib/sessions/permissions";
 
 export const dynamic = "force-dynamic";
@@ -22,14 +22,15 @@ export default async function EditSessionPage({
   params: Promise<{ slug: string; id: string }>;
 }) {
   const { slug, id } = await params;
-  const group = await requireGroupMember(slug);
-  const userId = group.membership.userId;
-  const [row, players, isAppAdmin] = await Promise.all([
-    getPlaySession(id, group.id),
-    listGroupPlayers(group.id),
-    userIsAppAdmin(userId),
+  const scope = { slug };
+  const [group, row, players, isAppAdmin] = await Promise.all([
+    requireGroupMember(slug),
+    getPlaySession(id, scope),
+    listGroupPlayers(scope),
+    sessionIsAppAdmin(),
   ]);
   if (!row) redirect("/");
+  const userId = group.membership.userId;
 
   if (
     !canEditPlaySession(

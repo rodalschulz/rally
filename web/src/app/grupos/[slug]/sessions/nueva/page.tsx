@@ -3,7 +3,7 @@ import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { SessionFinancierFields } from "@/components/SessionFinancierFields";
 import { SessionLimitsFields } from "@/components/SessionLimitsFields";
 import { createPlaySessionAction } from "@/lib/actions/sessions";
-import { userIsAppAdmin } from "@/lib/admin";
+import { sessionIsAppAdmin } from "@/lib/admin";
 import { listGroupPlayers } from "@/lib/data/queries";
 import { defaultSessionDatetimeLocal } from "@/lib/format";
 import { requireGroupMember } from "@/lib/groups";
@@ -16,12 +16,13 @@ export default async function NewSessionPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const group = await requireGroupMember(slug);
-  const userId = group.membership.userId;
-  const [players, isAppAdmin] = await Promise.all([
-    listGroupPlayers(group.id),
-    userIsAppAdmin(userId),
+  const scope = { slug };
+  const [group, players, isAppAdmin] = await Promise.all([
+    requireGroupMember(slug),
+    listGroupPlayers(scope),
+    sessionIsAppAdmin(),
   ]);
+  const userId = group.membership.userId;
 
   return (
     <>

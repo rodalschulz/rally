@@ -1,20 +1,16 @@
+import { cache } from "react";
 import { AvatarStickerPicker } from "@/components/AvatarStickerPicker";
 import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { signOutAction, updateProfileAction } from "@/lib/actions/profile";
-import { userIsAppAdmin } from "@/lib/admin";
 import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 
-/** Profile, cobro, push y cuenta — used from /ajustes and /grupos/[slug]/cuenta. */
-export async function UserSettingsScreen() {
-  const session = await getSession();
-  if (!session?.user?.id) redirect("/login");
-  const isAppAdmin = await userIsAppAdmin(session.user.id);
-  const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
+export const loadUserSettingsProfile = cache(async (userId: string) => {
+  return prisma.user.findUnique({
+    where: { id: userId },
     select: {
       avatarUrl: true,
       hue: true,
@@ -24,6 +20,14 @@ export async function UserSettingsScreen() {
       paymentWallet: true,
     },
   });
+});
+
+/** Profile, cobro, push y cuenta — used from /ajustes and /grupos/[slug]/cuenta. */
+export async function UserSettingsScreen() {
+  const session = await getSession();
+  if (!session?.user?.id) redirect("/login");
+  const isAppAdmin = Boolean(session.user.isAdmin);
+  const dbUser = await loadUserSettingsProfile(session.user.id);
 
   const player = {
     id: session.user.id,

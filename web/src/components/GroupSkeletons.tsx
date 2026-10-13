@@ -76,6 +76,15 @@ export function SessionPageSkeleton() {
   );
 }
 
+export function SessionResultsSkeleton() {
+  return (
+    <div className="mt-8 animate-pulse" aria-busy aria-label="Cargando resultados">
+      <div className="mb-2 h-5 w-28 rounded bg-mist-2" />
+      <div className="h-28 rounded-2xl bg-sand" />
+    </div>
+  );
+}
+
 export function AvailabilitySkeleton() {
   return (
     <span

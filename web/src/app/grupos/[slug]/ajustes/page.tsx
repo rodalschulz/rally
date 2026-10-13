@@ -2,7 +2,7 @@ import { DeleteGroupButton } from "@/components/DeleteGroupButton";
 import { EditGroupForm } from "@/components/EditGroupForm";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { LeaveGroupButton } from "@/components/LeaveGroupButton";
-import { prisma } from "@/lib/db";
+import { countGroupMembers } from "@/lib/data/queries";
 import { requireGroupMember } from "@/lib/groups";
 
 export const dynamic = "force-dynamic";
@@ -14,11 +14,11 @@ export default async function GroupSettingsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const group = await requireGroupMember(slug);
+  const [group, memberCount] = await Promise.all([
+    requireGroupMember(slug),
+    countGroupMembers({ slug }),
+  ]);
   const isOwner = group.membership.role === "owner";
-  const memberCount = await prisma.groupMember.count({
-    where: { groupId: group.id },
-  });
   const isSoleMember = memberCount === 1;
 
   return (

@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FreshOnMount } from "@/components/FreshOnMount";
+import { Suspense } from "react";
 import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 import { SessionAttendanceBlock } from "@/components/SessionAttendanceBlock";
 import { RecogeBolasBlock } from "@/components/RecogeBolasBlock";
 import { SessionFinancierControl } from "@/components/SessionFinancierControl";
-import { SinglesResultsPanel } from "@/components/SinglesResultsPanel";
+import { SessionResultsSection } from "@/components/SessionResultsSection";
+import { SessionResultsSkeleton } from "@/components/GroupSkeletons";
 import {
   getPlaySession,
   listGroupPlayers,
-  listRankingMatches,
-  listSessionMatchChangeLogs,
   toAttendance,
   toMatch,
   toPlayer,
@@ -24,7 +23,7 @@ import {
   canDeletePlaySession,
   canEditPlaySession,
 } from "@/lib/sessions/permissions";
-import { userIsAppAdmin } from "@/lib/admin";
+import { sessionIsAppAdmin } from "@/lib/admin";
 import {
   canEditRecogeBolas,
   isRecogeBolasApplied,
@@ -41,18 +40,15 @@ export default async function SessionDetailPage({
   const { slug, id } = await params;
   if (id === "nueva") redirect(`/grupos/${slug}/sessions/nueva`);
 
-  const group = await requireGroupMember(slug);
-  const userId = group.membership.userId;
-
-  const [row, allPlayers, changeLog, rankingMatches, isAppAdmin] =
-    await Promise.all([
-      getPlaySession(id, group.id),
-      listGroupPlayers(group.id),
-      listSessionMatchChangeLogs(id),
-      listRankingMatches(group.id),
-      userIsAppAdmin(userId),
-    ]);
+  const scope = { slug };
+  const [group, row, allPlayers, isAppAdmin] = await Promise.all([
+    requireGroupMember(slug),
+    getPlaySession(id, scope),
+    listGroupPlayers(scope),
+    sessionIsAppAdmin(),
+  ]);
   if (!row) redirect("/");
+  const userId = group.membership.userId;
 
   const session = toSession(row);
   const when = formatSessionWhen(session.startsAt);
@@ -113,7 +109,6 @@ export default async function SessionDetailPage({
 
   return (
     <>
-      <FreshOnMount />
       <div className="mb-5 flex items-center justify-between gap-3">
         <SessionFinancierControl
           playSessionId={session.id}
@@ -191,16 +186,18 @@ export default async function SessionDetailPage({
         isAppAdmin={isAppAdmin}
       />
 
-      <SinglesResultsPanel
-        playSessionId={session.id}
-        players={goingPlayers}
-        labelPlayers={allPlayers}
-        results={singlesResults}
-        rankingMatches={rankingMatches}
-        changeLog={changeLog}
-        canManage={canManageGames}
-        gamesOpen={gamesOpen}
-      />
+      <Suspense fallback={<SessionResultsSkeleton />}>
+        <SessionResultsSection
+          groupId={group.id}
+          throughStartsAt={startsAtDate}
+          playSessionId={session.id}
+          players={goingPlayers}
+          labelPlayers={allPlayers}
+          results={singlesResults}
+          canManage={canManageGames}
+          gamesOpen={gamesOpen}
+        />
+      </Suspense>
 
       <RecogeBolasBlock
         playSessionId={session.id}

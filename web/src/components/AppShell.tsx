@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { loadOverdueDebtNudge } from "@/lib/debts/loadOverdueNudge";
@@ -25,9 +26,9 @@ export async function AppShell({
   subtitle?: string;
   groupSlug?: string;
 }) {
-  const session = await getSession();
+  const [session, cookieStore] = await Promise.all([getSession(), cookies()]);
   const cookieSlug = parseHomeGroupSlug(
-    (await cookies()).get(HOME_GROUP_COOKIE)?.value,
+    cookieStore.get(HOME_GROUP_COOKIE)?.value,
   );
   // Explicit slug (group routes) wins; cookie keeps Fechas/Ranking/Deudas
   // usable on global pages like /ajustes after leaving the group layout.
@@ -35,12 +36,15 @@ export async function AppShell({
   const inGroup = Boolean(groupSlug);
   const showNav = Boolean(session?.user);
   const userId = session?.user?.id;
-  const overdueNudge = userId ? await loadOverdueDebtNudge(userId) : null;
 
   return (
     <div className="app-shell">
       <ServiceWorkerRegister />
-      {overdueNudge ? <OverdueDebtNudge nudge={overdueNudge} /> : null}
+      {userId ? (
+        <Suspense fallback={null}>
+          <OverdueNudgeLoader userId={userId} />
+        </Suspense>
+      ) : null}
       <header className="app-header sticky top-0 z-30 border-b border-ink/6 bg-mist/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-3">
           <BrandMark compact />
@@ -78,4 +82,10 @@ export async function AppShell({
       {showNav ? <BottomNav slug={navSlug} /> : null}
     </div>
   );
+}
+
+async function OverdueNudgeLoader({ userId }: { userId: string }) {
+  const nudge = await loadOverdueDebtNudge(userId);
+  if (!nudge) return null;
+  return <OverdueDebtNudge nudge={nudge} />;
 }

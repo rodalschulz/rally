@@ -1,5 +1,5 @@
 import { SessionPageSkeleton } from "@/components/GroupSkeletons";
 
-export default function SessionLoading() {
+export default function Loading() {
   return <SessionPageSkeleton />;
 }

@@ -1,23 +1,6 @@
-import { Suspense } from "react";
 import { AppShell } from "@/components/AppShell";
-import { GroupRouteSkeleton } from "@/components/GroupSkeletons";
-import { requireGroupMember } from "@/lib/groups";
 
-export default function GroupLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ slug: string }>;
-}) {
-  return (
-    <Suspense fallback={<GroupRouteSkeleton />}>
-      <GroupShell params={params}>{children}</GroupShell>
-    </Suspense>
-  );
-}
-
-async function GroupShell({
+export default async function GroupLayout({
   children,
   params,
 }: {
@@ -25,7 +8,8 @@ async function GroupShell({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const group = await requireGroupMember(slug);
-
+  // Membership is checked on each page, in parallel with that page's queries.
+  // Keeping the shell free of Neon lets tab changes paint their loading state
+  // without waiting on the group row first.
   return <AppShell groupSlug={slug}>{children}</AppShell>;
 }

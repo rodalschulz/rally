@@ -10,14 +10,30 @@ import {
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
 import { sessionPastCutoff } from "@/lib/sessions/windows";
 
-export async function listGroupPlayers(groupId: string) {
-  const members = await listGroupMembers(groupId);
+/**
+ * Group id (after the membership gate) or slug, so a page can start its
+ * queries in the same round trip as `requireGroupMember`.
+ */
+export type GroupKey = string | { slug: string };
+
+function groupWhere(
+  key: GroupKey,
+): { groupId: string } | { group: { slug: string } } {
+  return typeof key === "string" ? { groupId: key } : { group: { slug: key.slug } };
+}
+
+export async function listGroupPlayers(group: GroupKey) {
+  const members = await listGroupMembers(group);
   return members.map((m) => m.player);
 }
 
-export async function listGroupMembers(groupId: string) {
+export async function countGroupMembers(group: GroupKey) {
+  return prisma.groupMember.count({ where: groupWhere(group) });
+}
+
+export async function listGroupMembers(group: GroupKey) {
   const members = await prisma.groupMember.findMany({
-    where: { groupId },
+    where: groupWhere(group),
     include: { user: true },
     orderBy: { user: { displayName: "asc" } },
   });
@@ -36,9 +52,9 @@ export async function listGroupMembers(groupId: string) {
 
 const hubSessionInclude = { attendances: true } as const;
 
-export async function listPlaySessions(groupId: string) {
+export async function listPlaySessions(group: GroupKey) {
   return prisma.playSession.findMany({
-    where: { groupId },
+    where: groupWhere(group),
     orderBy: { startsAt: "desc" },
     include: {
       attendances: true,
@@ -48,10 +64,10 @@ export async function listPlaySessions(groupId: string) {
 }
 
 /** Próximas Fechas: still inside the results window, not cancelled. */
-export async function listUpcomingPlaySessions(groupId: string, now = new Date()) {
+export async function listUpcomingPlaySessions(group: GroupKey, now = new Date()) {
   return prisma.playSession.findMany({
     where: {
-      groupId,
+      ...groupWhere(group),
       status: { not: "cancelled" },
       startsAt: { gt: sessionPastCutoff(now) },
     },
@@ -62,12 +78,12 @@ export async function listUpcomingPlaySessions(groupId: string, now = new Date()
 
 /** Fechas Pasadas, newest first. Pass `take` for the hub preview. */
 export async function listPastPlaySessions(
-  groupId: string,
+  group: GroupKey,
   opts?: { take?: number; now?: Date },
 ) {
   return prisma.playSession.findMany({
     where: {
-      groupId,
+      ...groupWhere(group),
       status: { not: "cancelled" },
       startsAt: { lte: sessionPastCutoff(opts?.now) },
     },
@@ -77,16 +93,14 @@ export async function listPastPlaySessions(
   });
 }
 
-export async function getPlaySession(id: string, groupId?: string) {
+export async function getPlaySession(id: string, group?: GroupKey) {
   return prisma.playSession.findFirst({
-    where: groupId ? { id, groupId } : { id },
+    where: group ? { id, ...groupWhere(group) } : { id },
     include: {
-      attendances: { include: { user: true } },
-      debts: true,
+      attendances: true,
       matches: { orderBy: { createdAt: "asc" } },
       financier: true,
       recogeBolasPayer: true,
-      group: true,
     },
   });
 }
@@ -107,12 +121,12 @@ function toDebtWithSession(
   };
 }
 
-export async function listOpenDebts(groupId: string): Promise<DebtWithSession[]> {
+export async function listOpenDebts(group: GroupKey): Promise<DebtWithSession[]> {
   const rows = await prisma.debt.findMany({
     where: {
       status: "open",
       playSession: {
-        groupId,
+        ...groupWhere(group),
         status: { not: "cancelled" },
         startsAt: { lte: sessionPastCutoff() },
       },
@@ -125,11 +139,11 @@ export async function listOpenDebts(groupId: string): Promise<DebtWithSession[]>
 
 /** Saldadas, newest settled first. Pass `take` for the Historial preview. */
 export async function listSettledDebts(
-  groupId: string,
+  group: GroupKey,
   opts?: { take?: number },
 ): Promise<DebtWithSession[]> {
   const rows = await prisma.debt.findMany({
-    where: { status: "settled", playSession: { groupId } },
+    where: { status: "settled", playSession: groupWhere(group) },
     include: debtSessionSelect,
     orderBy: [
       { settledAt: { sort: "desc", nulls: "last" } },
@@ -140,22 +154,32 @@ export async function listSettledDebts(
   return rows.map(toDebtWithSession);
 }
 
-export async function listMatches(groupId: string) {
+export async function listMatches(group: GroupKey) {
   const rows = await prisma.match.findMany({
-    where: { playSession: { groupId }, deletedAt: null },
+    where: { playSession: groupWhere(group), deletedAt: null },
   });
   return rows.map(toMatch);
 }
 
-/** Matches that count for ranking: past fechas with a winner (not En curso / deleted). */
-export async function listRankingMatches(groupId: string) {
+/**
+ * Matches that count for ranking: a winner, not deleted.
+ * Default window is fechas that already started. `throughStartsAt` caps the
+ * history at one fecha (that fecha and earlier) so a single Fecha does not
+ * pull later results it will not use.
+ */
+export async function listRankingMatches(
+  group: GroupKey,
+  opts?: { throughStartsAt?: Date },
+) {
   const rows = await prisma.match.findMany({
     where: {
       winnerSide: { not: null },
       deletedAt: null,
       playSession: {
-        groupId,
-        startsAt: { lt: new Date() },
+        ...groupWhere(group),
+        startsAt: opts?.throughStartsAt
+          ? { lte: opts.throughStartsAt }
+          : { lt: new Date() },
       },
     },
     include: { playSession: { select: { startsAt: true } } },
