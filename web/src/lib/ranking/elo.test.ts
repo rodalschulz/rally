@@ -3,6 +3,8 @@ import type { Match } from "@/lib/domain/types";
 import {
   ELO_INITIAL,
   ELO_K_BY_UNIT,
+  ELO_K_GAME_LEGACY,
+  GAMES_ELO_K32_FROM,
   buildEloRanking,
   setEloMarginFactor,
 } from "./elo";
@@ -116,7 +118,7 @@ describe("buildEloRanking", () => {
     ]);
   });
 
-  it("uses a smaller K for loose games", () => {
+  it("keeps K=24 for games recorded before the cutoff", () => {
     const matches: Match[] = [
       match({
         id: "g1",
@@ -126,9 +128,73 @@ describe("buildEloRanking", () => {
       }),
     ];
     const rows = buildEloRanking(matches, "game");
-    const k = ELO_K_BY_UNIT.game;
+    const k = ELO_K_GAME_LEGACY;
     expect(rows[0]?.points).toBe(Math.round(ELO_INITIAL + k * 0.5));
     expect(rows[1]?.points).toBe(Math.round(ELO_INITIAL - k * 0.5));
+  });
+
+  it("uses K=32 for games recorded at or after the cutoff", () => {
+    const before = buildEloRanking(
+      [
+        match({
+          id: "old",
+          unit: "game",
+          score: "1-0",
+          winnerSide: "A",
+          createdAt: "2026-10-23T14:59:59.000Z",
+        }),
+      ],
+      "game",
+    );
+    const after = buildEloRanking(
+      [
+        match({
+          id: "new",
+          unit: "game",
+          score: "1-0",
+          winnerSide: "A",
+          sessionStartsAt: GAMES_ELO_K32_FROM,
+          createdAt: GAMES_ELO_K32_FROM,
+        }),
+      ],
+      "game",
+    );
+    expect(before[0]?.points).toBe(Math.round(ELO_INITIAL + ELO_K_GAME_LEGACY * 0.5));
+    expect(after[0]?.points).toBe(Math.round(ELO_INITIAL + ELO_K_BY_UNIT.game * 0.5));
+    expect(after[0]?.points).toBeGreaterThan(before[0]!.points);
+  });
+
+  it("leaves a pre-cutoff game on K=24 when a later game uses K=32", () => {
+    const old = match({
+      id: "old",
+      unit: "game",
+      score: "1-0",
+      winnerSide: "A",
+      createdAt: "2026-10-23T14:00:00.000Z",
+    });
+    const oldOnly = buildEloRanking([old], "game");
+    const both = buildEloRanking(
+      [
+        old,
+        match({
+          id: "new",
+          unit: "game",
+          score: "1-0",
+          sideA: ["c"],
+          sideB: ["d"],
+          winnerSide: "A",
+          sessionStartsAt: GAMES_ELO_K32_FROM,
+          createdAt: GAMES_ELO_K32_FROM,
+        }),
+      ],
+      "game",
+    );
+    expect(both.find((r) => r.playerId === "a")!.points).toBe(
+      oldOnly.find((r) => r.playerId === "a")!.points,
+    );
+    expect(both.find((r) => r.playerId === "c")!.points).toBe(
+      Math.round(ELO_INITIAL + ELO_K_BY_UNIT.game * 0.5),
+    );
   });
 
   it("does not expand a set score into the games ladder", () => {
@@ -219,7 +285,7 @@ describe("buildEloRanking", () => {
   });
 
   it("rebuilds as if an edited or deleted match always had the final state", () => {
-    const k = ELO_K_BY_UNIT.game;
+    const k = ELO_K_GAME_LEGACY;
     const afterAWins = buildEloRanking(
       [
         match({
@@ -321,7 +387,7 @@ describe("buildEloRanking", () => {
       ],
       "game",
     );
-    expect(g1[0]?.points).toBe(Math.round(ELO_INITIAL + ELO_K_BY_UNIT.game * 0.5));
+    expect(g1[0]?.points).toBe(Math.round(ELO_INITIAL + ELO_K_GAME_LEGACY * 0.5));
   });
 });
 

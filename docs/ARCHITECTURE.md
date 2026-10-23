@@ -144,7 +144,7 @@ Tratarlo como **adaptador**, no como núcleo de la app social.
 | Multi-grupo | Root = discovery; coordinación bajo `/grupos/[slug]` |
 | Grupos privados | Invite + contraseña; no listados en root |
 | Canchas libres | Globales (sin groupId) |
-| Algoritmo de ranking | Singles Elo por unit (K_game=24, K_set=32 × margen de games); sin ranking dobles en UI |
+| Algoritmo de ranking | Singles Elo por unit (Games: K=24 antes del 2026-10-23 10:00 Lima, K=32 desde entonces; Sets: K=32 × margen de games); sin ranking dobles en UI |
 | Tests | Vitest en módulos puros (`docs/TESTING.md`) |
 | Nombre de marca UI | **rally** |
 | Setup local | `web/docs/SETUP.md` |

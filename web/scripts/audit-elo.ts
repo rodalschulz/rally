@@ -18,6 +18,8 @@ import {
   buildEloRanking,
   ELO_INITIAL,
   ELO_K_BY_UNIT,
+  ELO_K_GAME_LEGACY,
+  GAMES_ELO_K32_FROM,
 } from "../src/lib/ranking/elo";
 import { buildSessionSinglesResumen } from "../src/lib/ranking/sessionResumen";
 import type { Match, MatchUnit } from "../src/lib/domain/types";
@@ -81,8 +83,12 @@ function recomputeElo(matches: Match[], unit: MatchUnit) {
     const w = (m.winnerSide === "A" ? m.sideA : m.sideB)[0];
     const l = (m.winnerSide === "A" ? m.sideB : m.sideA)[0];
     if (!w || !l || w === l) continue;
+    const gameK =
+      m.createdAt && Date.parse(m.createdAt) >= Date.parse(GAMES_ELO_K32_FROM)
+        ? ELO_K_BY_UNIT.game
+        : ELO_K_GAME_LEGACY;
     const k =
-      unit === "set" ? baseK * independentSetMarginFactor(m.score) : baseK;
+      unit === "set" ? baseK * independentSetMarginFactor(m.score) : gameK;
     const rw = get(w);
     const rl = get(l);
     const expW = 1 / (1 + 10 ** ((rl - rw) / 400));

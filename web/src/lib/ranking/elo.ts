@@ -4,8 +4,19 @@ import { calendarDaysBetween } from "../debts/overdueNudge";
 import { compareMatches } from "./matchOrder";
 
 export const ELO_INITIAL = 1000;
+
+/**
+ * Games recorded before this instant keep K=24 so ratings already on the
+ * ladder do not move. `createdAt` at or after it uses K=32.
+ * 2026-10-23 10:00 America/Lima.
+ */
+export const GAMES_ELO_K32_FROM = "2026-10-23T15:00:00.000Z";
+
+/** K for a Game whose `createdAt` is before `GAMES_ELO_K32_FROM`. */
+export const ELO_K_GAME_LEGACY = 24;
+
 export const ELO_K_BY_UNIT: Record<MatchUnit, number> = {
-  game: 24,
+  game: 32,
   set: 32,
 };
 
@@ -35,15 +46,25 @@ export function setEloMarginFactor(score: string): number {
   return Math.log(diff + 1) / Math.log(SET_ELO_STANDARD_MARGIN + 1);
 }
 
+/** Base K for one Game: 24 if it was recorded before the cutoff, 32 after. */
+export function gameEloBaseK(m: Match): number {
+  if (!m.createdAt) return ELO_K_GAME_LEGACY;
+  const at = Date.parse(m.createdAt);
+  if (Number.isNaN(at) || at < Date.parse(GAMES_ELO_K32_FROM)) {
+    return ELO_K_GAME_LEGACY;
+  }
+  return ELO_K_BY_UNIT.game;
+}
+
 export function eloKForMatch(m: Match): number {
-  const base = ELO_K_BY_UNIT[m.unit];
+  const base = m.unit === "game" ? gameEloBaseK(m) : ELO_K_BY_UNIT[m.unit];
   if (m.unit !== "set") return base;
   return base * setEloMarginFactor(m.score);
 }
 
 /**
  * Apply one finished singles result to an in-memory ratings map.
- * Sets scale K by game margin; Games stay binary at K=24.
+ * Sets scale K by game margin. Games stay binary: K=24 before the cutoff, K=32 after.
  */
 export function applySinglesElo(
   ratings: Map<PlayerId, number>,

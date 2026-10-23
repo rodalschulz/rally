@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Match } from "@/lib/domain/types";
-import { ELO_INITIAL, ELO_K_BY_UNIT } from "./elo";
+import { ELO_INITIAL, ELO_K_BY_UNIT, ELO_K_GAME_LEGACY } from "./elo";
 import {
   buildEloHistoryForChart,
   buildGroupEloPaths,
@@ -13,7 +13,7 @@ import {
   type PlayerStatsSessionInput,
 } from "./playerStats";
 
-const k = ELO_K_BY_UNIT.game;
+const k = ELO_K_GAME_LEGACY;
 const winDelta = Math.round(ELO_INITIAL + k * 0.5) - ELO_INITIAL; // +12
 
 function game(

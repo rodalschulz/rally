@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Match } from "@/lib/domain/types";
-import { ELO_INITIAL, ELO_K_BY_UNIT } from "./elo";
+import { ELO_INITIAL, ELO_K_BY_UNIT, ELO_K_GAME_LEGACY } from "./elo";
 import { buildSessionSinglesResumen } from "./sessionResumen";
 
 function match(
@@ -44,7 +44,7 @@ describe("buildSessionSinglesResumen", () => {
   });
 
   it("counts W–L and Elo for one game from 1000", () => {
-    const k = ELO_K_BY_UNIT.game;
+    const k = ELO_K_GAME_LEGACY;
     const expectedWinner = Math.round(ELO_INITIAL + k * 0.5);
     const expectedLoser = Math.round(ELO_INITIAL - k * 0.5);
     const rows = buildSessionSinglesResumen(
@@ -71,7 +71,7 @@ describe("buildSessionSinglesResumen", () => {
   });
 
   it("uses prior history for Elo start", () => {
-    const k = ELO_K_BY_UNIT.game;
+    const k = ELO_K_GAME_LEGACY;
     const priorWin = Math.round(ELO_INITIAL + k * 0.5);
     const priorLoss = Math.round(ELO_INITIAL - k * 0.5);
 
