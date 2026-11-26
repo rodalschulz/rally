@@ -11,7 +11,7 @@ import {
   updateSinglesLooseGameAction,
   updateSinglesSetAction,
 } from "@/lib/actions/sessions";
-import { formatChatTime } from "@/lib/format";
+import { formatChatTime, formatClockTime } from "@/lib/format";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
 import { rematchServerSide } from "@/lib/matches/rematchServer";
 import {
@@ -780,6 +780,10 @@ export function SinglesResultsPanel({
         <ul className="mb-4 max-h-[min(50vh,22rem)] overflow-y-auto overscroll-contain rounded-2xl bg-sand">
           {[...local].reverse().map((m, index) => {
             const number = local.length - index;
+            const addedAt =
+              m.unit === "game" && m.createdAt
+                ? formatClockTime(m.createdAt)
+                : null;
             const a = nameOf(labelPlayers, m.sideA[0]);
             const b = nameOf(labelPlayers, m.sideB[0]);
             const enCurso = isInProgress(m);
@@ -857,7 +861,15 @@ export function SinglesResultsPanel({
                           </p>
                         ) : null}
                       </div>
-                      {!enCurso && m.unit === "set" ? (
+                      {addedAt && m.createdAt ? (
+                        <time
+                          dateTime={m.createdAt}
+                          aria-label={`Agregado a las ${addedAt}`}
+                          className="shrink-0 pt-0.5 text-[0.8rem] font-medium tabular-nums text-muted"
+                        >
+                          {addedAt}
+                        </time>
+                      ) : !enCurso && m.unit === "set" ? (
                         <span className="shrink-0 text-[1.15rem] font-semibold tabular-nums tracking-tight text-ink">
                           {m.score}
                         </span>

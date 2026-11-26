@@ -137,3 +137,8 @@ export function formatChatTime(iso: string): string {
   const d = new Date(iso);
   return `${dayMonth.format(d)} · ${chatTimeFmt.format(d)}`;
 }
+
+/** Clock time in America/Lima, 24h (e.g. "19:22"). */
+export function formatClockTime(iso: string): string {
+  return timeFmt.format(new Date(iso));
+}
