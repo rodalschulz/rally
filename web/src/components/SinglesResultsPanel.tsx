@@ -13,7 +13,7 @@ import {
 } from "@/lib/actions/sessions";
 import { formatChatTime } from "@/lib/format";
 import type { MatchChangeLogEntry } from "@/lib/matches/changelog";
-import { pickNextGamePair } from "@/lib/matches/nextGamePair";
+import { rematchServerSide } from "@/lib/matches/rematchServer";
 import {
   buildSessionSinglesResumen,
   type SessionResumenRow,
@@ -197,6 +197,38 @@ function gameDraftFromMatch(m: Match): GameDraft {
   };
 }
 
+/** Keep a side only if that attendee is still Voy. Same ids → same object. */
+function retainSetPlayers(draft: SetDraft, goingIds: Set<string>): SetDraft {
+  const player1Id = goingIds.has(draft.player1Id) ? draft.player1Id : "";
+  const player2Id = goingIds.has(draft.player2Id) ? draft.player2Id : "";
+  if (player1Id === draft.player1Id && player2Id === draft.player2Id) {
+    return draft;
+  }
+  return { ...draft, player1Id, player2Id };
+}
+
+function retainGamePlayers(draft: GameDraft, goingIds: Set<string>): GameDraft {
+  const player1Id = goingIds.has(draft.player1Id) ? draft.player1Id : "";
+  const player2Id = goingIds.has(draft.player2Id) ? draft.player2Id : "";
+  if (player1Id === draft.player1Id && player2Id === draft.player2Id) {
+    return draft;
+  }
+  const bothStillThere = Boolean(player1Id) && Boolean(player2Id);
+  return {
+    ...draft,
+    player1Id,
+    player2Id,
+    winnerSide: bothStillThere ? draft.winnerSide : null,
+    serverSide: bothStillThere ? draft.serverSide : null,
+  };
+}
+
+function gamesForServer(matches: Match[], exceptId: string | null) {
+  return matches.filter(
+    (m) => m.unit === "game" && !m.deletedAt && m.id !== exceptId,
+  );
+}
+
 function nameOf(players: Player[], id: string | undefined) {
   return players.find((p) => p.id === id)?.displayName ?? "?";
 }
@@ -293,19 +325,10 @@ export function SinglesResultsPanel({
   const [serverPickById, setServerPickById] = useState<
     Partial<Record<string, "A" | "B" | null>>
   >({});
-  /** Brief press flash for "Siguiente Pareja". */
-  const [nextPairFlash, setNextPairFlash] = useState(false);
   const inFlight = useRef(0);
-  const nextPairFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setPortalReady(true);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (nextPairFlashTimer.current) clearTimeout(nextPairFlashTimer.current);
-    };
   }, []);
 
   useEffect(() => {
@@ -317,10 +340,12 @@ export function SinglesResultsPanel({
   }, [results, changeLog]);
 
   useEffect(() => {
-    if (!editingId) {
-      setSetDraft(emptySetDraft());
-      setGameDraft(emptyGameDraft());
-    }
+    // A finished save refreshes this prop with a new array. Don't wipe a
+    // draft the user already filled while that request was in flight.
+    if (editingId) return;
+    const goingIds = new Set(players.map((p) => p.id));
+    setSetDraft((d) => retainSetPlayers(d, goingIds));
+    setGameDraft((d) => retainGamePlayers(d, goingIds));
   }, [players, editingId]);
 
   useEffect(() => {
@@ -753,7 +778,8 @@ export function SinglesResultsPanel({
         <p className="mb-4 text-[0.9rem] text-muted">Sin resultados todavía.</p>
       ) : (
         <ul className="mb-4 max-h-[min(50vh,22rem)] overflow-y-auto overscroll-contain rounded-2xl bg-sand">
-          {local.map((m, index) => {
+          {[...local].reverse().map((m, index) => {
+            const number = local.length - index;
             const a = nameOf(labelPlayers, m.sideA[0]);
             const b = nameOf(labelPlayers, m.sideB[0]);
             const enCurso = isInProgress(m);
@@ -771,7 +797,7 @@ export function SinglesResultsPanel({
                     className="mt-0.5 w-5 shrink-0 text-right text-[0.85rem] font-medium tabular-nums text-muted"
                     aria-hidden
                   >
-                    {index + 1}
+                    {number}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
@@ -1139,47 +1165,32 @@ export function SinglesResultsPanel({
             </p>
           </div>
 
-          {!editingId && players.length >= 2 ? (
-            <button
-              type="button"
-              onClick={() => {
-                const pair = pickNextGamePair(
-                  players.map((p) => p.id),
-                  local.filter((m) => m.unit === "game" && !m.deletedAt),
-                );
-                if (!pair) return;
-                setGameDraft({
-                  player1Id: pair.player1Id,
-                  player2Id: pair.player2Id,
-                  winnerSide: null,
-                  serverSide: pair.serverSide,
-                });
-                setNextPairFlash(true);
-                if (nextPairFlashTimer.current) {
-                  clearTimeout(nextPairFlashTimer.current);
-                }
-                nextPairFlashTimer.current = setTimeout(
-                  () => setNextPairFlash(false),
-                  280,
-                );
-              }}
-              className={`w-full rounded-xl py-2.5 text-[0.9rem] font-medium text-ink transition-[background-color,transform] duration-150 active:scale-[0.98] ${
-                nextPairFlash ? "bg-ball/35" : "bg-mist-2"
-              }`}
-            >
-              Siguiente Pareja
-              <span className="mt-0.5 block text-[0.75rem] font-normal text-muted">
-                Empareja sin repetir y rota quien descansa
-              </span>
-            </button>
-          ) : null}
-
           <PlayerSelects
             players={players}
             player1Id={gameDraft.player1Id}
             player2Id={gameDraft.player2Id}
-            onPlayer1={(id) => setGameDraft((d) => ({ ...d, player1Id: id }))}
-            onPlayer2={(id) => setGameDraft((d) => ({ ...d, player2Id: id }))}
+            onPlayer1={(id) =>
+              setGameDraft((d) => ({
+                ...d,
+                player1Id: id,
+                serverSide: rematchServerSide(
+                  id,
+                  d.player2Id,
+                  gamesForServer(local, editingId),
+                ),
+              }))
+            }
+            onPlayer2={(id) =>
+              setGameDraft((d) => ({
+                ...d,
+                player2Id: id,
+                serverSide: rematchServerSide(
+                  d.player1Id,
+                  id,
+                  gamesForServer(local, editingId),
+                ),
+              }))
+            }
           />
 
           <div>

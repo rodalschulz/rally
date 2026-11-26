@@ -42,7 +42,7 @@ npm run audit:elo # reconciliación Elo vs DB (requiere DATABASE_URL en web/.env
 | `lib/debts/settleLabel.ts` | Copy del Historial: acreedor vs admin según `settledById` |
 | `lib/debts/reconcile.ts` | Conservar settled válidas; limpiar huérfanas |
 | `lib/matches/changelog.ts` | Textos del historial de resultados (anti-cheat) |
-| `lib/matches/nextGamePair.ts` | Siguiente Pareja de Games: RR + rotar descanso + Servidor en rematch |
+| `lib/matches/rematchServer.ts` | Servidor del siguiente Game: quien no sacó en el Game anterior del par |
 | `lib/avatar/optimize.ts` | Sticker ≤ 500 KB (resize + palette/WebP) |
 | `lib/avatar/detect.ts` | PNG/WebP por magic bytes (MIME vacío / octet-stream) |
 | `lib/avatar/toStored.ts` | ≤ 500 KB se guarda sin `sharp` (Vercel no carga libvips) |

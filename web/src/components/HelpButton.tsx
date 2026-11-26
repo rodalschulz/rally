@@ -75,7 +75,7 @@ const TABS: HelpTab[] = [
       },
       {
         title: "Ganador y servidor",
-        desc: "Cada Game necesita un ganador. Si quieres, marcas quién sacaba (el Servidor) para tus estadísticas.",
+        desc: "Cada Game necesita un ganador. El Servidor es opcional: si esos dos ya jugaron un Game en esta Fecha, queda marcado quien no sacó la vez anterior.",
       },
       {
         title: "En curso e historial",
